@@ -52,7 +52,12 @@ test("authenticated profiles use protected pre-authenticated config and sanitize
     workflow,
     /--plugin-lifecycle-evidence "npm run validate passed/u,
   );
-  assert.match(workflow, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/u);
+  // Shape, not a literal SHA: do not re-pin this to a specific commit. A literal SHA makes every
+  // legitimate dependabot bump of upload-artifact land red for no security benefit. What this
+  // assertion uniquely guards is that the upload step still EXISTS in this workflow and is still
+  // actions/upload-artifact -- the "pinned by 40-hex SHA" policy itself is enforced across all
+  // actions by the "immutable first-party action pins" test below.
+  assert.match(workflow, /actions\/upload-artifact@[0-9a-f]{40}/u);
   assert.match(workflow, /benchmark\/sanitized\//u);
   assert.doesNotMatch(workflow, /secrets\.|CURSOR_API_KEY|path:\s*benchmark\/results\//u);
   assert.doesNotMatch(workflow, /\bnpm publish\b|\bgh release create\b|\bgit push\b/u);
