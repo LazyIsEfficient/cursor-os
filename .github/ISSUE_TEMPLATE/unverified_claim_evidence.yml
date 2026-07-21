@@ -1,0 +1,93 @@
+name: Unverified-claim evidence
+description: Submit evidence for (or against) an item on the README's unverified-claims list.
+labels:
+  - evidence
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The README maintains a list of
+        [currently unverified claims](https://github.com/LazyIsEfficient/cursor-os/blob/main/README.md#current-unverified-claims)
+        — things this repository deliberately does **not** assert because no
+        direct evidence has been captured. Moving an item off that list
+        requires evidence, not confidence.
+
+        Use this form to submit that evidence, or to report that a claim the
+        repository *does* make is not holding on your machine.
+
+  - type: dropdown
+    id: claim
+    attributes:
+      label: Which claim
+      options:
+        - Manual Editor/Customize installation and component loading
+        - Live authenticated smoke or release benchmark outcomes
+        - Live plugin loading through the locally installed CLI
+        - Token counts in CLI structured output
+        - Subagent parentage, call counts, and concurrency telemetry
+        - A claim the repository currently makes that does not hold (describe below)
+        - Other unverified behaviour not yet listed
+    validations:
+      required: true
+
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Direction of the evidence
+      options:
+        - Supports the claim — it works, here is proof
+        - Contradicts the claim — it does not work, here is proof
+        - Partial / conditional — works only under specific conditions
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: |
+        Command output, structured CLI output, screenshots of the Cursor
+        settings pane, or artifact excerpts. Redact credentials and anything
+        machine-identifying. Assertions without artifacts cannot move a claim
+        off the unverified list.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: method
+    attributes:
+      label: How the evidence was produced
+      description: |
+        Exact steps, so someone else can reproduce them. Note whether the run
+        was authenticated, and whether any model calls were made.
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, Cursor Editor / CLI version, and the repository commit SHA.
+      placeholder: "macOS 15.5, Node v22.14.0, Cursor 1.2.3, commit 9027bba"
+    validations:
+      required: true
+
+  - type: textarea
+    id: probe
+    attributes:
+      label: "`npm run probe` output (optional but strongly preferred)"
+      description: Network-free local capability evidence for the same machine.
+      render: json
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: The evidence above is from a run I performed, not from documentation or inference.
+          required: true
+        - label: I have redacted credentials, API keys, and evaluator or canary values.
+          required: true
