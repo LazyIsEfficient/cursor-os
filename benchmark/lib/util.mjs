@@ -76,14 +76,15 @@ export async function hashTree(root) {
   return sha256(entries.join(""));
 }
 
-export async function copyTree(source, destination) {
+// Defaults to owner-only because the credential-copying callers are the ones that must not
+// get this wrong; callers copying non-sensitive trees pass their own mode explicitly.
+export async function copyTree(source, destination, { mode = 0o600 } = {}) {
   await mkdir(destination, { recursive: true });
   for (const sourcePath of await listFiles(source)) {
     const relativePath = relative(source, sourcePath);
     const destinationPath = join(destination, relativePath);
     await mkdir(dirname(destinationPath), { recursive: true });
-    // Copies can carry authenticated Cursor config material; keep them owner-only at rest.
-    await writeFile(destinationPath, await readFile(sourcePath), { flag: "wx", mode: 0o600 });
+    await writeFile(destinationPath, await readFile(sourcePath), { flag: "wx", mode });
   }
 }
 
