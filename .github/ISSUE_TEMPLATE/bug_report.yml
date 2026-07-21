@@ -6,9 +6,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Do not report security vulnerabilities here.** Follow
-        [SECURITY.md](https://github.com/LazyIsEfficient/cursor-os/blob/main/SECURITY.md)
-        instead — public issues are the wrong channel for them.
+        **Do not report security vulnerabilities here.** Public issues are the
+        wrong channel. Use GitHub's private advisory form at
+        [security/advisories/new](https://github.com/LazyIsEfficient/cursor-os/security/advisories/new),
+        which is visible only to maintainers;
+        [SECURITY.md](https://github.com/LazyIsEfficient/cursor-os/blob/main/SECURITY.md#reporting-a-vulnerability)
+        documents what to include.
 
         This project is evidence-first. The probe output below is the single
         most useful thing you can attach: it is network-free and reports what

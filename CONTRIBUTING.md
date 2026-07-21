@@ -59,16 +59,29 @@ nvm use
 
 ## Local verification gates
 
-Run all six before opening a pull request. CI runs a subset; the rest are local
-only, which is why the pull request template asks you to confirm them.
+Run all six before opening a pull request, after installing with
+`npm ci --ignore-scripts`.
+
+CI also runs three of them (`npm test`, `npm run validate`,
+`npm run benchmark:corpus-smoke`), so those are a fast local signal rather than
+your only one. The other three — `npm run plugin:lifecycle:verify`,
+`npm run probe`, and `npm run release:dry-run` — **CI never runs**: the first two
+need a real local Cursor installation and the third needs a clean working tree.
+Nothing catches those for you, which is why the pull request template asks you
+to confirm them and to paste their output.
 
 ```sh
 npm ci --ignore-scripts
+
+# CI also runs these three
 npm test
 npm run validate
-npm run plugin:lifecycle:verify
 npm run benchmark:corpus-smoke
+
+# CI runs none of these three — local only
+npm run plugin:lifecycle:verify
 npm run probe
+npm run release:dry-run
 ```
 
 What each gate covers:
@@ -136,9 +149,13 @@ the validator rejects `node:child_process`, network modules, `fetch`, `eval`,
 
 ## Security
 
-Do not report vulnerabilities through public issues. Follow
-[SECURITY.md](SECURITY.md), which also defines the supported boundary — local
-Cursor Editor and CLI use in a trusted workspace, with Cloud Agent execution
+Do not report vulnerabilities through public issues. Report them privately
+through GitHub's advisory form at
+<https://github.com/LazyIsEfficient/cursor-os/security/advisories/new>; the
+procedure and what to include are in
+[Reporting a vulnerability](SECURITY.md#reporting-a-vulnerability).
+[SECURITY.md](SECURITY.md) also defines the supported boundary — local Cursor
+Editor and CLI use in a trusted workspace, with Cloud Agent execution
 explicitly out of scope.
 
 ## Code of conduct

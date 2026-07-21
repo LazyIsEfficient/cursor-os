@@ -17,5 +17,8 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore(actions)
-    labels:
-      - dependencies
+    # No `labels:` key: `dependencies` is already Dependabot's default label,
+    # so stating it explicitly changed nothing. The repository does not
+    # currently define that label, and Dependabot ignores labels that do not
+    # exist rather than failing, so no label is applied either way. Create a
+    # `dependencies` label if you want these pull requests tagged.
