@@ -76,6 +76,26 @@ async function selectedEvidenceFiles(runRoot) {
   return selected.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 }
 
+// A canary written by `echo "$SECRET" > canary.txt` carries a trailing newline, and an
+// untrimmed canary matches nothing -- the scan silently no-ops and the export ships the
+// plaintext. Surrounding whitespace is trimmed from both ends: because matching is a
+// substring test, a shorter canary matches strictly more content, so trimming can only
+// widen coverage and never narrow it. A secret that genuinely begins or ends with
+// whitespace is still caught by its trimmed core. The empty-after-trim case is rejected
+// rather than kept, so a whitespace-only canary fails the export instead of disabling it.
+const CANARY_BYTE_ENCODINGS = ["utf8", "utf16le", "latin1"];
+
+function canaryByteVariants(text) {
+  const variants = [];
+  for (const encoding of CANARY_BYTE_ENCODINGS) {
+    const buffer = Buffer.from(text, encoding);
+    if (buffer.length === 0) continue;
+    if (variants.some((existing) => existing.equals(buffer))) continue;
+    variants.push(buffer);
+  }
+  return variants;
+}
+
 async function loadSecretCanaries(secretCanaryFiles, runRoot, exportRoot) {
   invariant(
     Array.isArray(secretCanaryFiles) && secretCanaryFiles.length > 0,
@@ -90,9 +110,12 @@ async function loadSecretCanaries(secretCanaryFiles, runRoot, exportRoot) {
     );
     const metadata = await lstat(path);
     invariant(metadata.isFile() && !metadata.isSymbolicLink(), "secret canary must be a regular file");
-    const bytes = await readFile(path);
-    invariant(bytes.length > 0, "secret canary must not be empty");
-    canaries.push(bytes);
+    const text = (await readFile(path, "utf8")).trim();
+    invariant(
+      text.length > 0,
+      "secret canary must not be empty or whitespace-only after trimming surrounding whitespace",
+    );
+    canaries.push({ text, byteVariants: canaryByteVariants(text) });
   }
   return canaries;
 }
@@ -112,7 +135,11 @@ function collectStrings(value, collected) {
 // JSON encoding hides a secret from a raw-byte scan: `"` becomes `\"`, `\` becomes
 // `\\`, and control characters become `\n` or `\uXXXX`. Scanning the decoded field
 // values is what catches those. The raw scan is kept as well, so this is strictly
-// additive and non-UTF8 payloads stay covered.
+// additive. The raw scan compares the canary encoded as utf8, utf16le, and latin1, so a
+// secret written to a log in any of those encodings is caught even when the bytes never
+// decode as UTF-8. It does not catch transformations of the secret -- base64, URL
+// encoding, or a value split across two JSON strings all pass, by design: this is an
+// exact-canary matcher, not a general secret detector.
 //
 // Only harness-generated evidence is required to parse. These files are written by
 // `JSON.stringify` (`appendJsonLine`), so a parse failure means truncation or
@@ -168,11 +195,12 @@ function decodedStrings(bytes, path) {
 function assertNoCredentials(bytes, canaries, path) {
   const candidates = [bytes.toString("utf8"), ...decodedStrings(bytes, path)];
   for (const canary of canaries) {
-    invariant(!bytes.includes(canary), `selected artifact ${path} contains an exact secret canary`);
-    const canaryText = canary.toString("utf8");
+    for (const variant of canary.byteVariants) {
+      invariant(!bytes.includes(variant), `selected artifact ${path} contains an exact secret canary`);
+    }
     for (const candidate of candidates) {
       invariant(
-        !candidate.includes(canaryText),
+        !candidate.includes(canary.text),
         `selected artifact ${path} contains an exact secret canary`,
       );
     }
