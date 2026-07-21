@@ -113,8 +113,8 @@ jobs:
         run: |
           {
             printf 'Reproducible plugin payload for cursor-harness %s.\n\n' "$VERSION"
-            printf '- Archive: `%s`\n' "$ARCHIVE"
-            printf '- SHA-256: `%s`\n\n' "$DIGEST"
+            printf -- '- Archive: `%s`\n' "$ARCHIVE"
+            printf -- '- SHA-256: `%s`\n\n' "$DIGEST"
             printf 'Verify with `sha256sum --check %s.sha256`.\n' "$ARCHIVE"
           } > release-notes.md
           gh release create "v$VERSION" \
