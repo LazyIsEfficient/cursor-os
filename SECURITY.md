@@ -1,5 +1,37 @@
 # Security
 
+## Reporting a vulnerability
+
+Do not open a public issue, pull request, or discussion for a suspected
+vulnerability. Report it privately through GitHub's private vulnerability
+reporting form at
+<https://github.com/LazyIsEfficient/cursor-os/security/advisories/new>. Reports
+submitted there are visible only to repository maintainers.
+
+Include the affected file or command, what you observed, and the steps to
+reproduce it. `npm run probe` output is useful when the issue involves hook
+execution, because it is network-free and records what your local Cursor Editor
+and CLI actually support.
+
+Expect an acknowledgement from a maintainer. This repository publishes no
+response-time commitment, because none has been measured — treat the absence of
+a stated window as exactly that, not as a service level.
+
+Read the support boundary below before reporting. Behaviour outside it —
+notably Cloud Agent execution — is not a supported configuration, and the
+command guard is explicitly not a security boundary.
+
+> **Maintainer note:** this repository publishes no email contact, so GitHub's
+> private reporting form is the only private maintainer channel. Replace the URL
+> above with a dedicated security address if you prefer email.
+>
+> **Verify before the repository goes public:** the repository is currently
+> private, so neither the advisory URL above nor the `blob/main/...` links in
+> `.github/ISSUE_TEMPLATE/` can be confirmed to resolve for an anonymous
+> visitor. Confirm that GitHub private vulnerability reporting is enabled
+> (Settings → Code security and analysis) before publishing, or this section
+> points at a form nobody outside the org can reach.
+
 ## Support boundary
 
 The shipped command hook is supported for local Cursor Editor and Cursor CLI
