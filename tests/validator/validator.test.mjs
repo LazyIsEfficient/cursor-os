@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import test from "node:test";
@@ -42,6 +42,7 @@ test("comprehensive validator accepts the repository and reports every check", a
     "frontmatter",
     "markdown-links",
     "plugin-inventory",
+    "documented-components",
     "orchestration",
     "workflows",
     "schemas",
@@ -273,6 +274,97 @@ test("inventory generation is deterministic", async () => {
     first.components.map(({ path }) => path),
     [...first.components.map(({ path }) => path)].sort(),
   );
+});
+
+// Issue #5: both READMEs claimed six skills while nineteen shipped. The prose
+// component lists are asserted against the inventory so the same drift cannot
+// recur silently.
+test("validator rejects a documented component count that drifts from the inventory", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(
+      join(repository, "README.md"),
+      "<!-- components:skill:start count=19 -->",
+      "<!-- components:skill:start count=6 -->",
+    );
+
+    await assert.rejects(
+      validateRepository(repository),
+      /README\.md declares count=6 for skills but the plugin inventory has 19/iu,
+    );
+  });
+});
+
+test("validator rejects a README that omits an installed component", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(
+      join(repository, "plugin/README.md"),
+      "`release-manager`",
+      "release-manager",
+    );
+
+    await assert.rejects(
+      validateRepository(repository),
+      /plugin\/README\.md omits installed skills: release-manager/iu,
+    );
+  });
+});
+
+test("validator rejects a README that documents a component the plugin does not ship", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(
+      join(repository, "README.md"),
+      "`capability-probe` for capability",
+      "`capability-probe` and `imaginary-agent` for capability",
+    );
+
+    await assert.rejects(
+      validateRepository(repository),
+      /README\.md documents agents that are not installed: imaginary-agent/iu,
+    );
+  });
+});
+
+// The count phrase is checked separately from the marker so that prose saying
+// "six skills" fails even when the marker and the name list stay correct.
+test("validator rejects a prose count phrase that contradicts the inventory", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(join(repository, "README.md"), "nineteen skills:", "six skills:");
+
+    await assert.rejects(
+      validateRepository(repository),
+      /README\.md states "six skills" but the plugin inventory has 19 skills/iu,
+    );
+  });
+});
+
+test("validator rejects a README whose component markers are missing", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(join(repository, "plugin/README.md"), "<!-- components:agent:end -->", "");
+
+    await assert.rejects(
+      validateRepository(repository),
+      /plugin\/README\.md must contain exactly one components:agent marker pair/iu,
+    );
+  });
+});
+
+// Adding a skill to the plugin must fail validation until both READMEs
+// document it, which is the drift this check exists to prevent.
+test("validator rejects a newly installed skill that no README documents", async () => {
+  await withRepositoryCopy(async (repository) => {
+    const skillDirectory = join(repository, "plugin/skills/undocumented-skill");
+    await mkdir(skillDirectory, { recursive: true });
+    await writeFile(
+      join(skillDirectory, "SKILL.md"),
+      "---\nname: undocumented-skill\ndescription: A skill added to the plugin without updating either README component list.\n---\n\nDo the thing.\n",
+    );
+    await generatePluginInventory(repository, { write: true });
+
+    await assert.rejects(
+      validateRepository(repository),
+      /README\.md declares count=19 for skills but the plugin inventory has 20/iu,
+    );
+  });
 });
 
 test("validator rejects unresolved or non-local schema references", async () => {

@@ -14,6 +14,38 @@ const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
 const INVENTORY_PATH = "plugin/.cursor-plugin/inventory.json";
 const COMPONENT_EXTENSIONS = new Set([".md", ".mdc", ".markdown"]);
 const MANIFEST_COMPONENT_FIELDS = new Set(["agents", "commands", "hooks", "rules", "skills"]);
+const DOCUMENTED_COMPONENT_DOCS = ["README.md", "plugin/README.md"];
+// Prose component lists drift silently from the shipped plugin. Each documented
+// kind is fenced by markers so the claim is checked against the inventory
+// instead of against one exact sentence, which would fail on harmless edits.
+const DOCUMENTED_COMPONENT_KINDS = new Map([
+  ["agent", "agents"],
+  ["command", "commands"],
+  ["skill", "skills"],
+]);
+const DOCUMENTED_COUNT_WORDS = new Map([
+  ["zero", 0],
+  ["one", 1],
+  ["two", 2],
+  ["three", 3],
+  ["four", 4],
+  ["five", 5],
+  ["six", 6],
+  ["seven", 7],
+  ["eight", 8],
+  ["nine", 9],
+  ["ten", 10],
+  ["eleven", 11],
+  ["twelve", 12],
+  ["thirteen", 13],
+  ["fourteen", 14],
+  ["fifteen", 15],
+  ["sixteen", 16],
+  ["seventeen", 17],
+  ["eighteen", 18],
+  ["nineteen", 19],
+  ["twenty", 20],
+]);
 const MARKETPLACE_FIELDS = new Set(["metadata", "name", "owner", "plugins"]);
 const MARKETPLACE_PLUGIN_FIELDS = new Set([
   "description",
@@ -563,6 +595,80 @@ async function validateInventory(repositoryRoot, expected) {
   );
 }
 
+function extractDocumentedRegion(source, kind, label) {
+  const starts = [
+    ...source.matchAll(new RegExp(String.raw`<!-- components:${kind}:start count=(\d+) -->`, "gu")),
+  ];
+  const ends = [...source.matchAll(new RegExp(String.raw`<!-- components:${kind}:end -->`, "gu"))];
+  invariant(
+    starts.length === 1 && ends.length === 1,
+    `${label} must contain exactly one components:${kind} marker pair; found ${starts.length} start and ${ends.length} end markers`,
+  );
+  const [start] = starts;
+  const [end] = ends;
+  const bodyStart = start.index + start[0].length;
+  invariant(
+    end.index >= bodyStart,
+    `${label} components:${kind} end marker appears before its start marker`,
+  );
+  return { declaredCount: Number(start[1]), body: source.slice(bodyStart, end.index) };
+}
+
+function documentedIdentifiers(body) {
+  return new Set(
+    [...body.matchAll(/`\/?([a-z0-9]+(?:-[a-z0-9]+)*)`/gu)].map(([, identifier]) => identifier),
+  );
+}
+
+// Only phrases that actually state a count are checked, so wording stays free.
+function assertDocumentedCountPhrases(body, noun, expected, label) {
+  for (const match of body.matchAll(new RegExp(String.raw`\b([a-z]+|\d+)\s+${noun}\b`, "giu"))) {
+    const token = match[1].toLowerCase();
+    const stated = /^\d+$/u.test(token) ? Number(token) : DOCUMENTED_COUNT_WORDS.get(token);
+    if (stated === undefined) continue;
+    invariant(
+      stated === expected,
+      `${label} states "${match[0]}" but the plugin inventory has ${expected} ${noun}`,
+    );
+  }
+}
+
+async function validateDocumentedComponents(repositoryRoot, inventory) {
+  const installed = new Map([...DOCUMENTED_COMPONENT_KINDS.keys()].map((kind) => [kind, new Set()]));
+  for (const { kind, id } of inventory.components) {
+    installed.get(kind)?.add(id);
+  }
+  for (const documentPath of DOCUMENTED_COMPONENT_DOCS) {
+    const absolutePath = join(repositoryRoot, documentPath);
+    invariant(await pathExists(absolutePath), `documented component list ${documentPath} does not exist`);
+    const source = await readFile(absolutePath, "utf8");
+    for (const [kind, noun] of DOCUMENTED_COMPONENT_KINDS) {
+      const expected = installed.get(kind);
+      const { declaredCount, body } = extractDocumentedRegion(source, kind, documentPath);
+      invariant(
+        declaredCount === expected.size,
+        `${documentPath} declares count=${declaredCount} for ${noun} but the plugin inventory has ${expected.size}`,
+      );
+      const documented = documentedIdentifiers(body);
+      const missing = [...expected].filter((id) => !documented.has(id)).sort();
+      invariant(
+        missing.length === 0,
+        `${documentPath} omits installed ${noun}: ${missing.join(", ")}`,
+      );
+      const unknown = [...documented].filter((id) => !expected.has(id)).sort();
+      invariant(
+        unknown.length === 0,
+        `${documentPath} documents ${noun} that are not installed: ${unknown.join(", ")}`,
+      );
+      invariant(
+        documented.size === expected.size,
+        `${documentPath} documents ${documented.size} ${noun} but the plugin inventory has ${expected.size}`,
+      );
+      assertDocumentedCountPhrases(body, noun, expected.size, documentPath);
+    }
+  }
+}
+
 function requirePattern(source, pattern, label) {
   invariant(pattern.test(source), `required orchestration wiring is missing from ${label}: ${pattern}`);
 }
@@ -741,6 +847,7 @@ export async function validateRepository(repositoryRoot) {
   await validateMarkdownLinks(pluginRoot, components);
   const inventory = await generatePluginInventory(root);
   await validateInventory(root, inventory);
+  await validateDocumentedComponents(root, inventory);
   await validateOrchestration(root);
   await validateWorkflows(root);
   await validateSchemas(root);
@@ -754,6 +861,7 @@ export async function validateRepository(repositoryRoot) {
       "frontmatter",
       "markdown-links",
       "plugin-inventory",
+      "documented-components",
       "orchestration",
       "workflows",
       "schemas",
