@@ -186,6 +186,7 @@ async function runTrial({
     cursorConfigTemplatePath,
   });
   const integrityFailures = [];
+  const integrityFindings = [];
   let beforeIntegrity;
   try {
     beforeIntegrity = await captureIntegrity({
@@ -198,6 +199,12 @@ async function runTrial({
       outcome: "error",
       expectedSha256: sha256("fixture-integrity-baseline-required"),
       actualSha256: null,
+    });
+    integrityFindings.push({
+      id: "fixture-integrity-baseline-error",
+      tier: 0,
+      summary: error.message,
+      disposition: "gate-failed",
     });
   }
   let beforeWorkspace;
@@ -233,6 +240,7 @@ async function runTrial({
   }
   agentResult.metrics ??= failedMetrics();
   agentResult.findings ??= [];
+  agentResult.findings.push(...integrityFindings);
   const effectiveNetworkEnforcement = normalizeNetworkEnforcement(agentResult.networkEnforcement);
   const effectiveNetworkAttemptEvidence = networkAttemptEvidence(agentResult.networkAttempts);
 
