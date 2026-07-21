@@ -100,6 +100,103 @@ Evidence: `npm run probe`, `agent --help`, `agent --version`, the official
 [CLI parameters](https://cursor.com/docs/cli/reference/parameters), and
 [output format reference](https://cursor.com/docs/cli/reference/output-format).
 
+### Benchmark CLI config isolation
+
+- **Verified by local process tests:** a pre-authenticated external template is
+  copied into each fresh isolated config directory; trials set documented
+  `CURSOR_CONFIG_DIR` and isolate `HOME`/`XDG_CONFIG_HOME`. The captured child
+  invocation reports `CURSOR_CONFIG_DIR` pointing at the per-trial
+  `cursor-home` and `CURSOR_CONFIG_HOME` unset, because that variable is not
+  documented and is deliberately not set.
+- **Verified by local process tests:** the child environment is an operational
+  allowlist. With `CURSOR_API_KEY` and `AWS_SECRET_ACCESS_KEY` present in the
+  supplied environment, the captured invocation records no inherited sensitive
+  variables.
+- **Verified by local process tests:** the trial setup accepts only a validated
+  external Cursor config template, and the authentication preflight fails with a
+  clear error when that template is missing.
+- **Unverified — requires a live agent run:** no authenticated CLI trial has
+  been executed, so isolation is proven against the mock agent, not against a
+  real authenticated Cursor CLI session. Authentication through API-key
+  environment or arguments remains intentionally unsupported because tool
+  subprocess inheritance has not been proven safe.
+
+Evidence: `npm test` —
+`tests/benchmark/engine.test.mjs`, tests "Cursor CLI adapter captures streams
+and invalidates timeout, nonzero, and missing results", "trial setup copies only
+a validated external Cursor config template", and "authentication preflight uses
+a copied synthetic config and fails clearly when missing"; and the official
+[CLI configuration](https://cursor.com/docs/cli/reference/configuration).
+
+### Benchmark artifact isolation
+
+- **Verified by local process tests:** the exporter selects only result/report
+  files and named trial logs. Trial `workspace/` and `cursor-home/` trees, and
+  unselected files inside an artifact directory, are absent from the export.
+- **Verified by local process tests:** the exporter scans selected bytes for
+  supplied canaries and credential patterns and fails closed, leaving no export
+  directory behind, when either matches.
+- **Verified by local process tests:** every exported file carries a SHA-256
+  entry that matches the exported bytes, and the manifest is written alongside
+  the export. These hashes provide integrity binding, not external attestation.
+- **Verified in the workflow:** the authenticated benchmark uploads only
+  `benchmark/sanitized/`, never `benchmark/results/`.
+
+Evidence: `npm test` —
+`tests/benchmark/artifact-export.test.mjs`, tests "sanitized export allowlists
+evidence, excludes raw roots, and writes verified hashes" and "sanitized export
+fails closed on exact canaries and credential patterns";
+`tests/contracts/schema-contracts.test.mjs`, test "sanitized artifact export
+manifests bind allowlisted file bytes"; and
+`tests/workflows/integration-gates.test.mjs`, test "authenticated profiles use
+protected pre-authenticated config and sanitized artifacts".
+
+### CI action pinning
+
+- **Verified in this repository:** every `uses:` reference in `ci.yml` and
+  `authenticated-benchmark.yml` names a first-party `actions/*` action pinned to
+  a full 40-character commit SHA. As of this capture that is `actions/checkout`,
+  `actions/setup-node`, and `actions/upload-artifact`, and the check is
+  enforced generically rather than against a fixed list.
+- **Unverified — outside this repository:** pinning binds the workflow to a
+  specific tree object; it is not an upstream provenance attestation, and this
+  repository has not independently verified what those upstream commits contain.
+
+Evidence: `npm test` — `tests/workflows/integration-gates.test.mjs`, test
+"workflows use only immutable first-party action pins".
+
+## Verified under a stated precondition
+
+Claims in this section hold only while the stated precondition is true. The
+precondition is machine-checked, and its absence is a hard failure rather than a
+silently degraded pass.
+
+### Benchmark network denial
+
+- **Precondition:** the probed Cursor CLI exposes `--sandbox`. `npm run probe`
+  reports this capability from parsed `agent --help` output, and the CLI adapter
+  refuses to run unless `--print`, `stream-json`, and `--sandbox` are all
+  present.
+- **Verified by local process tests:** every CLI trial writes an exact repo
+  policy to the workspace before its baseline, invokes `--sandbox enabled`, and
+  requires the policy SHA-256 to be unchanged afterwards. A mutated policy
+  yields an error status and a missing policy aborts the trial.
+- **Verified in the repository policy:** the written policy sets the network
+  default to `deny` with an empty allow list and explicitly denies `0.0.0.0/0`
+  and `::/0`. Cursor documents that deny rules win over allow rules.
+- **Verified in the runtime contract:** missing CLI support or missing policy
+  evidence is a critical error, never a pass.
+- **Unverified — requires a live agent run:** no authenticated trial has been
+  executed, so this repository has observed the harness requesting and
+  hash-binding the deny policy, **not** Cursor's sandbox actually refusing an
+  egress attempt. Enforcement is the CLI's, and it has not been witnessed here.
+
+Evidence: `npm test` —
+`tests/benchmark/engine.test.mjs`, test "Cursor CLI adapter captures streams and
+invalidates timeout, nonzero, and missing results"; `test/platform-contract.test.mjs`,
+test "CLI help parser detects documented stream-json flags"; `npm run probe`; and
+the official [sandbox.json reference](https://cursor.com/docs/reference/sandbox).
+
 ## Explicitly unavailable or unverified
 
 - **Token counts:** unverified. The documented CLI `stream-json` result contract
@@ -126,29 +223,6 @@ Evidence: `npm run probe`, `agent --help`, `agent --version`, the official
   Evidence: [Hooks documentation](https://cursor.com/docs/hooks).
 - **Marketplace installation in Customize:** unverified and editor-only/manual.
 - **Cloud Agent parity:** unverified; no Cloud Agent probe was run.
-- **Benchmark network denial:** supported when the probed Cursor CLI exposes
-  `--sandbox`. Every CLI trial writes an exact repo policy before its baseline,
-  invokes `--sandbox enabled`, and requires the policy hash to remain unchanged.
-  The policy denies by default and explicitly denies `0.0.0.0/0` and `::/0`;
-  Cursor documents that deny rules win over allow rules. Missing CLI support or
-  policy evidence is a critical error, never a pass. Evidence:
-  [sandbox.json reference](https://cursor.com/docs/reference/sandbox).
-- **CLI config isolation:** verified local contract. A pre-authenticated
-  external template is copied into each fresh isolated config directory;
-  trials set documented `CURSOR_CONFIG_DIR`, isolate `HOME`/`XDG_CONFIG_HOME`,
-  and do not set unsupported `CURSOR_CONFIG_HOME`. The child environment is an
-  operational allowlist and excludes API keys and common CI/cloud/token
-  credential variables. Authentication through API-key environment or
-  arguments is intentionally unsupported because tool subprocess inheritance
-  has not been proven safe. Evidence:
-  [CLI configuration](https://cursor.com/docs/cli/reference/configuration).
-- **Artifact isolation:** verified local contract. The exporter selects only
-  result/report files and named trial logs, excludes workspaces and config
-  homes, scans selected bytes for supplied canaries and credential patterns,
-  and emits SHA-256 entries. CI uploads only this export. These hashes provide
-  integrity binding, not external attestation.
-- **CI action immutability:** `actions/checkout`, `actions/setup-node`, and
-  `actions/upload-artifact` are pinned to verified full commit SHAs.
 
 ## Reproduce
 
