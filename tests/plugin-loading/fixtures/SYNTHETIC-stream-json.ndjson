@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","session_id":"SYNTHETIC-0000","agents":["capability-probe","code-reviewer"],"rules":["factual-correctness"]}
+{"type":"user","message":{"role":"user","content":"List the exact names of every custom agent and every rule currently available to you."}}
+{"type":"assistant","message":{"role":"assistant","content":"orchestrator-first\nevidence-review-tiers\nactual-diff-verification\nengineer"}}
+{"type":"result","subtype":"success","session_id":"SYNTHETIC-0000"}
