@@ -11,7 +11,7 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "^22"
   },
   "scripts": {
     "inventory": "node scripts/generate-plugin-inventory.mjs",

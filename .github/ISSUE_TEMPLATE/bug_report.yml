@@ -1,0 +1,96 @@
+name: Bug report
+description: Something in the plugin, validator, benchmark, or release tooling behaves incorrectly.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security vulnerabilities here.** Follow
+        [SECURITY.md](https://github.com/LazyIsEfficient/cursor-os/blob/main/SECURITY.md)
+        instead — public issues are the wrong channel for them.
+
+        This project is evidence-first. The probe output below is the single
+        most useful thing you can attach: it is network-free and reports what
+        your local Cursor Editor and CLI actually support.
+
+  - type: textarea
+    id: probe
+    attributes:
+      label: "`npm run probe` output"
+      description: |
+        Run `npm run probe` from the repository root and paste the complete
+        output. It makes no network or model calls. Redact anything you
+        consider machine-identifying before pasting.
+      render: json
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Node version (`node --version`), and Cursor Editor / CLI version.
+      placeholder: "macOS 15.5, Node v22.14.0, Cursor 1.2.3 (CLI 1.2.3)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Plugin hooks (command guard, session/memory scripts)
+        - Plugin components (agents, skills, commands, rules)
+        - Repository validator (npm run validate)
+        - Benchmark harness
+        - Release / packaging tooling
+        - CI workflows
+        - Documentation
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: What you expected, and what happened instead
+      description: State both. If a documented claim is wrong, quote the line.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Exact commands, starting from a clean clone where possible.
+      placeholder: |
+        1. git clone ... && cd cursor-os
+        2. npm ci --ignore-scripts
+        3. npm run validate
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: gate-output
+    attributes:
+      label: Failing gate output
+      description: |
+        Output of the failing command. If it is a validator or test failure,
+        include the full error, not just the summary line.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on Node 22 (`engines` is `^22`; `.nvmrc` pins `22`).
+          required: true
+        - label: I reproduced this after `npm ci --ignore-scripts`, not with a stale `node_modules`.
+          required: true
+        - label: This is not a security vulnerability report.
+          required: true

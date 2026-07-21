@@ -1,5 +1,6 @@
 /dist/
 /benchmark/results/
+/benchmark/sanitized/
 /.tmp/
 /tmp/
 /.cursor-local/

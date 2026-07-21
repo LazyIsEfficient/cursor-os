@@ -1,0 +1,21 @@
+version: 2
+
+# GitHub Actions are the only dependency surface this repository has. The
+# npm lockfile contains zero third-party packages by design, so no `npm`
+# ecosystem entry is configured here -- adding one would give Dependabot
+# nothing to update while inviting dependency drift into a repository whose
+# zero-dependency constraint is a stated contract (see CONTRIBUTING.md).
+#
+# Actions are pinned to immutable 40-character commit SHAs and are validated
+# by tests/workflows/integration-gates.test.mjs. Pinned actions never update
+# on their own, so this automation is what keeps them current.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(actions)
+    labels:
+      - dependencies
