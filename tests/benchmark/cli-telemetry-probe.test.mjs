@@ -167,6 +167,9 @@ test("analyzeStreamJson reports absence only for a completed call", async () => 
   assert.equal(observations.eventCount, 6);
   assert.equal(observations.hasTerminalResult, true);
   assert.deepEqual(observations.parseErrors, []);
+  // Genuine absence: the walk was complete, so `absent` is a claim the probe is entitled to make.
+  assert.deepEqual(observations.observationGaps, []);
+  assert.equal(observations.keyPathsDepthTruncated, false);
   assert.equal(observations.tokenCounts.determination, "absent");
   assert.match(observations.tokenCounts.reason, /completed-stream/u);
   assert.equal(observations.subagentCorrelation.determination, "absent");
@@ -296,6 +299,96 @@ test("subagentCorrelation flags a saturated correlated-edge count instead of pla
   assert.ok(correlation.correlatedEdges > 0);
   assert.ok(correlation.correlatedEdges < fanOut);
   assert.equal(correlation.correlatedEdgesTruncated, true);
+});
+
+// The probe's one way to actively mislead an operator: reporting `absent` for a field it stopped
+// looking for. Each of the following pins a distinct way the walk can end early.
+
+test("a field nested past the depth cap is inconclusive with a depth signal, never absent", () => {
+  // `usage.input_tokens` is really there, just buried deeper than MAX_KEY_PATH_DEPTH. Before this
+  // guard the probe reported a confident `absent` with keyPathsTruncated false and no parse errors,
+  // which an operator could not tell apart from the CLI genuinely not emitting token counts.
+  let node = { usage: { input_tokens: 1234, output_tokens: 99 } };
+  for (let index = 0; index < 7; index += 1) node = { [`w${index}`]: node };
+  const source = [
+    JSON.stringify({ type: "assistant", ...node }),
+    JSON.stringify({ type: "result", subtype: "success" }),
+  ].join("\n");
+  const observations = analyzeStreamJson(source, { callStatus: "completed" });
+
+  // The field really was dropped: it never reached the enumerated key paths.
+  assert.ok(!observations.keyPaths.some((entry) => entry.path.includes("input_tokens")));
+  // ...and the artifact says so, distinctly from the path-count cap.
+  assert.equal(observations.keyPathsDepthTruncated, true);
+  assert.equal(observations.keyPathsTruncated, false);
+  assert.deepEqual(observations.parseErrors, []);
+  assert.ok(observations.observationGaps.some((gap) => /^key-paths-dropped-beyond-depth-\d+$/u.test(gap)));
+
+  assert.equal(observations.tokenCounts.determination, "inconclusive");
+  assert.equal(observations.tokenCounts.degradedFrom.determination, "absent");
+  assert.deepEqual(observations.tokenCounts.observationGaps, observations.observationGaps);
+  // The degradation is not token-specific: every sibling determiner inherits it.
+  assert.equal(observations.subagentCorrelation.determination, "inconclusive");
+  assert.equal(observations.concurrency.determination, "inconclusive");
+});
+
+test("a stream with unparsed lines is inconclusive, not absent", () => {
+  // The truncated line actually contains input_tokens, so `absent` would be flatly wrong.
+  const source = [
+    JSON.stringify({ type: "system", subtype: "init" }),
+    '{"type":"assistant","usage":{"input_tokens":1234,"output_to',
+    JSON.stringify({ type: "result", subtype: "success" }),
+  ].join("\n");
+  const observations = analyzeStreamJson(source, { callStatus: "completed" });
+
+  assert.equal(observations.parseErrors.length, 1);
+  assert.deepEqual(observations.observationGaps, ["unparsed-lines:1"]);
+  for (const finding of [
+    observations.tokenCounts,
+    observations.subagentCorrelation,
+    observations.concurrency,
+  ]) {
+    assert.equal(finding.determination, "inconclusive");
+    assert.deepEqual(finding.observationGaps, ["unparsed-lines:1"]);
+  }
+  for (const finding of [observations.tokenCounts, observations.subagentCorrelation]) {
+    assert.equal(finding.reason, "observation-incomplete-so-absence-cannot-be-asserted");
+    assert.equal(finding.degradedFrom.determination, "absent");
+  }
+  // Concurrency inherits the unsettled precondition rather than being degraded directly, so it
+  // keeps the more specific reason. What matters is that it is not `absent`.
+  assert.equal(observations.concurrency.reason, "subagent-correlation-is-inconclusive");
+});
+
+test("a truncated stdout capture is inconclusive, not absent", () => {
+  // Same class as an unparsed line: the field could be in the bytes that were never captured.
+  const source = [
+    JSON.stringify({ type: "system", subtype: "init" }),
+    JSON.stringify({ type: "result", subtype: "success" }),
+  ].join("\n");
+  const complete = analyzeStreamJson(source, { callStatus: "completed", stdoutTruncated: false });
+  assert.equal(complete.tokenCounts.determination, "absent");
+
+  const truncated = analyzeStreamJson(source, { callStatus: "completed", stdoutTruncated: true });
+  assert.deepEqual(truncated.observationGaps, ["stdout-truncated"]);
+  assert.equal(truncated.tokenCounts.determination, "inconclusive");
+  assert.equal(truncated.subagentCorrelation.determination, "inconclusive");
+  assert.equal(truncated.concurrency.determination, "inconclusive");
+});
+
+test("an incomplete walk never downgrades a field that was actually observed", () => {
+  // The guard must not become uselessly conservative: `present` rests on positive evidence, and an
+  // unparsed line elsewhere in the stream cannot un-observe it.
+  const source = [
+    JSON.stringify({ type: "assistant", usage: { input_tokens: 0, output_tokens: 0 } }),
+    "not json",
+    JSON.stringify({ type: "result", subtype: "success" }),
+  ].join("\n");
+  const observations = analyzeStreamJson(source, { callStatus: "completed" });
+  assert.deepEqual(observations.observationGaps, ["unparsed-lines:1"]);
+  // Present-but-zero is still present: a real zero is an observation, not an absence.
+  assert.equal(observations.tokenCounts.determination, "present");
+  assert.equal("degradedFrom" in observations.tokenCounts, false);
 });
 
 test("analyzeStreamJson records malformed lines instead of discarding them", () => {

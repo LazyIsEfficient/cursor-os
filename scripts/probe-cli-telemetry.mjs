@@ -24,7 +24,8 @@ import { copyTree, hashTree, listFiles, sha256 } from "../benchmark/lib/util.mjs
 import { validateCursorConfigTemplate, writeTrialSandboxPolicy } from "../benchmark/lib/workspace.mjs";
 import { probeCursorCli } from "./lib/platform-contract.mjs";
 
-export const EVIDENCE_SCHEMA_VERSION = "1.1.0";
+// 1.2.0 adds observationGaps / keyPathsDepthTruncated and narrows when 'absent' may be emitted.
+export const EVIDENCE_SCHEMA_VERSION = "1.2.0";
 export const EVIDENCE_KIND = "cli-telemetry-probe-evidence";
 
 export const DEFAULT_PROMPT =
@@ -103,19 +104,46 @@ function leafType(value) {
   return value === null ? "null" : typeof value;
 }
 
+export function createTruncationState() {
+  return { keyPathCount: false, keyPathDepth: false };
+}
+
+/**
+ * Cheap test for whether abandoning `value` actually discards observable evidence. Walking the
+ * subtree to answer precisely would defeat the cap it enforces, so this over-reports: a subtree of
+ * nothing but empty objects counts as dropped. Over-reporting degrades a finding to `inconclusive`,
+ * which is the safe direction; under-reporting would let a dropped field read as `absent`.
+ */
+function subtreeCouldContributePaths(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object") return Object.keys(value).length > 0;
+  return isPlainLeaf(value);
+}
+
 /**
  * Walk one parsed event and record every leaf key path. Array indices collapse
  * to `[]` so that repeated elements share a single path.
+ *
+ * Both caps record *that* they fired into `truncation`. Without that, a subtree abandoned at the
+ * depth cap is indistinguishable from a subtree that never existed, and the probe would report a
+ * confident `absent` for a field it simply stopped walking towards.
  */
-function collectLeafPaths(value, prefix, sink, depth = 0) {
-  if (depth > MAX_KEY_PATH_DEPTH || sink.size >= MAX_KEY_PATHS) return;
+function collectLeafPaths(value, prefix, sink, truncation, depth = 0) {
+  if (sink.size >= MAX_KEY_PATHS) {
+    if (subtreeCouldContributePaths(value)) truncation.keyPathCount = true;
+    return;
+  }
+  if (depth > MAX_KEY_PATH_DEPTH) {
+    if (subtreeCouldContributePaths(value)) truncation.keyPathDepth = true;
+    return;
+  }
   if (Array.isArray(value)) {
-    for (const item of value) collectLeafPaths(item, `${prefix}[]`, sink, depth + 1);
+    for (const item of value) collectLeafPaths(item, `${prefix}[]`, sink, truncation, depth + 1);
     return;
   }
   if (value && typeof value === "object") {
     for (const [key, child] of Object.entries(value)) {
-      collectLeafPaths(child, prefix ? `${prefix}.${key}` : key, sink, depth + 1);
+      collectLeafPaths(child, prefix ? `${prefix}.${key}` : key, sink, truncation, depth + 1);
     }
     return;
   }
@@ -173,6 +201,44 @@ function summarizePath(entry) {
     path: entry.path,
     count: entry.count,
     valueTypes: [...entry.valueTypes].sort(),
+  };
+}
+
+/**
+ * Every reason this capture may not have shown the probe everything a field could hide.
+ * Each entry names the specific limit that fired, so an operator can act on it (raise a cap,
+ * re-run the capture) rather than merely distrust the artifact.
+ */
+export function observationGaps({ truncation, parseErrors, stdoutTruncated }) {
+  const gaps = [];
+  if (truncation.keyPathDepth) gaps.push(`key-paths-dropped-beyond-depth-${MAX_KEY_PATH_DEPTH}`);
+  if (truncation.keyPathCount) gaps.push(`key-paths-dropped-at-${MAX_KEY_PATHS}-path-cap`);
+  if (parseErrors.length > 0) gaps.push(`unparsed-lines:${parseErrors.length}`);
+  if (stdoutTruncated) gaps.push("stdout-truncated");
+  return gaps;
+}
+
+/**
+ * `absent` is the probe's strongest negative claim: it asserts the walk was exhaustive and the
+ * field was not there. That is only honest when nothing was skipped. If any cap fired, any line
+ * failed to parse, or the capture itself was cut short, the field may be sitting in the part that
+ * was never examined, so the finding degrades to `inconclusive` and carries the reason it could
+ * not be settled.
+ *
+ * `present` never degrades: a field that was observed was observed, and an incomplete walk cannot
+ * un-observe it. `indeterminate` already outranks both and is left alone.
+ */
+function withObservationCompleteness(finding, gaps) {
+  if (gaps.length === 0) return { ...finding, observationGaps: gaps };
+  if (finding.determination !== "absent") return { ...finding, observationGaps: gaps };
+  return {
+    ...finding,
+    determination: "inconclusive",
+    reason: "observation-incomplete-so-absence-cannot-be-asserted",
+    // Preserved so the artifact still shows what the walk found, without letting that stand as
+    // the determination.
+    degradedFrom: { determination: finding.determination, reason: finding.reason },
+    observationGaps: gaps,
   };
 }
 
@@ -332,31 +398,48 @@ function determineConcurrency(paths, correlation, callStatus) {
  * Pure analysis of a captured stream-json stdout capture.
  *
  * @param {string} source raw stdout
- * @param {{callStatus: "completed"|"failed"|"timed-out"|"no-terminal-result"|"not-performed"}} options
+ * @param {{
+ *   callStatus: "completed"|"failed"|"timed-out"|"no-terminal-result"|"not-performed",
+ *   stdoutTruncated?: boolean,
+ * }} options
  */
-export function analyzeStreamJson(source, { callStatus }) {
+export function analyzeStreamJson(source, { callStatus, stdoutTruncated = false }) {
   const { events, parseErrors } = parseEventLines(source);
   const sink = new Map();
+  const truncation = createTruncationState();
   const eventTypeCounts = {};
   for (const { event } of events) {
     const type = typeof event.type === "string" ? event.type : "<untyped>";
     eventTypeCounts[type] = (eventTypeCounts[type] ?? 0) + 1;
-    collectLeafPaths(event, "", sink);
+    collectLeafPaths(event, "", sink, truncation);
   }
   const paths = [...sink.values()].sort((left, right) => left.path.localeCompare(right.path));
   const normalized = normalizeCliNdjson(source);
-  const subagentCorrelation = determineSubagentCorrelation(events, paths, callStatus);
+  const gaps = observationGaps({ truncation, parseErrors, stdoutTruncated });
+  const subagentCorrelation = withObservationCompleteness(
+    determineSubagentCorrelation(events, paths, callStatus),
+    gaps,
+  );
   return {
     eventCount: events.length,
     eventTypeCounts,
     parseErrors,
-    keyPathsTruncated: sink.size >= MAX_KEY_PATHS,
+    keyPathsTruncated: truncation.keyPathCount,
+    keyPathsDepthTruncated: truncation.keyPathDepth,
+    stdoutTruncated,
+    // The union of every limit that fired, repeated on each finding it could have affected.
+    observationGaps: gaps,
     keyPaths: paths.map(summarizePath),
     documentedToolCallCount: normalized.toolCallCount,
     hasTerminalResult: normalized.hasTerminalResult,
-    tokenCounts: determineTokenCounts(paths, callStatus),
+    tokenCounts: withObservationCompleteness(determineTokenCounts(paths, callStatus), gaps),
     subagentCorrelation,
-    concurrency: determineConcurrency(paths, subagentCorrelation, callStatus),
+    // Takes the already-degraded correlation: if correlation could not be settled, concurrency
+    // inherits that rather than reading an unsettled precondition as a settled absence.
+    concurrency: withObservationCompleteness(
+      determineConcurrency(paths, subagentCorrelation, callStatus),
+      gaps,
+    ),
   };
 }
 
@@ -473,7 +556,9 @@ export function buildEvidence({ options, cli, template, call, observations, bind
       ],
       note:
         "This artifact records only what the observed CLI emitted for one prompt on one CLI version. " +
-        "A determination of 'absent' applies to this capture, not to the CLI in general. " +
+        "A determination of 'absent' applies to this capture, not to the CLI in general, and is " +
+        "only ever emitted when the probe examined the whole stream: see observations.observationGaps, " +
+        "which lists every limit that fired. If it is non-empty, no finding is reported as 'absent'. " +
         "A determination of 'indeterminate' means the call did not complete and nothing may be concluded.",
     },
   };
@@ -522,7 +607,10 @@ export async function runTelemetryProbe(options) {
     else if (result.exitCode !== 0) status = "failed";
     else if (!normalizeCliNdjson(result.stdout).hasTerminalResult) status = "no-terminal-result";
 
-    const observations = analyzeStreamJson(result.stdout, { callStatus: status });
+    const observations = analyzeStreamJson(result.stdout, {
+      callStatus: status,
+      stdoutTruncated: result.stdoutTruncated,
+    });
     const evidence = buildEvidence({
       options,
       cli,
