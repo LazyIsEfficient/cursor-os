@@ -1,0 +1,290 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { cp, mkdir, mkdtemp, readFile, readdir, readlink, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import {
+  collectEditorEvidence,
+  evaluateTranscript,
+  inspectComponent,
+  parseArguments,
+  resolveInstallCandidates,
+  summarizeComponents,
+} from "../../scripts/verify-editor-loading.mjs";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const script = join(root, "scripts/verify-editor-loading.mjs");
+const sourcePlugin = join(root, "plugin");
+
+async function withTemporaryRoot(run) {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "cursor-harness-editor-verify-"));
+  try {
+    await run(temporaryRoot);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+}
+
+// Records every path plus its content hash so any create, delete, or in-place
+// edit under the Cursor home is caught.
+async function snapshotTree(root) {
+  const entries = [];
+  async function visit(directory) {
+    for (const entry of (await readdir(directory, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name))) {
+      const path = join(directory, entry.name);
+      const relativePath = relative(root, path);
+      if (entry.isSymbolicLink()) entries.push([relativePath, `symlink:${await readlink(path)}`]);
+      else if (entry.isDirectory()) {
+        entries.push([relativePath, "directory"]);
+        await visit(path);
+      } else entries.push([relativePath, createHash("sha256").update(await readFile(path)).digest("hex")]);
+    }
+  }
+  await visit(root);
+  return entries;
+}
+
+async function installedCursorHome(temporaryRoot) {
+  const cursorHome = join(temporaryRoot, "cursor");
+  await mkdir(join(cursorHome, "plugins"), { recursive: true });
+  await cp(sourcePlugin, join(cursorHome, "plugins/cursor-harness"), { recursive: true });
+  await writeFile(
+    join(cursorHome, "plugins.json"),
+    `${JSON.stringify({ plugins: { "cursor-harness": { path: "plugins/cursor-harness", version: "0.1.0" } } }, null, 2)}\n`,
+  );
+  return cursorHome;
+}
+
+test("argument parsing rejects unknown options, missing values, and relative paths", () => {
+  assert.throws(() => parseArguments(["--nope", "/tmp/x"]), /unknown option --nope/u);
+  assert.throws(() => parseArguments(["--cursor-home"]), /--cursor-home requires a value/u);
+  assert.throws(() => parseArguments(["--cursor-home", "--evidence"]), /--cursor-home requires a value/u);
+  assert.throws(() => parseArguments(["--cursor-home", "relative/path"]), /must be an absolute path/u);
+  assert.throws(() => parseArguments(["cursor-home"]), /unexpected argument cursor-home/u);
+  assert.deepEqual(parseArguments(["--cursor-home", "/tmp/cursor"]), { cursorHomePath: "/tmp/cursor" });
+});
+
+test("install candidates cover the registry entry and both documented directories", () => {
+  const candidates = resolveInstallCandidates({
+    cursorHomePath: "/home/user/.cursor",
+    pluginId: "cursor-harness",
+    registry: { plugins: { "cursor-harness": { path: "plugins/cursor-harness" } } },
+  });
+  assert.deepEqual(candidates.map((candidate) => candidate.source), [
+    "plugins.json",
+    "local-symlink",
+    "managed-directory",
+  ]);
+  assert.equal(candidates[1].path, "/home/user/.cursor/plugins/local/cursor-harness");
+});
+
+test("install candidates ignore an absolute registry path", () => {
+  const candidates = resolveInstallCandidates({
+    cursorHomePath: "/home/user/.cursor",
+    pluginId: "cursor-harness",
+    registry: { plugins: { "cursor-harness": { path: "/etc/passwd" } } },
+  });
+  assert.equal(candidates.some((candidate) => candidate.source === "plugins.json"), false);
+});
+
+test("component summary reports modified and missing components as unmatched", () => {
+  const summary = summarizeComponents([
+    { id: "a", kind: "agent", state: "present-matching" },
+    { id: "b", kind: "agent", state: "present-modified" },
+    { id: "c", kind: "rule", state: "missing" },
+  ]);
+  assert.equal(summary.allPresentMatching, false);
+  assert.deepEqual(summary.unmatched, [
+    { id: "b", state: "present-modified" },
+    { id: "c", state: "missing" },
+  ]);
+  assert.deepEqual(summary.byKind.agent, { expected: 2, presentMatching: 1 });
+});
+
+test("an empty component set is never treated as a pass", () => {
+  assert.equal(summarizeComponents([]).allPresentMatching, false);
+});
+
+test("transcript evaluation only reports the sentinel when it is present", () => {
+  assert.equal(evaluateTranscript("nothing here").observed, false);
+  assert.equal(evaluateTranscript("> cursor-harness-agent-discovered").observed, true);
+});
+
+test("a component path that escapes the installed plugin root is rejected", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const outside = join(temporaryRoot, "outside.md");
+    await writeFile(outside, "should never be read\n");
+    const installedRoot = join(temporaryRoot, "installed");
+    await mkdir(installedRoot);
+
+    await assert.rejects(
+      inspectComponent(installedRoot, {
+        id: "traversal",
+        kind: "agent",
+        path: "plugin/../outside.md",
+        sha256: "0".repeat(64),
+      }),
+      /must not contain \.\./u,
+    );
+  });
+});
+
+test("a component path outside plugin/ is rejected", async () => {
+  await assert.rejects(
+    inspectComponent("/tmp", { id: "stray", kind: "agent", path: "elsewhere/x.md", sha256: "0".repeat(64) }),
+    /is not inside plugin\//u,
+  );
+});
+
+test("fails closed when the Cursor home does not exist", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    await assert.rejects(
+      collectEditorEvidence({ cursorHomePath: join(temporaryRoot, "absent") }),
+      /no Cursor home at/u,
+    );
+  });
+});
+
+test("fails closed when the plugin is not installed, naming the paths checked", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = join(temporaryRoot, "cursor");
+    await mkdir(cursorHome);
+    await assert.rejects(
+      collectEditorEvidence({ cursorHomePath: cursorHome }),
+      (error) => {
+        assert.match(error.message, /is not installed under/u);
+        assert.match(error.message, /plugins\/local\/cursor-harness/u);
+        assert.match(error.message, /This script never creates it/u);
+        return true;
+      },
+    );
+  });
+});
+
+test("fails closed when an installed component no longer matches the inventory", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    await writeFile(join(cursorHome, "plugins/cursor-harness/agents/capability-probe.md"), "tampered\n");
+    await assert.rejects(
+      collectEditorEvidence({ cursorHomePath: cursorHome }),
+      /installed components do not match the inventory/u,
+    );
+  });
+});
+
+test("refuses to write evidence inside the Cursor home", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    await assert.rejects(
+      collectEditorEvidence({
+        cursorHomePath: cursorHome,
+        evidencePath: join(cursorHome, "evidence.json"),
+      }),
+      /never writes there/u,
+    );
+  });
+});
+
+test("a matching install yields evidence bound to the plugin digest and no loading claim", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const evidence = await collectEditorEvidence({ cursorHomePath: cursorHome });
+
+    assert.equal(evidence.schemaVersion, "1.0.0");
+    assert.equal(evidence.artifact, "editor-plugin-loading-evidence");
+    assert.match(evidence.pluginSourceSha256, /^[a-f0-9]{64}$/u);
+    assert.match(evidence.inventorySha256, /^[a-f0-9]{64}$/u);
+    assert.equal(evidence.claims.componentsInstalledOnDisk.status, "observed");
+    assert.equal(evidence.claims.editorComponentLoading.status, "not-proven");
+    assert.deepEqual(evidence.summary.byKind.agent, { expected: 9, presentMatching: 9 });
+    assert.deepEqual(evidence.summary.byKind.rule, { expected: 4, presentMatching: 4 });
+    assert.deepEqual(evidence.summary.byKind.command, { expected: 3, presentMatching: 3 });
+    assert.deepEqual(evidence.summary.byKind.skill, { expected: 19, presentMatching: 19 });
+  });
+});
+
+test("a supplied sentinel transcript is reported as an operator attestation", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const transcriptPath = join(temporaryRoot, "transcript.txt");
+    await writeFile(transcriptPath, "cursor-harness-agent-discovered\n");
+    const evidence = await collectEditorEvidence({ cursorHomePath: cursorHome, transcriptPath });
+
+    assert.equal(evidence.claims.editorComponentLoading.status, "operator-attested");
+    assert.match(evidence.transcript.transcriptSha256, /^[a-f0-9]{64}$/u);
+  });
+});
+
+test("the local-development symlink layout is read, never created", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = join(temporaryRoot, "cursor");
+    await mkdir(join(cursorHome, "plugins/local"), { recursive: true });
+    await symlink(sourcePlugin, join(cursorHome, "plugins/local/cursor-harness"));
+
+    const evidence = await collectEditorEvidence({ cursorHomePath: cursorHome });
+    assert.equal(evidence.installation.source, "local-symlink");
+    assert.equal(evidence.installation.isSymbolicLink, true);
+    assert.equal(evidence.installation.registeredInPluginsJson, false);
+  });
+});
+
+test("a successful run leaves the Cursor home byte-for-byte unchanged", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const before = await snapshotTree(cursorHome);
+    assert.ok(before.length > 100, "snapshot must actually cover the installed tree");
+
+    const result = spawnSync(process.execPath, [script, "--cursor-home", cursorHome], {
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+
+    assert.deepEqual(await snapshotTree(cursorHome), before);
+  });
+});
+
+test("the script never creates the local-development symlink when nothing is installed", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = join(temporaryRoot, "cursor");
+    await mkdir(cursorHome);
+
+    spawnSync(process.execPath, [script, "--cursor-home", cursorHome], { encoding: "utf8" });
+
+    assert.deepEqual(await snapshotTree(cursorHome), []);
+  });
+});
+
+test("the script exits nonzero and writes nothing to the Cursor home on failure", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = join(temporaryRoot, "cursor");
+    await mkdir(cursorHome);
+    const result = spawnSync(process.execPath, [script, "--cursor-home", cursorHome], {
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Editor plugin loading verification failed/u);
+    assert.equal(result.stdout, "");
+  });
+});
+
+test("the script writes evidence to an operator-chosen path outside the Cursor home", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const evidencePath = join(temporaryRoot, "out/evidence.json");
+    const result = spawnSync(
+      process.execPath,
+      [script, "--cursor-home", cursorHome, "--evidence", evidencePath],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
+    assert.equal(evidence.readOnly, true);
+    assert.equal(evidence.cursorHomePath, cursorHome);
+  });
+});
