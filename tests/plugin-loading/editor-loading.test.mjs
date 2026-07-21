@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, readdir, readlink, rm, symlink, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { chmod, cp, lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
@@ -29,19 +30,36 @@ async function withTemporaryRoot(run) {
   }
 }
 
-// Records every path plus its content hash so any create, delete, or in-place
-// edit under the Cursor home is caught.
+// Records every path with its content hash, permission bits, size, and
+// modification time.
+//
+// Content hashes alone are not enough. A [path, contentHash] snapshot compares
+// equal after a permission change, after an mtime-only touch, and after a
+// create-then-delete round trip — so it cannot substantiate a "byte-for-byte
+// unchanged" or "never writes here" claim. Mode and mtime close the first two;
+// the transient-write case is covered separately by asserting on the guard that
+// refuses the write in the first place.
 async function snapshotTree(root) {
   const entries = [];
   async function visit(directory) {
     for (const entry of (await readdir(directory, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name))) {
       const path = join(directory, entry.name);
       const relativePath = relative(root, path);
-      if (entry.isSymbolicLink()) entries.push([relativePath, `symlink:${await readlink(path)}`]);
+      const metadata = await lstat(path);
+      // mtimeMs is float-valued; nanosecond drift across a read would make this
+      // flap, so compare at whole-millisecond resolution.
+      const stamp = `mode:${(metadata.mode & 0o7777).toString(8)} mtime:${Math.floor(metadata.mtimeMs)}`;
+      if (entry.isSymbolicLink()) entries.push([relativePath, `symlink:${await readlink(path)}`, stamp]);
       else if (entry.isDirectory()) {
-        entries.push([relativePath, "directory"]);
+        entries.push([relativePath, "directory", stamp]);
         await visit(path);
-      } else entries.push([relativePath, createHash("sha256").update(await readFile(path)).digest("hex")]);
+      } else {
+        entries.push([
+          relativePath,
+          createHash("sha256").update(await readFile(path)).digest("hex"),
+          `${stamp} size:${metadata.size}`,
+        ]);
+      }
     }
   }
   await visit(root);
@@ -186,6 +204,75 @@ test("refuses to write evidence inside the Cursor home", async () => {
       }),
       /never writes there/u,
     );
+  });
+});
+
+// Regression: the guard compared resolve()d paths, and resolve() is lexical.
+// Pointing --evidence at a symlink whose target is the Cursor home passed the
+// check and wrote a 14 KB artifact inside the home — an artifact whose own
+// readOnly: true field then contradicted the file's existence.
+test("a symlink pointing back into the Cursor home cannot smuggle a write past the guard", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const sneaky = join(temporaryRoot, "sneaky");
+    await symlink(cursorHome, sneaky);
+    const before = await snapshotTree(cursorHome);
+
+    await assert.rejects(
+      collectEditorEvidence({
+        cursorHomePath: cursorHome,
+        evidencePath: join(sneaky, "evidence.json"),
+      }),
+      /never writes there/u,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [script, "--cursor-home", cursorHome, "--evidence", join(sneaky, "evidence.json")],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 1, "the bypass must fail the process, not just the library call");
+    assert.match(result.stderr, /never writes there/u);
+    assert.equal(existsSync(join(cursorHome, "evidence.json")), false);
+    assert.deepEqual(await snapshotTree(cursorHome), before);
+  });
+});
+
+// The same lexical weakness applies to a symlinked Cursor home: only one side
+// being realpath'd still lets the two paths compare as unrelated.
+test("a symlinked Cursor home is resolved before the guard compares paths", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const homeAlias = join(temporaryRoot, "home-alias");
+    await symlink(cursorHome, homeAlias);
+
+    await assert.rejects(
+      collectEditorEvidence({
+        cursorHomePath: homeAlias,
+        evidencePath: join(cursorHome, "evidence.json"),
+      }),
+      /never writes there/u,
+    );
+    assert.equal(existsSync(join(cursorHome, "evidence.json")), false);
+  });
+});
+
+test("the read-only snapshot detects permission and timestamp changes, not just content", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const probe = join(cursorHome, "plugins.json");
+    const before = await snapshotTree(cursorHome);
+
+    // A content-hash-only snapshot compares equal after both of these, which is
+    // why it could not substantiate "byte-for-byte unchanged".
+    await chmod(probe, 0o600);
+    assert.notDeepEqual(await snapshotTree(cursorHome), before, "a mode change must be detected");
+    await chmod(probe, (await lstat(probe)).mode & 0o7777 | 0o644);
+
+    const restored = await snapshotTree(cursorHome);
+    const past = new Date(Date.now() - 60_000);
+    await utimes(probe, past, past);
+    assert.notDeepEqual(await snapshotTree(cursorHome), restored, "an mtime change must be detected");
   });
 });
 

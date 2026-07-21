@@ -78,14 +78,45 @@ Options:
 
 ### Authentication
 
-This follows the repository's existing authenticated-run contract, matching
-`benchmark/preflight.mjs`. API keys are never accepted through environment
-variables or arguments; credential-shaped options such as `--api-key` are
-refused outright. You supply an absolute path to a protected, pre-authenticated
-config-template directory that lives outside every workspace and outside this
-repository. The script copies it into a fresh temporary config home, isolates
-`HOME`, `XDG_CONFIG_HOME`, and `CURSOR_CONFIG_DIR`, and removes that home in a
-`finally` block.
+This follows the repository's existing authenticated-run contract. API keys are
+never accepted through environment variables or arguments; credential-shaped
+options such as `--api-key` are refused outright. You supply an absolute path to
+a protected, pre-authenticated config-template directory that lives outside
+every workspace and outside this repository.
+
+Before the probe invocation, the script calls `runCursorAuthenticationPreflight`
+from `benchmark/lib/auth-preflight.mjs` — the same helper `benchmark/run.mjs`
+uses. An expired or malformed template therefore fails with that diagnosis
+rather than as an opaque `exited 1` from the main invocation.
+
+The script then copies the template into a fresh temporary config home created
+with mode `0700`, isolates `HOME`, `XDG_CONFIG_HOME`, and `CURSOR_CONFIG_DIR`,
+and runs the CLI under `--sandbox enabled`.
+
+That temporary home holds a copy of your credentials, so it is removed both in a
+`finally` block and from `SIGINT`/`SIGTERM`/`SIGHUP` handlers. A `finally` block
+alone does not unwind when the process dies from a default-disposition signal,
+and Ctrl-C on a long-running interactive run is routine. The handlers remove the
+directory synchronously, then re-raise the signal so the exit status still
+reflects it.
+
+### What counts as evidence
+
+Component names are matched **only against `assistant` and `result` event
+content** — the model's own output. `user` and `system` events are excluded from
+the haystack even though they are parsed and their types recorded.
+
+This is the invariant that keeps the check from being self-satisfying. `user`
+echoes the prompt back. `system` is the more dangerous of the two: an init event
+listing loaded config files names every component as a filesystem path, and
+because `/` and `.` are word boundaries for the matcher, those paths match. A
+CLI that prints a loaded-file listing at startup would otherwise produce a full
+pass while the model said nothing at all — the exact false pass this script
+exists to prevent.
+
+Matching also requires the component id to stand alone within surrounding
+identifier characters (`A-Za-z0-9_-`), so `rust-engineer` does not satisfy
+`engineer` and `my_engineer` does not satisfy `engineer`.
 
 ### Fail-closed behaviour
 

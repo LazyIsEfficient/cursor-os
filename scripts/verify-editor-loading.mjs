@@ -2,13 +2,12 @@
 // installation. This script never creates, writes, or removes anything under
 // the Cursor home directory (README.md:81); it only reads paths and emits
 // evidence to an operator-chosen path outside that directory.
-import { createHash } from "node:crypto";
 import { lstat, mkdir, readFile, readlink, realpath, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assertSafeRelativePath, hashTree } from "../benchmark/lib/util.mjs";
+import { assertSafeRelativePath, hashTree, sha256 } from "../benchmark/lib/util.mjs";
 
 export const SCHEMA_VERSION = "1.0.0";
 export const ARTIFACT_KIND = "editor-plugin-loading-evidence";
@@ -32,10 +31,6 @@ function invariant(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
-
 function isInside(parent, child) {
   const path = relative(parent, child);
   return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
@@ -56,6 +51,33 @@ export function parseArguments(argv) {
     else throw new Error(`${USAGE}\nunknown option ${name}`);
   }
   return options;
+}
+
+// resolve() is lexical: it collapses "..", but it does not follow symbolic
+// links. A guard built on resolve() alone is bypassed by pointing --evidence at
+// a symlink that lands back inside the Cursor home. Every other path check in
+// this repository resolves symlinks first (benchmark/lib/workspace.mjs,
+// benchmark/lib/util.mjs), and so must this one.
+//
+// The path being checked may not exist yet (the evidence leaf never does, and
+// the Cursor home may be absent), so resolve the nearest existing ancestor and
+// re-append the not-yet-existing remainder lexically.
+export async function realpathAllowingMissingLeaf(path) {
+  let current = resolve(path);
+  const missingSegments = [];
+  for (;;) {
+    try {
+      return join(await realpath(current), ...missingSegments);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      const parent = dirname(current);
+      // The filesystem root always exists; this guards against an infinite loop
+      // if it somehow does not.
+      invariant(parent !== current, `cannot resolve any existing ancestor of ${path}`);
+      missingSegments.unshift(basename(current));
+      current = parent;
+    }
+  }
 }
 
 async function statOrNull(path) {
@@ -160,9 +182,12 @@ export async function collectEditorEvidence(options = {}) {
   const pluginId = inventory.plugin.id;
 
   if (options.evidencePath) {
+    const realCursorHome = await realpathAllowingMissingLeaf(cursorHomePath);
+    const realEvidencePath = await realpathAllowingMissingLeaf(options.evidencePath);
     invariant(
-      !isInside(resolve(cursorHomePath), resolve(options.evidencePath)),
-      "--evidence must not point inside the Cursor home; this script never writes there",
+      !isInside(realCursorHome, realEvidencePath),
+      `--evidence must not point inside the Cursor home; this script never writes there. ` +
+        `${options.evidencePath} resolves to ${realEvidencePath}, which is inside ${realCursorHome}.`,
     );
   }
 

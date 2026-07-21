@@ -5,15 +5,16 @@
 // Fails closed. A CLI that silently ignores --plugin-dir is the exact failure
 // this script exists to catch, so an absent --plugin-dir capability is an error,
 // never a pass.
-import { createHash } from "node:crypto";
+import { rmSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildCursorChildEnvironment } from "../benchmark/lib/adapters.mjs";
+import { runCursorAuthenticationPreflight } from "../benchmark/lib/auth-preflight.mjs";
 import { spawnCaptured } from "../benchmark/lib/process.mjs";
-import { copyTree, hashTree } from "../benchmark/lib/util.mjs";
+import { copyTree, hashTree, sha256 } from "../benchmark/lib/util.mjs";
 import { validateCursorConfigTemplate } from "../benchmark/lib/workspace.mjs";
 import { probeCursorCli } from "./lib/platform-contract.mjs";
 
@@ -33,9 +34,15 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const inventoryPath = join(repositoryRoot, "plugin/.cursor-plugin/inventory.json");
 const defaultPluginDir = join(repositoryRoot, "plugin");
 const DOCUMENTED_EVENT_TYPES = new Set(["system", "user", "assistant", "tool_call", "result"]);
-// The `user` event echoes the prompt back; matching against it would let the
-// prompt text, not the plugin, satisfy the assertion.
-const MATCHABLE_EVENT_TYPES = new Set(["system", "assistant", "result"]);
+// Only the model's own output counts as evidence.
+//
+// `user` echoes the prompt back, and `system` is worse: an init event that
+// lists loaded config files names every plugin component as a filesystem path,
+// which componentNamePattern matches because `/` and `.` are boundary
+// characters. Including either makes this check self-satisfying — a CLI that
+// prints a loaded-file listing at startup would "prove" loading with zero model
+// participation, which is the exact false pass this script exists to prevent.
+export const MATCHABLE_EVENT_TYPES = new Set(["assistant", "result"]);
 const CREDENTIAL_ARGUMENT = /(?:api[_-]?key|token|secret|password|credential)/iu;
 
 const USAGE = [
@@ -51,10 +58,6 @@ const USAGE = [
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
-}
-
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
 }
 
 function isInside(parent, child) {
@@ -105,7 +108,10 @@ export function parseArguments(argv) {
 // id to stand alone within the surrounding identifier characters.
 export function componentNamePattern(id) {
   const escaped = id.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`, "u");
+  // `_` is an identifier character: without it here, "my_engineer" would satisfy
+  // "engineer". No current inventory id collides, but the boundary should be
+  // correct rather than incidentally safe.
+  return new RegExp(`(?<![A-Za-z0-9_-])${escaped}(?![A-Za-z0-9_-])`, "u");
 }
 
 // Matching runs over decoded string values, not the re-serialized event. A
@@ -195,6 +201,56 @@ export function assertStreamProvesLoading(analysis, processResult) {
   );
 }
 
+// --sandbox is enforcement; the prompt's "do not read, edit, or execute
+// anything" is only instruction, and an instruction is not a control. Every
+// other authenticated invocation in this repository passes it
+// (benchmark/lib/adapters.mjs).
+// Contract: https://cursor.com/docs/reference/sandbox
+export function buildInvocationArguments(pluginDir) {
+  return [
+    "--print",
+    "--output-format",
+    "stream-json",
+    "--sandbox",
+    "enabled",
+    "--plugin-dir",
+    pluginDir,
+    PROMPT,
+  ];
+}
+
+export const CLEANUP_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
+
+// A `finally` block does not unwind when the process dies from a
+// default-disposition signal. This is a long-running interactive operator
+// script, so Ctrl-C is routine — without this, an interrupted run leaves a copy
+// of the authenticated credentials in the temp root indefinitely.
+//
+// Cleanup must be synchronous: an awaited rm() would not finish before the
+// process terminates. After cleaning up we drop our listeners, which restores
+// the signal's default disposition, then re-raise so the exit status reflects
+// the signal rather than a normal exit.
+export function installSignalCleanup(temporaryRoot) {
+  const handlers = new Map();
+  const release = () => {
+    for (const [signal, handler] of handlers) process.removeListener(signal, handler);
+    handlers.clear();
+  };
+  for (const signal of CLEANUP_SIGNALS) {
+    const handler = () => {
+      release();
+      try {
+        rmSync(temporaryRoot, { recursive: true, force: true });
+      } finally {
+        process.kill(process.pid, signal);
+      }
+    };
+    handlers.set(signal, handler);
+    process.on(signal, handler);
+  }
+  return release;
+}
+
 export async function verifyCliPluginLoading(options) {
   const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
   const components = inventory.components.filter((component) => OBSERVED_KINDS.includes(component.kind));
@@ -213,11 +269,21 @@ export async function verifyCliPluginLoading(options) {
     "Cursor CLI must expose --print and --output-format stream-json",
   );
 
+  // An expired or malformed config template otherwise surfaces as an opaque
+  // "Cursor CLI exited 1" from the main invocation. The preflight names the
+  // real fault, matching benchmark/run.mjs.
+  await runCursorAuthenticationPreflight({
+    binary: options.binary,
+    cursorConfigTemplatePath: options.cursorConfigTemplatePath,
+  });
+
   const temporaryRoot = await mkdtemp(join(tmpdir(), "cursor-harness-cli-plugin-"));
+  const releaseSignalCleanup = installSignalCleanup(temporaryRoot);
   try {
     const cursorHomePath = join(temporaryRoot, "cursor-home");
     const workspacePath = join(temporaryRoot, "workspace");
-    await mkdir(cursorHomePath);
+    // This directory receives a copy of the authenticated credentials.
+    await mkdir(cursorHomePath, { mode: 0o700 });
     await mkdir(workspacePath);
 
     const template = await validateCursorConfigTemplate(options.cursorConfigTemplatePath, { workspacePath });
@@ -227,14 +293,7 @@ export async function verifyCliPluginLoading(options) {
     );
     await copyTree(template.realPath, cursorHomePath);
 
-    const argv = [
-      "--print",
-      "--output-format",
-      "stream-json",
-      "--plugin-dir",
-      options.pluginDir,
-      PROMPT,
-    ];
+    const argv = buildInvocationArguments(options.pluginDir);
     const processResult = await spawnCaptured({
       executable: options.binary,
       arguments: argv,
@@ -282,6 +341,7 @@ export async function verifyCliPluginLoading(options) {
       },
     };
   } finally {
+    releaseSignalCleanup();
     await rm(temporaryRoot, { recursive: true, force: true });
   }
 }
