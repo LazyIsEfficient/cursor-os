@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/LazyIsEfficient/cursor-os/security/advisories/new
+    about: >-
+      Do not open a public issue for vulnerabilities. This form is private to
+      maintainers. SECURITY.md documents what to include and the supported
+      boundary (local Cursor Editor and CLI use in a trusted workspace; Cloud
+      Agent execution is out of scope).
+  - name: Contributing guide and verification gates
+    url: https://github.com/LazyIsEfficient/cursor-os/blob/main/CONTRIBUTING.md
+    about: >-
+      Read before proposing a change — especially the zero-third-party-dependency
+      rule and the six gates, three of which CI does not run for you.

@@ -1,0 +1,6 @@
+{"type":"system","subtype":"init","session_id":"synthetic-session-1","cwd":"/synthetic/workspace"}
+{"type":"user","message":{"role":"user","content":"synthetic prompt"}}
+{"type":"tool_call","subtype":"started","call_id":"synthetic-call-1","tool_call":{"name":"write"}}
+{"type":"tool_call","subtype":"completed","call_id":"synthetic-call-1","tool_call":{"name":"write"}}
+{"type":"assistant","message":{"role":"assistant","content":"synthetic answer"}}
+{"type":"result","subtype":"success","result":"synthetic done"}

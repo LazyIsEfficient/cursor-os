@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import test from "node:test";
@@ -42,6 +42,7 @@ test("comprehensive validator accepts the repository and reports every check", a
     "frontmatter",
     "markdown-links",
     "plugin-inventory",
+    "documented-components",
     "orchestration",
     "workflows",
     "schemas",
@@ -273,6 +274,112 @@ test("inventory generation is deterministic", async () => {
     first.components.map(({ path }) => path),
     [...first.components.map(({ path }) => path)].sort(),
   );
+});
+
+// Issue #5: both READMEs claimed six skills while nineteen shipped. The prose
+// component lists are asserted against the inventory so the same drift cannot
+// recur silently.
+test("validator rejects a README that omits an installed component", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(
+      join(repository, "plugin/README.md"),
+      "`release-manager`",
+      "release-manager",
+    );
+
+    await assert.rejects(
+      validateRepository(repository),
+      /plugin\/README\.md omits installed skills: release-manager/iu,
+    );
+  });
+});
+
+// A misspelled name must not read as "you forgot to document release-manager"
+// when release-managr is sitting right there in the file. The omission and the
+// unrecognized token are reported together so the typo is self-evident.
+test("validator reports an unrecognized name alongside the component it omits", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(join(repository, "plugin/README.md"), "`release-manager`", "`release-managr`");
+
+    await assert.rejects(validateRepository(repository), (error) => {
+      assert.match(error.message, /plugin\/README\.md omits installed skills: release-manager/iu);
+      assert.match(error.message, /unrecognized names in this region[^:]*: release-managr/iu);
+      return true;
+    });
+  });
+});
+
+// Marker regions are prose. Formatting a tool name as code inside one is
+// ordinary markdown, not a claim that the plugin ships a `jest` component.
+test("validator accepts backticked non-component tokens inside a marker region", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(
+      join(repository, "plugin/README.md"),
+      "(Jest and Supertest)",
+      "(`jest` and `supertest`)",
+    );
+
+    await validateRepository(repository);
+  });
+});
+
+// Fail-open, recorded so nobody assumes coverage that is gone: the prose count
+// in front of the name list is not verified in any form. Only the names are.
+test("validator does not verify the prose count in front of a component list", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(join(repository, "README.md"), "nineteen skills:", "a dozen skills:");
+
+    await validateRepository(repository);
+  });
+});
+
+test("validator rejects a README whose component markers are missing", async () => {
+  await withRepositoryCopy(async (repository) => {
+    await replace(join(repository, "plugin/README.md"), "<!-- components:agent:end -->", "");
+
+    await assert.rejects(
+      validateRepository(repository),
+      /plugin\/README\.md must contain exactly one components:agent marker pair/iu,
+    );
+  });
+});
+
+// The property this whole check exists for: a newly installed skill must fail
+// validation until BOTH READMEs name it. Each stage is asserted, so documenting
+// one README cannot be mistaken for satisfying the check.
+test("validator rejects a newly installed skill until both READMEs document it", async () => {
+  await withRepositoryCopy(async (repository) => {
+    const skillDirectory = join(repository, "plugin/skills/undocumented-skill");
+    await mkdir(skillDirectory, { recursive: true });
+    await writeFile(
+      join(skillDirectory, "SKILL.md"),
+      "---\nname: undocumented-skill\ndescription: A skill added to the plugin without updating either README component list.\n---\n\nDo the thing.\n",
+    );
+    await generatePluginInventory(repository, { write: true });
+
+    const document = (path) =>
+      replace(
+        join(repository, path),
+        "<!-- components:skill:end -->",
+        " Also `undocumented-skill`.<!-- components:skill:end -->",
+      );
+
+    await assert.rejects(
+      validateRepository(repository),
+      /README\.md omits installed skills: undocumented-skill/iu,
+      "neither README documents the new skill",
+    );
+
+    await document("README.md");
+    await assert.rejects(
+      validateRepository(repository),
+      /plugin\/README\.md omits installed skills: undocumented-skill/iu,
+      "the plugin README still omits the new skill",
+    );
+
+    await document("plugin/README.md");
+    await validateRepository(repository);
+  });
 });
 
 test("validator rejects unresolved or non-local schema references", async () => {

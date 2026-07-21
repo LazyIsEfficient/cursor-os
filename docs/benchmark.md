@@ -87,6 +87,71 @@ unavailable unless stable correlation fields are observed. See the
 [evidence policy](evidence-policy.md), [capability matrix](cursor-capability-matrix.md),
 and [threat model](threat-model.md).
 
+## Telemetry probe
+
+`npm run probe:cli-telemetry` captures one authenticated CLI call in
+stream-json mode and records which fields that CLI version actually emits. It
+exists because the benchmark currently marks token counts, subagent parentage,
+and concurrency `unavailable` without captured evidence either way.
+
+The probe never extracts telemetry by guessing field names. It enumerates every
+leaf key path observed in the stream and reports a determination per claim:
+
+- `present` — a numeric token/usage field was observed, or a parent identifier
+  resolved to an identifier emitted on another event;
+- `inconclusive` — a plausibly named field was observed but carried no usable
+  value or linkage;
+- `absent` — the call completed with a terminal result and no such field
+  appeared; and
+- `indeterminate` — the call did not complete, so nothing may be concluded.
+
+Absence of a field and absence of a call are therefore never conflated. If the
+CLI is missing, unauthenticated, or cannot emit stream-json, the probe exits
+non-zero and writes no evidence artifact at all.
+
+Run it with the same protected pre-authenticated config template the benchmark
+uses; API-key environment and argument authentication are not supported here
+either:
+
+```sh
+npm run probe:cli-telemetry -- \
+  --cursor-config-template /protected/cursor-config \
+  --out /protected/evidence/cli-telemetry-stream.ndjson \
+  --evidence /protected/evidence/cli-telemetry-evidence.json
+```
+
+All paths must be absolute and neither output path may already exist. Optional
+flags are `--agent-bin`, `--prompt`, `--timeout-ms`, and `--work-root`; pass
+`--work-root` when the CLI sandbox denies writes under the temporary directory.
+The config template is copied `0600` into a fresh per-run config home that is
+removed in a `finally` block. Because `finally` does not unwind when the process
+dies on a default-disposition signal — and Ctrl-C is routine on a ten-minute
+interactive call — the probe also installs `SIGINT`/`SIGTERM`/`SIGHUP` handlers
+that remove the config home synchronously and then re-raise the signal, so no
+credential copy survives an interrupted run and the exit code stays the
+signal's (130/143/129) rather than one of the probe's choosing.
+
+This call is paid and non-deterministic. The raw stream is unredacted model
+output: treat it like a workspace artifact, review it before sharing, and do
+not upload it through `benchmark:export`. The evidence artifact itself never
+carries observed values: reported key paths are reduced to a path, a count, and
+a set of value types, and only derived numerics reach the artifact.
+
+The artifact carries a `schemaVersion` and the CLI version that produced it,
+because a determination is only ever evidence about the CLI version and prompt
+that produced it. Alongside those, `bindings` ties the capture to conditions a
+consumer can check without trusting the run: `sandboxPolicySha256` is
+recomputable from the policy the harness exports, and `workspaceSha256` is a
+tree digest of the sandbox workspace as the CLI left it, binding the artifact
+to observable side effects rather than only to its own bytes.
+
+One reported count is capped by design. `correlatedEdges` counts parent-to-child
+identifier linkages, and retained values are bounded per key path, so on a wide
+fan-out the count saturates. When that happens the artifact sets
+`correlatedEdgesTruncated: true`: read the count as a lower bound, not a total.
+The determination is unaffected — a single surviving edge is enough to establish
+`present`.
+
 ## Eligibility and scoring
 
 The following gates are non-compensable:

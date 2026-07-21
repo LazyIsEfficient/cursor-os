@@ -11,7 +11,7 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "^22"
   },
   "scripts": {
     "inventory": "node scripts/generate-plugin-inventory.mjs",
@@ -20,6 +20,7 @@
     "plugin:editor:verify": "node scripts/verify-editor-loading.mjs",
     "plugin:cli:verify": "node scripts/verify-cli-plugin-loading.mjs",
     "probe": "node scripts/probe-capabilities.mjs",
+    "probe:cli-telemetry": "node scripts/probe-cli-telemetry.mjs",
     "test": "node --test test/*.test.mjs tests/benchmark/*.test.mjs tests/contracts/*.test.mjs tests/fixtures/*.test.mjs tests/plugin-loading/*.test.mjs tests/release/*.test.mjs tests/rules/*.test.mjs tests/security/*.test.mjs tests/validator/*.test.mjs tests/workflows/*.test.mjs",
     "benchmark:test": "node --test tests/benchmark/*.test.mjs",
     "benchmark:run": "node benchmark/run.mjs",
