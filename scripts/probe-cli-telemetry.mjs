@@ -10,7 +10,8 @@
 // https://cursor.com/docs/cli/reference/configuration
 // https://cursor.com/docs/reference/sandbox
 
-import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
+import { access, chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,11 +20,11 @@ import { buildCursorChildEnvironment } from "../benchmark/lib/adapters.mjs";
 import { runCursorAuthenticationPreflight } from "../benchmark/lib/auth-preflight.mjs";
 import { spawnCaptured } from "../benchmark/lib/process.mjs";
 import { normalizeCliNdjson } from "../benchmark/lib/telemetry.mjs";
-import { copyTree, sha256 } from "../benchmark/lib/util.mjs";
+import { copyTree, hashTree, listFiles, sha256 } from "../benchmark/lib/util.mjs";
 import { validateCursorConfigTemplate, writeTrialSandboxPolicy } from "../benchmark/lib/workspace.mjs";
 import { probeCursorCli } from "./lib/platform-contract.mjs";
 
-export const EVIDENCE_SCHEMA_VERSION = "1.0.0";
+export const EVIDENCE_SCHEMA_VERSION = "1.1.0";
 export const EVIDENCE_KIND = "cli-telemetry-probe-evidence";
 
 export const DEFAULT_PROMPT =
@@ -35,7 +36,55 @@ const MAX_KEY_PATH_DEPTH = 8;
 const MAX_KEY_PATHS = 2_000;
 const MAX_RECORDED_VALUES = 200;
 const MAX_REPORTED_VALUES = 8;
-const IDENTIFIER_VALUE_MAX_LENGTH = 128;
+const RETAINED_VALUE_MAX_LENGTH = 128;
+
+// Probe roots that exist on disk right now. A signal handler needs this because the async
+// `finally` in `runTelemetryProbe` never runs when the process dies on a default-disposition
+// signal, and the probe root holds a copy of the operator's Cursor credentials. Shape mirrors
+// `installCredentialSignalHandlers` in benchmark/lib/workspace.mjs so the two stay consistent.
+const activeProbeRoots = new Set();
+const CREDENTIAL_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
+let installedSignalHandlers = null;
+let signalHandlerDepth = 0;
+
+function removeActiveProbeRootsSync() {
+  for (const probeRoot of activeProbeRoots) {
+    try {
+      // Synchronous by necessity: the process is about to terminate, so an awaited rm would
+      // not finish before the default disposition kills us.
+      rmSync(probeRoot, { recursive: true, force: true });
+    } catch (error) {
+      process.stderr.write(`failed to remove probe root ${probeRoot}: ${error.message}\n`);
+    }
+  }
+  activeProbeRoots.clear();
+}
+
+// Removes credential copies on Ctrl-C or runner cancellation, then re-raises with the default
+// disposition so the exit code the operator observes is the signal's, not ours.
+export function installCredentialSignalHandlers() {
+  signalHandlerDepth += 1;
+  if (installedSignalHandlers === null) {
+    installedSignalHandlers = new Map();
+    for (const signal of CREDENTIAL_SIGNALS) {
+      const handler = () => {
+        removeActiveProbeRootsSync();
+        uninstallCredentialSignalHandlers({ force: true });
+        process.kill(process.pid, signal);
+      };
+      installedSignalHandlers.set(signal, handler);
+      process.on(signal, handler);
+    }
+  }
+  return () => uninstallCredentialSignalHandlers();
+}
+
+function uninstallCredentialSignalHandlers({ force = false } = {}) {
+  signalHandlerDepth = force ? 0 : Math.max(0, signalHandlerDepth - 1);
+  if (signalHandlerDepth > 0 || installedSignalHandlers === null) return;
+  for (const [signal, handler] of installedSignalHandlers) process.removeListener(signal, handler);
+  installedSignalHandlers = null;
+}
 
 // Broad on purpose. This is discovery, not extraction: a false positive is
 // visible to the operator, a false negative silently hides a real field.
@@ -71,14 +120,20 @@ function collectLeafPaths(value, prefix, sink, depth = 0) {
     return;
   }
   if (!isPlainLeaf(value) || prefix === "") return;
-  const existing = sink.get(prefix) ?? { path: prefix, count: 0, valueTypes: new Set(), values: [] };
+  const existing = sink.get(prefix) ??
+    { path: prefix, count: 0, valueTypes: new Set(), values: [], valuesTruncated: false };
   existing.count += 1;
   existing.valueTypes.add(leafType(value));
-  // Long strings are model output. Retain only values that could plausibly be a
-  // count or an identifier, so the artifact cannot accumulate response text.
+  // `values` is analysis-only scratch and never reaches the artifact: `summarizePath` drops it
+  // structurally, and only derived numerics are reported. This cap is therefore a memory bound,
+  // not a data-leak defence — it stops a stream of long leaf values growing the sink without
+  // limit. The leak protection is the structural drop; see the summarizePath test.
   const retainable = typeof value === "number" ||
-    (typeof value === "string" && value.length > 0 && value.length <= IDENTIFIER_VALUE_MAX_LENGTH);
-  if (retainable && existing.values.length < MAX_RECORDED_VALUES) existing.values.push(value);
+    (typeof value === "string" && value.length > 0 && value.length <= RETAINED_VALUE_MAX_LENGTH);
+  if (retainable) {
+    if (existing.values.length < MAX_RECORDED_VALUES) existing.values.push(value);
+    else existing.valuesTruncated = true;
+  }
   sink.set(prefix, existing);
 }
 
@@ -109,6 +164,10 @@ function identifierValues(entry) {
   return entry.values.filter((value) => typeof value === "string");
 }
 
+/**
+ * The artifact surface for one observed key path. Deliberately omits `entry.values`: dropping
+ * observed values here is what keeps model output and identifiers out of an exportable artifact.
+ */
 function summarizePath(entry) {
   return {
     path: entry.path,
@@ -183,6 +242,7 @@ function determineSubagentCorrelation(events, paths, callStatus) {
       ambiguousCandidates,
       subagentLabels,
       correlatedEdges: 0,
+      correlatedEdgesTruncated: false,
     };
   }
   if (parentPaths.length === 0) {
@@ -193,16 +253,19 @@ function determineSubagentCorrelation(events, paths, callStatus) {
       ambiguousCandidates,
       subagentLabels,
       correlatedEdges: 0,
+      correlatedEdgesTruncated: false,
     };
   }
 
+  const otherIdentifierPaths = identifierPaths.filter((entry) => !PARENT_PATH_PATTERN.test(entry.path));
   const parentValues = new Set(parentPaths.flatMap(identifierValues));
-  const otherIdentifierValues = new Set(
-    identifierPaths
-      .filter((entry) => !PARENT_PATH_PATTERN.test(entry.path))
-      .flatMap(identifierValues),
-  );
+  const otherIdentifierValues = new Set(otherIdentifierPaths.flatMap(identifierValues));
   const correlatedEdges = [...parentValues].filter((value) => otherIdentifierValues.has(value)).length;
+  // MAX_RECORDED_VALUES caps retained values per path, so on a wide fan-out this count saturates
+  // and understates the true edge count. Say so rather than let a reader take a plateaued number
+  // at face value. The determination itself is unaffected: one surviving edge still proves it.
+  const correlatedEdgesTruncated = [...parentPaths, ...otherIdentifierPaths]
+    .some((entry) => entry.valuesTruncated);
   if (correlatedEdges > 0) {
     return {
       determination: "present",
@@ -211,6 +274,7 @@ function determineSubagentCorrelation(events, paths, callStatus) {
       ambiguousCandidates,
       subagentLabels,
       correlatedEdges,
+      correlatedEdgesTruncated,
     };
   }
   return {
@@ -220,6 +284,7 @@ function determineSubagentCorrelation(events, paths, callStatus) {
     ambiguousCandidates,
     subagentLabels,
     correlatedEdges,
+    correlatedEdgesTruncated,
   };
 }
 
@@ -360,7 +425,7 @@ export function assertCliSupportsStreamJson(cli) {
   return cli;
 }
 
-export function buildEvidence({ options, cli, template, call, observations }) {
+export function buildEvidence({ options, cli, template, call, observations, bindings }) {
   return {
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     kind: EVIDENCE_KIND,
@@ -385,6 +450,19 @@ export function buildEvidence({ options, cli, template, call, observations }) {
       path: options.outPath,
       bytes: call.bytes,
       sha256: call.sha256,
+    },
+    // Bindings to inputs and side effects that a consumer can check without trusting this run.
+    // `promptSha256` and `rawStream.sha256` above are self-referential: they only prove the
+    // artifact is internally consistent. These bind the capture to conditions reproducible from
+    // the repository, so a future gate can confirm the run was governed by the policy it claims.
+    bindings: {
+      sandboxPolicyPath: bindings.sandboxPolicy.relativePath,
+      sandboxPolicySource: bindings.sandboxPolicy.source,
+      // Recomputable from SANDBOX_POLICY_BYTES in benchmark/lib/workspace.mjs.
+      sandboxPolicySha256: bindings.sandboxPolicy.sha256,
+      // Tree digest of the sandbox workspace as the CLI left it: binds the artifact to the
+      // observable side effects of the prompt, not just to its own bytes.
+      workspaceSha256: bindings.workspaceSha256,
     },
     observations,
     interpretation: {
@@ -412,13 +490,19 @@ export async function runTelemetryProbe(options) {
   });
 
   const probeRoot = await mkdtemp(join(options.workRoot, "cursor-telemetry-probe-"));
+  activeProbeRoots.add(probeRoot);
+  const releaseSignalHandlers = installCredentialSignalHandlers();
   try {
     const cursorHomePath = join(probeRoot, "cursor-home");
     const workspacePath = join(probeRoot, "workspace");
     await mkdir(cursorHomePath, { mode: 0o700 });
     await mkdir(workspacePath, { mode: 0o700 });
     await copyTree(template.realPath, cursorHomePath);
-    await writeTrialSandboxPolicy(workspacePath);
+    // copyTree does not set a mode, so the copied credentials land 0644. Tighten them here:
+    // benchmark/lib/util.mjs is owned by another change in flight, and this probe must not
+    // depend on that landing first.
+    for (const path of await listFiles(cursorHomePath)) await chmod(path, 0o600);
+    const sandboxPolicy = await writeTrialSandboxPolicy(workspacePath);
 
     const argv = ["--print", "--output-format", "stream-json", "--sandbox", "enabled", options.prompt];
     await mkdir(dirname(options.outPath), { recursive: true });
@@ -455,6 +539,7 @@ export async function runTelemetryProbe(options) {
         sha256: sha256(result.stdout),
       },
       observations,
+      bindings: { sandboxPolicy, workspaceSha256: await hashTree(workspacePath) },
     });
     if (options.evidencePath !== undefined) {
       await mkdir(dirname(options.evidencePath), { recursive: true });
@@ -466,7 +551,14 @@ export async function runTelemetryProbe(options) {
     }
     return { evidence, status };
   } finally {
-    await rm(probeRoot, { recursive: true, force: true });
+    // Keep the signal handlers armed across the removal itself: a Ctrl-C landing mid-rm must
+    // still unwind the credential copy.
+    try {
+      await rm(probeRoot, { recursive: true, force: true });
+    } finally {
+      activeProbeRoots.delete(probeRoot);
+      releaseSignalHandlers();
+    }
   }
 }
 

@@ -7,13 +7,17 @@
 // probe against a real authenticated CLI can produce evidence.
 
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
 import { chmod, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+import { sha256 } from "../../benchmark/lib/util.mjs";
+import { SANDBOX_PATH, SANDBOX_POLICY_BYTES } from "../../benchmark/lib/workspace.mjs";
 import {
   analyzeStreamJson,
   assertCliSupportsStreamJson,
@@ -50,12 +54,19 @@ if (argv[0] === "status") {
   process.stdout.write("Logged in as synthetic@example.test\\n");
   process.exit(0);
 }
+if (mode === "hang") {
+  // Stands in for a long-running authenticated call, so the probe can be signalled mid-flight.
+  process.stdout.write('{"type":"system","subtype":"init"}\\n');
+  setTimeout(() => process.exit(0), 30000);
+  setInterval(() => {}, 1000);
+} else {
 const lines = readFileSync(${JSON.stringify(samplePath)}, "utf8").split("\\n").filter(Boolean);
 const emitted = mode === "no-terminal-result"
   ? lines.filter((line) => !line.includes('"type":"result"'))
   : lines;
 process.stdout.write(emitted.join("\\n") + "\\n");
 if (mode === "nonzero") process.exit(7);
+}
 `;
   await writeFile(path, source, { encoding: "utf8", mode: 0o700 });
   await chmod(path, 0o700);
@@ -196,6 +207,7 @@ test("analyzeStreamJson reports presence when token and parent fields correlate"
 
   assert.equal(observations.subagentCorrelation.determination, "present");
   assert.equal(observations.subagentCorrelation.correlatedEdges, 1);
+  assert.equal(observations.subagentCorrelation.correlatedEdgesTruncated, false);
   assert.deepEqual(
     observations.subagentCorrelation.parentIdentifierMatches.map((entry) => entry.path),
     ["parent_id"],
@@ -216,7 +228,10 @@ test("analyzeStreamJson marks a dangling parent pointer inconclusive, not presen
   assert.equal(observations.concurrency.determination, "inconclusive");
 });
 
-test("analyzeStreamJson never copies model output into the artifact", () => {
+test("analyzeStreamJson reports a long model-output field as a path without its value", () => {
+  // Names what this actually covers: a field whose value exceeds RETAINED_VALUE_MAX_LENGTH is
+  // still enumerated as a key path. It does NOT cover the leak guard — values of any length are
+  // dropped structurally by summarizePath, which the next test pins.
   const secret = `SECRET-${"x".repeat(400)}`;
   const source = [
     JSON.stringify({ type: "assistant", message: { content: secret }, usage: { input_tokens: 5 } }),
@@ -227,6 +242,60 @@ test("analyzeStreamJson never copies model output into the artifact", () => {
   // The path is still reported so the operator knows the field exists.
   assert.ok(observations.keyPaths.some((entry) => entry.path === "message.content"));
   assert.equal(observations.tokenCounts.determination, "present");
+});
+
+test("summarizePath structurally drops observed values from every artifact surface", () => {
+  // The real leak guard. Every value here is SHORT enough to be retained in analysis scratch,
+  // so the length cap cannot be what protects the artifact — only the structural drop can.
+  // Mutation check: adding `values: entry.values` to summarizePath must fail this test.
+  const credential = "sk-live-0123456789abcdef";
+  const source = [
+    JSON.stringify({ type: "system", subtype: "init", session_id: "s1", auth_token: credential }),
+    JSON.stringify({ type: "assistant", event_id: "e1", parent_id: "s1", usage: { input_tokens: 5 } }),
+    JSON.stringify({ type: "result", subtype: "success" }),
+  ].join("\n");
+  const observations = analyzeStreamJson(source, { callStatus: "completed" });
+
+  // The field is enumerated: discovery must still report that it exists.
+  assert.ok(observations.keyPaths.some((entry) => entry.path === "auth_token"));
+  assert.ok(observations.keyPaths.some((entry) => entry.path === "session_id"));
+
+  const surfaces = [
+    observations.keyPaths,
+    observations.tokenCounts.matches,
+    observations.subagentCorrelation.parentIdentifierMatches,
+    observations.subagentCorrelation.ambiguousCandidates,
+    observations.concurrency.timestampMatches,
+  ];
+  for (const surface of surfaces) {
+    for (const entry of surface) {
+      assert.equal("values" in entry, false, `${entry.path} leaked a values array`);
+      assert.deepEqual(Object.keys(entry).includes("valuesTruncated"), false);
+    }
+  }
+  // No observed string value reaches the artifact by any route.
+  const serialized = JSON.stringify(observations);
+  assert.ok(!serialized.includes(credential));
+  assert.ok(!serialized.includes("s1"));
+  assert.ok(!serialized.includes("e1"));
+});
+
+test("subagentCorrelation flags a saturated correlated-edge count instead of plateauing silently", () => {
+  const fanOut = 600;
+  const lines = [JSON.stringify({ type: "system", subtype: "init" })];
+  for (let index = 0; index < fanOut; index += 1) {
+    lines.push(JSON.stringify({ type: "assistant", event_id: `e${index}` }));
+    lines.push(JSON.stringify({ type: "task", event_id: `t${index}`, parent_id: `e${index}` }));
+  }
+  lines.push(JSON.stringify({ type: "result", subtype: "success" }));
+  const correlation = analyzeStreamJson(lines.join("\n"), { callStatus: "completed" }).subagentCorrelation;
+
+  // The determination is the load-bearing part and stays correct under saturation.
+  assert.equal(correlation.determination, "present");
+  // The count saturates well below the true fan-out, so the artifact must say so.
+  assert.ok(correlation.correlatedEdges > 0);
+  assert.ok(correlation.correlatedEdges < fanOut);
+  assert.equal(correlation.correlatedEdgesTruncated, true);
 });
 
 test("analyzeStreamJson records malformed lines instead of discarding them", () => {
@@ -270,6 +339,14 @@ test("runTelemetryProbe writes the raw stream and a schema-versioned artifact, t
 
   const written = JSON.parse(await readFile(options.evidencePath, "utf8"));
   assert.deepEqual(written, evidence);
+
+  // Bindings must be independently checkable, not self-referential. The sandbox policy digest is
+  // recomputable from the exported policy bytes without trusting anything this run produced.
+  assert.equal(evidence.bindings.sandboxPolicyPath, SANDBOX_PATH);
+  assert.equal(evidence.bindings.sandboxPolicySha256, sha256(SANDBOX_POLICY_BYTES));
+  assert.match(evidence.bindings.workspaceSha256, /^[0-9a-f]{64}$/u);
+  // The workspace digest binds side effects, so it must not be the digest of an empty tree.
+  assert.notEqual(evidence.bindings.workspaceSha256, sha256(""));
 
   // No copy of the config template may survive the run.
   assert.deepEqual(await readdir(workRoot), []);
@@ -336,6 +413,52 @@ test("runTelemetryProbe fails closed when the CLI cannot emit stream-json", asyn
   }));
   await assert.rejects(runTelemetryProbe(options), /does not expose --output-format stream-json/u);
 });
+
+// Regression guard for the credential copy that survived Ctrl-C: `finally` does not unwind on a
+// default-disposition signal, so the probe installs signal handlers. Verified by hand against a
+// real `kill -INT` on a running invocation; this pins the behaviour.
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+  test(`${signal} during the call removes the credential copy and re-raises the signal`, async () => {
+    const root = await makeRoot();
+    const workRoot = join(root, "work");
+    await mkdir(workRoot);
+    const child = spawn(process.execPath, [
+      probeScript,
+      ...baseArguments({
+        template: await makeConfigTemplate(root),
+        out: join(root, "stream.ndjson"),
+        evidence: join(root, "evidence.json"),
+        binary: await makeMockCli(root, { mode: "hang" }),
+      }),
+      "--work-root", workRoot,
+      "--timeout-ms", "600000",
+    ], { stdio: "ignore" });
+
+    try {
+      // Wait until the credential copy actually exists, otherwise the signal proves nothing.
+      let copied = false;
+      for (let attempt = 0; attempt < 200 && !copied; attempt += 1) {
+        const roots = await readdir(workRoot);
+        copied = roots.length > 0 &&
+          (await readdir(join(workRoot, roots[0], "cursor-home")).catch(() => [])).length > 0;
+        if (!copied) await setTimeout(50);
+      }
+      assert.ok(copied, "credential copy never appeared, so the signal would prove nothing");
+
+      child.kill(signal);
+      const [code, terminatingSignal] = await once(child, "exit");
+
+      // Re-raised with the default disposition: the process must die *of* the signal, not exit
+      // normally with a code of our choosing.
+      assert.equal(terminatingSignal, signal);
+      assert.equal(code, null);
+      // Nothing survives under the work root.
+      assert.deepEqual(await readdir(workRoot), []);
+    } finally {
+      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    }
+  });
+}
 
 test("the probe exits non-zero with a clear message when the CLI is absent", async () => {
   const root = await makeRoot();
