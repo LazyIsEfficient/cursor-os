@@ -9,6 +9,11 @@ The project is source-available under the [MIT License](LICENSE). It is not
 currently claimed to be published in Cursor Marketplace or proven by a live
 authenticated benchmark.
 
+Cursor Harness is a port of the **agentic-os** project to Cursor's plugin
+format; the workflow concepts it implements originate there. The Cursor plugin
+manifest, hooks, validator, benchmark, and release tooling in this repository
+are separate work.
+
 ## Goals and gates
 
 Objective results are ranked in this order:
@@ -69,7 +74,11 @@ advisory and is tracked for recurrence.
 The intended v0.1.0 scope is local Cursor Editor and Cursor CLI operation.
 Repository contracts verify plugin layout, component metadata, hook behavior,
 benchmark isolation, and CLI feature detection. Actual Editor loading and
-authenticated CLI outcomes remain manual or unverified.
+authenticated CLI outcomes remain manual or unverified. `npm run
+plugin:editor:verify` and `npm run plugin:cli:verify` are the operator-run
+scripts that capture evidence for them; neither settles a claim on its own, and
+[plugin loading verification](docs/plugin-loading-verification.md) documents
+their options, exit codes, and the limits of what they establish.
 
 Cursor Cloud Agents are excluded: plugin loading, hook enforcement, filesystem
 semantics, and telemetry parity have not been verified in Cloud. The benchmark
@@ -86,12 +95,25 @@ source, review its contents and permissions, then install. This describes the
 supported concept; it does not claim that Cursor Harness is currently listed
 or published.
 
-For local development only, a user may manually create a symlink under
-`~/.cursor/plugins/local`:
+For local development **from a git checkout**, a user may manually create a
+symlink under `~/.cursor/plugins/local`. Run it from the repository root; the
+target is the `plugin/` subdirectory, not the repository root:
 
 ```sh
 mkdir -p ~/.cursor/plugins/local
 ln -s "$PWD/plugin" ~/.cursor/plugins/local/cursor-harness
+```
+
+That command is **wrong for a release archive**, where the archive root itself
+is the plugin and no `plugin/` subdirectory exists — linking `"$PWD/plugin"`
+there produces a dangling symlink. Archive users follow
+[Installation in the plugin README](plugin/README.md#installation), which ships
+inside the archive and links `"$PWD"` from the extracted directory instead.
+
+Either way, confirm the link resolved with:
+
+```sh
+ls ~/.cursor/plugins/local/cursor-harness/.cursor-plugin/plugin.json
 ```
 
 This repository never creates that symlink or writes `~/.cursor`. Remove it
@@ -181,4 +203,6 @@ tag, submit to Marketplace, or create a GitHub release.
 - subagent parentage, call counts, and concurrency telemetry.
 
 These stay explicitly unavailable until direct evidence is captured. Missing
-telemetry is never scored as zero.
+telemetry is never scored as zero. The first and third are the claims
+[plugin loading verification](docs/plugin-loading-verification.md) exists to
+capture evidence for.

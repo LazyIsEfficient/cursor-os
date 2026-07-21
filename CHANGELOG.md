@@ -41,6 +41,24 @@ here therefore corresponds to a single consistent version across the repository.
 - `.gitignore` now excludes `/benchmark/sanitized/`, which the authenticated
   benchmark writes as exported artifacts alongside the already-ignored
   `/benchmark/results/`.
+- Install instructions for release-archive users. The archive root *is* the
+  plugin, so the documented `ln -s "$PWD/plugin" ...` — correct from a git
+  checkout — produced a dangling symlink for anyone who downloaded a release.
+  `plugin/README.md`, the README that ships inside the archive, now carries
+  archive-relative steps, and both READMEs state which layout each command
+  applies to.
+- `scripts/verify-editor-loading.mjs` referenced `README.md:73-81` for the
+  symlink instructions; those lines are an unrelated Cloud Agents paragraph.
+  The message now names the Installation section instead of a line range.
+
+### Documentation
+
+- [docs/plugin-loading-verification.md](docs/plugin-loading-verification.md) is
+  now linked from `README.md`, `plugin/README.md`, and `CONTRIBUTING.md`, whose
+  command table also gains `npm run plugin:editor:verify` and
+  `npm run plugin:cli:verify`. The document had no inbound references.
+- `README.md` credits **agentic-os** as the upstream project this was ported
+  from.
 
 ## [0.1.0] - 2026-07-20
 

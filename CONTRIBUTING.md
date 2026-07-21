@@ -95,6 +95,20 @@ What each gate covers:
 | `npm run probe` | Network-free local Editor/CLI capability evidence. Machine-specific, so it cannot run in CI. | No |
 | `npm run release:dry-run` | Reproducible packaging and version parity across all seven version fields. | No |
 
+Two further scripts are operator-run rather than gates, because they need a real
+Cursor installation and, for the CLI, real credentials:
+
+| Command | Covers | In CI |
+|---|---|---|
+| `npm run plugin:editor:verify` | Read-only comparison of an installed Editor plugin tree against the inventory, plus an optional operator transcript attesting component loading. Exits `3` when the install matches but loading is unproven. | No |
+| `npm run plugin:cli:verify` | Live plugin loading through the authenticated Cursor CLI, matching component names only against model output. Fails closed when the CLI lacks `--plugin-dir`. | No |
+
+Neither settles an unverified claim by itself; both produce evidence artifacts a
+maintainer reviews. Read
+[plugin loading verification](docs/plugin-loading-verification.md) before running
+either — it documents the options, the exit codes, and what the artifacts can and
+cannot show.
+
 `npm ci --ignore-scripts` is the documented install form. If it ever installs
 something from a registry, that is a bug in your change, not in the command.
 
