@@ -19,6 +19,10 @@ const MUTATING_COMMANDS = new Set([
   "truncate",
   "unlink",
 ]);
+// `<<<` and `<<` end a segment for the same reason `|` does: what follows is a
+// payload, not another operand of the command on the left. Leaving them inside
+// the segment let `bash <<< 'rm -rf /'` read as the word list
+// `[bash, rm, -rf, /]`, where `rm` looked like a harmless argument to `bash`.
 const SEGMENT_OPERATORS = new Set([
   ";",
   ";;",
@@ -31,7 +35,13 @@ const SEGMENT_OPERATORS = new Set([
   ")",
   "{",
   "}",
+  "<<<",
+  "<<",
 ]);
+// Here-documents and here-strings both feed their payload to the command on
+// stdin. For an interpreter that payload *is* the script, so it is inspected as
+// one rather than treated as inert data.
+const HERE_OPERATORS = new Set(["<<<", "<<"]);
 // `>|` forces truncation over `noclobber`, and `>&`/`&>`/`&>>` redirect a
 // stream to a file just as `>` does. All of them can destroy a protected file.
 const REDIRECT_OPERATORS = new Set([">", ">>", ">|", ">&", "&>", "&>>"]);
@@ -42,6 +52,7 @@ const OPERATOR_LITERALS = [
   "||",
   ";;",
   ">>",
+  "<<<",
   "<<",
   ">|",
   ">&",
@@ -74,6 +85,28 @@ const SHELL_KEYWORDS = new Set([
   "while",
   "{",
   "}",
+]);
+// `case WORD in`, `for NAME in`, and `select NAME in` are followed by a subject
+// rather than by a command. Skipping only the keyword left the subject sitting
+// in command position, where `case $x in ...` resolved its executable to `$x`.
+const KEYWORDS_WITH_SUBJECT = new Set(["case", "for", "select"]);
+// Every one of these runs a command string given to `-c`. `script -c CMD` does
+// it through a pty; the `ksh` family was missing entirely, which is what let
+// `ksh -c 'rm -rf /'` resolve to the inert executable `ksh`. `busybox sh` is
+// not listed here because `busybox` is unwrapped as a wrapper first, leaving
+// the applet name (`sh`) as the executable.
+const SHELL_INTERPRETERS = new Set([
+  "ash",
+  "bash",
+  "dash",
+  "ksh",
+  "ksh88",
+  "ksh93",
+  "mksh",
+  "pdksh",
+  "script",
+  "sh",
+  "zsh",
 ]);
 
 function decision(permission, rule) {
@@ -345,6 +378,14 @@ const WRAPPERS = new Map([
   ["nice", { valueFlags: ["-n", "--adjustment"] }],
   ["ionice", { valueFlags: ["-c", "--class", "-n", "--classdata", "-p", "--pid"] }],
   ["setsid", {}],
+  // `busybox APPLET ARGS` is a multi-call binary: unwrapping it exposes the
+  // applet, so `busybox rm -rf /` resolves to `rm` and `busybox sh -c CMD`
+  // resolves to `sh` and then recurses through the normal interpreter path.
+  ["busybox", {}],
+  // `watch` concatenates its operands and runs the result through `sh -c`, so
+  // `watch 'rm -rf /'` executes a deletion from a single quoted word whose
+  // basename is empty. `joinsOperands` re-joins them for a nested inspection.
+  ["watch", { valueFlags: ["-n", "--interval"], joinsOperands: true }],
   ["stdbuf", { valueFlags: ["-i", "-o", "-e", "--input", "--output", "--error"] }],
   // `chrt PRIORITY COMMAND` and `taskset MASK COMMAND` both place a mandatory
   // operand before the command; without it the operand reads as the executable.
@@ -386,12 +427,17 @@ const WRAPPERS = new Map([
 
 function unwrapCommand(words) {
   let index = 0;
+  let joinsOperands = false;
 
   while (index < words.length) {
     // Reserved words are matched literally: `IF` and `/usr/bin/if` are not
     // keywords, so they must not be skipped.
     if (SHELL_KEYWORDS.has(words[index])) {
+      const keyword = words[index];
       index += 1;
+      if (KEYWORDS_WITH_SUBJECT.has(keyword) && index < words.length) {
+        index += 1;
+      }
       continue;
     }
     if (isAssignment(words[index])) {
@@ -408,6 +454,7 @@ function unwrapCommand(words) {
     }
 
     const valueFlags = new Set(wrapper.valueFlags ?? []);
+    joinsOperands = joinsOperands || wrapper.joinsOperands === true;
     index += 1;
 
     while (index < words.length) {
@@ -446,7 +493,13 @@ function unwrapCommand(words) {
 
   return {
     executable: index < words.length ? executableName(words[index]) : "",
+    // The raw word is kept alongside the basename because executableName()
+    // discards exactly the evidence the unresolvable-name rule needs: it
+    // lowercases, and it slices at the last `/`, so `eval$IFS'rm -rf /'` —
+    // a single word ending in a slash — reduces to the empty string.
+    executableWord: index < words.length ? words[index] : "",
     arguments: words.slice(index + 1),
+    joinsOperands,
   };
 }
 
@@ -540,25 +593,115 @@ function protectedPathRule(segment, executable, arguments_) {
   return null;
 }
 
+// Every rule below keys off the executable name. If the shell will rewrite that
+// name at run time — a command substitution (`$(...)`, backticks) or a variable
+// (`$FOO`, `${FOO}`) — the guard is matching against text the shell never runs,
+// so no rule can fire and the command falls through as "unrecognised, allow".
+// A name the guard cannot resolve is a name it cannot police: fail closed.
+//
+// This takes the raw word rather than the basename, because executableName()
+// erases the evidence: it slices at the last `/`, so `eval$IFS'rm -rf /'` —
+// one word ending in a slash — reduces to the empty string.
+//
+// An empty name is deliberately excluded. It means the segment consisted only
+// of assignments (`FOO=1`) or reserved words (`fi`, `done`), both of which are
+// legitimate and execute nothing.
+function isUnresolvableCommandName(word) {
+  if (word === "") {
+    return false;
+  }
+  // A leading `-` is a flag, never an executable. It is the residue left behind
+  // when a substitution supplied the command name: `$(echo rm) -rf /` splits
+  // into a `$` segment and a `[-rf, /]` segment.
+  return word.includes("$") || word.includes("`") || word.startsWith("-");
+}
+
+// PRODUCT DECISION PENDING — deliberately not wired into the deny path.
+//
+// `find ... -exec CMD ... ;` runs CMD once per match, which is arbitrary
+// command execution that no rule below inspects. `find . -exec rm -rf {} \;`
+// was one of the confirmed canary deletions. Enabling this predicate would
+// contradict tests/security/shell-guard-parser.test.mjs, which asserts
+// `find . -name "*.log" -exec rm {} \;` as an intentional allow. That assertion
+// encodes arbitrary-rm-via-`-exec` as desired behaviour and only the product
+// owner can flip it, so the check ships implemented but off.
+const DENY_FIND_EXEC = false;
+const FIND_EXEC_FLAGS = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
+
+function findExecutesMutatingCommand(executable, arguments_) {
+  if (executable !== "find") {
+    return false;
+  }
+  return arguments_.some(
+    (argument, index) =>
+      FIND_EXEC_FLAGS.has(argument) &&
+      index + 1 < arguments_.length &&
+      MUTATING_COMMANDS.has(executableName(arguments_[index + 1])),
+  );
+}
+
 function inspectSegment(segment, depth) {
   const words = segment
     .filter((token) => token.kind === "word")
     .map((token) => token.value);
-  const { executable, arguments: arguments_ } = unwrapCommand(words);
+  const {
+    executable,
+    executableWord,
+    arguments: arguments_,
+    joinsOperands,
+  } = unwrapCommand(words);
 
   const protectedRule = protectedPathRule(segment, executable, arguments_);
   if (protectedRule) {
     return protectedRule;
   }
 
-  // `script -c CMD` runs CMD through a shell, exactly like `sh -c`.
-  if (["sh", "bash", "zsh", "dash", "script"].includes(executable) && depth > 0) {
+  // A wrapper that concatenates its operands into a command string (`watch`)
+  // is inspected on the rejoined string, so the quoted single-word form and
+  // the multi-word form resolve to the same command.
+  if (joinsOperands && executableWord !== "") {
+    if (depth <= 0) {
+      return "nested-shell-depth-exceeded";
+    }
+    return inspectCommand([executableWord, ...arguments_].join(" "), depth - 1);
+  }
+
+  // `eval` joins its operands with a space and runs the result as a shell
+  // command, so the joined text is inspected exactly like an `sh -c` payload.
+  // Recursion is preferred over an outright deny because it keeps `eval` usable
+  // for the harmless cases while still resolving the destructive ones to their
+  // real rule name; anything eval runs that the guard cannot resolve statically
+  // is caught by isUnresolvableCommandName instead.
+  if (executable === "eval") {
+    if (depth <= 0) {
+      return "nested-shell-depth-exceeded";
+    }
+    const rule = inspectCommand(arguments_.join(" "), depth - 1);
+    if (rule) {
+      return rule;
+    }
+  }
+
+  if (SHELL_INTERPRETERS.has(executable)) {
     const commandIndex = arguments_.findIndex(
       (argument) => argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
     );
     if (commandIndex >= 0 && commandIndex + 1 < arguments_.length) {
+      // Exhausting the nesting budget must not degrade into an allow: the
+      // payload is a command string the guard has explicitly stopped reading.
+      if (depth <= 0) {
+        return "nested-shell-depth-exceeded";
+      }
       return inspectCommand(arguments_[commandIndex + 1], depth - 1);
     }
+  }
+
+  if (isUnresolvableCommandName(executableWord)) {
+    return "unresolvable-command-name";
+  }
+
+  if (DENY_FIND_EXEC && findExecutesMutatingCommand(executable, arguments_)) {
+    return "find-exec-mutation";
   }
 
   if (executable === "rm") {
@@ -712,11 +855,54 @@ function joinLineContinuations(command) {
   return command.replaceAll("\\\r\n", "").replaceAll("\\\n", "");
 }
 
+// Splitting the segment stops the payload being read as an argument, but the
+// payload of `bash <<< 'rm -rf /'` is a whole script and lands in a segment of
+// its own whose executable is meaningless. This pass pairs each here-operator
+// with the command it feeds and, when that command is an interpreter, inspects
+// the payload as the command string it actually is.
+function inspectHereDocuments(tokens, depth) {
+  let words = [];
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+
+    if (token.kind === "word") {
+      words.push(token.value);
+      continue;
+    }
+
+    if (HERE_OPERATORS.has(token.value)) {
+      const payload = tokens[index + 1];
+      const { executable } = unwrapCommand(words);
+      if (payload?.kind === "word" && SHELL_INTERPRETERS.has(executable)) {
+        if (depth <= 0) {
+          return "nested-shell-depth-exceeded";
+        }
+        const rule = inspectCommand(payload.value, depth - 1);
+        if (rule) {
+          return rule;
+        }
+      }
+      words = [];
+      continue;
+    }
+
+    if (SEGMENT_OPERATORS.has(token.value)) {
+      words = [];
+    }
+  }
+
+  return null;
+}
+
 function inspectCommand(rawCommand, depth = MAX_NESTED_SHELL_DEPTH) {
   const command = joinLineContinuations(rawCommand);
   const substitutionRule = inspectSubstitutions(command, depth);
   if (substitutionRule) return substitutionRule;
-  for (const segment of splitSegments(tokenize(command))) {
+  const tokens = tokenize(command);
+  const hereRule = inspectHereDocuments(tokens, depth);
+  if (hereRule) return hereRule;
+  for (const segment of splitSegments(tokens)) {
     const rule = inspectSegment(segment, depth);
     if (rule) {
       return rule;

@@ -296,6 +296,165 @@ test("still allows ordinary development commands", () => {
   }
 });
 
+// Confirmed bypass: `eval` was in neither SHELL_KEYWORDS nor the wrapper table,
+// so unwrapCommand resolved the executable to `eval` itself and every rule that
+// keys off the executable — rm, git, gh, npm, protected-path — missed. A cold
+// reviewer ran these against a real canary directory and deleted it.
+test("blocks destructive commands passed to eval", () => {
+  for (const command of [
+    "eval rm -rf /",
+    "eval 'rm -rf /'",
+    'eval "rm -rf /"',
+    'eval "git push --force origin main"',
+    "eval 'echo ok; rm -rf /'",
+    "eval eval rm -rf /",
+    "sudo eval rm -rf /",
+    "eval 'npm publish'",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// `eval` is inspected by recursing into its joined operands rather than denied
+// outright, so operands that resolve to something harmless stay usable.
+test("still allows eval of non-destructive commands", () => {
+  for (const command of ["eval echo hi", "eval 'npm test'", "eval ls"]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// Confirmed bypass: `<<` and `<` were operator literals but not segment
+// operators, so the payload stayed in the interpreter's own segment and the
+// words read as `[bash, rm, -rf, /]` — `rm` looked like an argument to `bash`.
+// `<<<` was not tokenized as an operator at all.
+test("blocks destructive here-strings and here-documents", () => {
+  for (const command of [
+    "bash <<< 'rm -rf /'",
+    'bash <<< "rm -rf /"',
+    "sh <<< 'rm -rf /'",
+    "zsh <<< 'git reset --hard'",
+    "bash << EOF\nrm -rf /\nEOF",
+    "sh << 'EOF'\nnpm publish\nEOF",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// The payload is only a script when an interpreter reads it. Feeding text to a
+// non-interpreter on stdin must not be inspected as a command.
+test("still allows here-strings feeding non-interpreters", () => {
+  for (const command of [
+    "cat <<< 'rm -rf /'",
+    "bash <<< 'npm test'",
+    "grep foo <<< 'some text'",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// Confirmed bypass: inspectSubstitutions recursed into the substitution *body*
+// (`echo rm`, harmless) but never modelled that its *result* becomes the
+// command name. tokenize split on `(`/`)`, leaving a final segment `[-rf, /]`
+// whose executable parsed as `-rf` and matched no rule.
+test("blocks commands whose name comes from a substitution or variable", () => {
+  for (const command of [
+    "$(echo rm) -rf /",
+    "`echo rm` -rf /",
+    '"$(echo rm)" -rf /',
+    "$FOO -rf /",
+    "${CMD} -rf /",
+    "$SHELL -c 'rm -rf /'",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// The unresolvable-name rule inspects the command name only. Substitutions and
+// variables in argument position keep their existing meaning.
+test("still allows substitutions and variables in argument position", () => {
+  for (const command of [
+    "echo $(printf safe)",
+    "rm -rf ${HOME}/scratch",
+    "git commit -m \"$(cat msg.txt)\"",
+    "echo $HOME",
+    "for i in a b c; do echo $i; done",
+    "case $x in a) echo hi;; esac",
+    "select opt in a b; do echo $opt; done",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// Confirmed bypass: the interpreter list covered `sh|bash|zsh|dash|script` and
+// missed the `ksh` family; `busybox` and `watch` were absent from the wrapper
+// table, so `busybox sh -c CMD` resolved to `busybox` and `watch rm` to `watch`.
+test("blocks destructive commands behind the widened interpreter list", () => {
+  for (const command of [
+    "ksh -c 'rm -rf /'",
+    "ksh93 -c 'rm -rf /'",
+    "mksh -c 'rm -rf /'",
+    "ash -c 'rm -rf /'",
+    "busybox sh -c 'rm -rf /'",
+    "busybox rm -rf /",
+    "busybox sh -c 'git push --force origin main'",
+    "watch rm -rf /",
+    "watch -n 1 rm -rf /",
+    "watch --interval 2 npm publish",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+test("still allows non-destructive uses of the widened interpreter list", () => {
+  for (const command of [
+    "ksh -c 'npm test'",
+    "busybox ls",
+    "watch date",
+    "watch -n 1 git status",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// Found while probing the fixes above, not in the reported set. Both survive
+// executableName(): `watch 'rm -rf /'` and `eval$IFS'rm -rf /'` each tokenize
+// to a single word ending in `/`, so slicing at the last slash left an empty
+// command name, and an empty name is a legitimate assignment-only segment.
+// The unresolvable-name rule therefore tests the raw word, not the basename.
+test("blocks destructive commands quoted into a single command word", () => {
+  for (const command of [
+    "watch 'rm -rf /'",
+    'watch "rm -rf /"',
+    "watch -n 1 'rm -rf /'",
+    "eval$IFS'rm -rf /'",
+    "$(which rm) -rf /",
+    "eval \"$@\"",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+test("still allows watch over non-destructive commands", () => {
+  for (const command of [
+    "watch date",
+    "watch 'git status'",
+    "watch -n 1 'npm test'",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// Running out of nesting budget means the guard has stopped reading a command
+// string it knows is there. That is exactly when it must not degrade to allow.
+test("fails closed when nested shell depth is exhausted", () => {
+  for (const command of [
+    'sh -c "sh -c \\"sh -c \\\\\\"sh -c rm\\\\\\"\\""',
+    'eval "eval \\"eval \\\\\\"eval rm -rf /\\\\\\"\\""',
+  ]) {
+    assertDenied(command);
+  }
+});
+
 // The fail-closed contract is the hook's core guarantee; a tokenizer refactor
 // must not turn a parse failure into an allow.
 test("fails closed on empty, non-JSON, and command-less input", () => {
