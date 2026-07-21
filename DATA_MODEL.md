@@ -762,7 +762,7 @@ An unchanged install requires the recorded `sourceDigest` and a freshly computed
 | Field | Value |
 |---|---|
 | **Kind** | `persistence` |
-| **Ingestion route** | `npm run plugin:lifecycle:verify -- [--evidence <path>]` performs install, unchanged reinstall, repair, and uninstall against a temporary Cursor root; it emits this object to standard output and optionally to the requested artifact |
+| **Ingestion route** | `npm run plugin:lifecycle:verify -- [--evidence <path>] [--input-digest <sha256> \| --benchmark-manifest <path>]` performs install, unchanged reinstall, repair, and uninstall against a temporary Cursor root; it emits this object to standard output and optionally to the requested artifact. `--benchmark-manifest` derives `inputDigest` from the profile manifest, which is how `.github/workflows/authenticated-benchmark.yml` supplies it |
 | **Source** | `scripts/verify-plugin-lifecycle.mjs`; `benchmark/report.mjs` (`lifecycleGate`); `.github/workflows/authenticated-benchmark.yml`; `tests/validator/install-lifecycle.test.mjs`; `tests/workflows/integration-gates.test.mjs` |
 
 #### Shape
@@ -775,7 +775,8 @@ An unchanged install requires the recorded `sourceDigest` and a freshly computed
   "pluginSourceSha256": "64-character lowercase SHA-256",
   "lifecycleStatuses": ["installed", "unchanged", "repaired", "uninstalled"],
   "removalVerified": true,
-  "unrelatedRegistrationPreserved": true
+  "unrelatedRegistrationPreserved": true,
+  "inputDigest": "64-character lowercase SHA-256"
 }
 ```
 
@@ -785,13 +786,20 @@ An unchanged install requires the recorded `sourceDigest` and a freshly computed
 |---|---|---|---|
 | `schemaVersion` | string constant | yes | Exactly `1.0.0` |
 | `command` | string constant | yes | Exactly `npm run plugin:lifecycle:verify` |
-| `temporaryCursorRoot` | boolean constant | yes | Exactly `true`; the verifier creates and later removes an isolated temporary root |
-| `pluginSourceSha256` | string | yes | 64-character lowercase SHA-256 of the source plugin tree |
-| `lifecycleStatuses` | fixed tuple | yes | Exactly `["installed", "unchanged", "repaired", "uninstalled"]` in lifecycle execution order |
-| `removalVerified` | boolean constant | yes | Exactly `true` after the managed plugin, registry, and install-state directory are absent |
-| `unrelatedRegistrationPreserved` | boolean constant | yes | Exactly `true` after the unrelated plugin registry entry survives repair and removal |
+| `temporaryCursorRoot` | boolean | yes | Observed, not asserted before emission; `benchmark/report.mjs` requires `true` |
+| `pluginSourceSha256` | string | yes | 64-character lowercase SHA-256 of the source plugin tree, from `hashTree` in `benchmark/lib/util.mjs` |
+| `lifecycleStatuses` | fixed tuple | yes | Exactly `["installed", "unchanged", "repaired", "uninstalled"]` in lifecycle execution order; asserted before any evidence is emitted |
+| `removalVerified` | boolean | yes | Observed after removal; `benchmark/report.mjs` requires `true` |
+| `unrelatedRegistrationPreserved` | boolean | yes | Observed after repair and removal; `benchmark/report.mjs` requires `true` |
+| `inputDigest` | string | yes for the report gate | 64-character lowercase SHA-256 binding the evidence to a benchmark input; omitted only by standalone verifier runs, which the report gate then refuses |
 
-The verifier never addresses the user's Cursor root. Authenticated reporting derives a passing plugin-lifecycle gate only from a successfully parsed evidence file with the exact command, statuses, source digest, temporary-root marker, and removal marker. The report gate evidence names both the command and consumed artifact path; plain repository validation cannot substitute for this lifecycle proof.
+No other property may appear: `benchmark/report.mjs` rejects an artifact carrying any key outside this table.
+
+`temporaryCursorRoot`, `removalVerified`, and `unrelatedRegistrationPreserved` are emitted as observed and asserted afterwards, so a failing run writes an artifact recording the false observation and exits non-zero. That is what makes the consumer's check on those fields able to fire.
+
+The verifier never addresses the user's Cursor root. Authenticated reporting derives a passing plugin-lifecycle gate only when all of the following hold: the artifact parses, carries no unknown property, matches every constant above, carries an `inputDigest` equal to the loaded benchmark input digest, carries a `pluginSourceSha256` equal to the digest of `plugin/` re-derived at report time, and — decisively — matches a fresh lifecycle verification that `benchmark/report.mjs` executes itself as a subprocess. Reading the artifact alone proves nothing: every field in it is a constant from this table or a digest the writer can compute. The gate re-runs `scripts/verify-plugin-lifecycle.mjs` so that the passing report rests on a lifecycle run this gate observed, not on the artifact's self-report. The report gate evidence names the command, consumed artifact path, plugin digest, input digest, and `reverifiedBy=benchmark/report.mjs`; plain repository validation cannot substitute for this lifecycle proof.
+
+**Digest coverage limitation.** `pluginSourceSha256` comes from `hashTree`, which hashes the relative path, byte length, and content of regular files only. It therefore does **not** cover file modes or empty directories: `chmod +x` on a plugin file does not move the digest, and adding or removing an empty directory under `plugin/` does not either. Dotfiles and nested files are covered, and symbolic links are refused outright. Neither gap is currently exploitable, because plugin hooks are invoked as `node "${CURSOR_PLUGIN_ROOT}/scripts/…"`, so a file's executable bit is never consulted. `hashTree` replaced an earlier `digestDirectory` that hashed explicit `directory:` records; that change is what dropped empty-directory coverage. Extending `hashTree` would change the artifacts of every caller, so the limitation is documented rather than closed.
 
 ### NormalizedTelemetryEvent
 

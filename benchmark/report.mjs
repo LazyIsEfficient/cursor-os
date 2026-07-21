@@ -1,6 +1,8 @@
+import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import { readBenchmarkManifest } from "./lib/manifest.mjs";
 import {
@@ -10,9 +12,85 @@ import {
 import { validateResultRecords } from "./lib/result.mjs";
 import { hashTree } from "./lib/util.mjs";
 
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // scripts/verify-plugin-lifecycle.mjs produces the artifact this gate consumes and must
 // derive pluginSourceSha256 from the same helper against the same directory.
-const sourcePlugin = join(resolve(dirname(fileURLToPath(import.meta.url)), ".."), "plugin");
+const sourcePlugin = join(repositoryRoot, "plugin");
+// Executed as a subprocess, not imported: benchmark/ must not take a module dependency on
+// scripts/ while the shared-lib layering decision spanning PRs #19/#22/#23 is open.
+const lifecycleVerifier = join(repositoryRoot, "scripts", "verify-plugin-lifecycle.mjs");
+const execFileAsync = promisify(execFile);
+
+const EXPECTED_LIFECYCLE_STATUSES = ["installed", "unchanged", "repaired", "uninstalled"];
+const EVIDENCE_PROPERTIES = new Set([
+  "schemaVersion",
+  "command",
+  "temporaryCursorRoot",
+  "pluginSourceSha256",
+  "lifecycleStatuses",
+  "removalVerified",
+  "unrelatedRegistrationPreserved",
+  "inputDigest",
+]);
+
+// Key order is not meaningful in the artifact, so compare on a canonical form.
+function canonicalize(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalize(value[key])}`).join(",")}}`;
+}
+
+function assertEvidenceShape(evidence, { inputDigest }) {
+  if (evidence === null || typeof evidence !== "object" || Array.isArray(evidence)) {
+    throw new Error("plugin lifecycle evidence artifact is invalid");
+  }
+  const unknown = Object.keys(evidence).filter((key) => !EVIDENCE_PROPERTIES.has(key));
+  if (unknown.length > 0) {
+    throw new Error(
+      `plugin lifecycle evidence artifact carries unknown properties ${unknown.sort().join(", ")}`,
+    );
+  }
+  if (
+    evidence.schemaVersion !== "1.0.0" ||
+    evidence.command !== "npm run plugin:lifecycle:verify" ||
+    evidence.temporaryCursorRoot !== true ||
+    evidence.removalVerified !== true ||
+    evidence.unrelatedRegistrationPreserved !== true ||
+    !/^[a-f0-9]{64}$/u.test(evidence.pluginSourceSha256) ||
+    JSON.stringify(evidence.lifecycleStatuses) !== JSON.stringify(EXPECTED_LIFECYCLE_STATUSES)
+  ) {
+    throw new Error("plugin lifecycle evidence artifact is invalid");
+  }
+  // Fails closed on absence: a binding that only applies when the artifact opts into it
+  // is not a binding.
+  if (evidence.inputDigest === undefined) {
+    throw new Error(
+      "plugin lifecycle evidence is missing inputDigest; re-run " +
+        `npm run plugin:lifecycle:verify -- --evidence <path> --input-digest ${inputDigest}`,
+    );
+  }
+  if (evidence.inputDigest !== inputDigest) {
+    throw new Error("plugin lifecycle evidence is bound to a different benchmark run");
+  }
+}
+
+// The artifact is a self-report: every field in it is a constant or a digest the writer
+// can compute, so reading it proves nothing about whether the lifecycle ever ran. Running
+// the verifier here means this gate observes the lifecycle itself.
+async function runLifecycleVerifier(inputDigest) {
+  try {
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      [lifecycleVerifier, "--input-digest", inputDigest],
+      { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 1024 * 1024 },
+    );
+    return JSON.parse(stdout);
+  } catch (error) {
+    throw new Error(
+      `plugin lifecycle verification re-run failed: ${(error.stderr || error.message).trim()}`,
+    );
+  }
+}
 
 function parseArguments(argv) {
   const options = {};
@@ -41,33 +119,32 @@ function parseArguments(argv) {
 async function lifecycleGate(options, { inputDigest }) {
   if (options.pluginLifecycleEvidenceFile) {
     const evidence = JSON.parse(await readFile(options.pluginLifecycleEvidenceFile, "utf8"));
-    if (
-      evidence?.schemaVersion !== "1.0.0" ||
-      evidence.command !== "npm run plugin:lifecycle:verify" ||
-      evidence.temporaryCursorRoot !== true ||
-      evidence.removalVerified !== true ||
-      !/^[a-f0-9]{64}$/u.test(evidence.pluginSourceSha256) ||
-      JSON.stringify(evidence.lifecycleStatuses) !==
-        JSON.stringify(["installed", "unchanged", "repaired", "uninstalled"])
-    ) {
-      throw new Error("plugin lifecycle evidence artifact is invalid");
-    }
+    assertEvidenceShape(evidence, { inputDigest });
     const observedPluginSha256 = await hashTree(sourcePlugin);
     if (evidence.pluginSourceSha256 !== observedPluginSha256) {
       throw new Error(
         "plugin lifecycle evidence pluginSourceSha256 " +
           `${evidence.pluginSourceSha256} does not match the digest of plugin/ ` +
-          `${observedPluginSha256}; the evidence does not describe the plugin under report`,
+          `${observedPluginSha256}; the evidence does not describe the plugin under report. ` +
+          "Re-run npm run plugin:lifecycle:verify -- --evidence " +
+          `${options.pluginLifecycleEvidenceFile} --input-digest ${inputDigest}`,
       );
     }
-    if (evidence.inputDigest !== undefined && evidence.inputDigest !== inputDigest) {
-      throw new Error("plugin lifecycle evidence is bound to a different benchmark run");
+    const observed = await runLifecycleVerifier(inputDigest);
+    if (canonicalize(observed) !== canonicalize(evidence)) {
+      throw new Error(
+        "plugin lifecycle evidence does not match the verification this gate just ran; " +
+          "the artifact was not produced by scripts/verify-plugin-lifecycle.mjs. Re-run " +
+          `npm run plugin:lifecycle:verify -- --evidence ${options.pluginLifecycleEvidenceFile} ` +
+          `--input-digest ${inputDigest}`,
+      );
     }
     return {
       status: "pass",
       evidence:
         `command=${evidence.command};artifact=${options.pluginLifecycleEvidenceFile}` +
-        `;pluginSourceSha256=${observedPluginSha256}`,
+        `;pluginSourceSha256=${observedPluginSha256};inputDigest=${inputDigest}` +
+        ";reverifiedBy=benchmark/report.mjs",
     };
   }
   const status = options.pluginLifecycleStatus ?? "fail";

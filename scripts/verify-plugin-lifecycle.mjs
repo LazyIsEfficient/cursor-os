@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readBenchmarkManifest } from "../benchmark/lib/manifest.mjs";
 import { hashTree } from "../benchmark/lib/util.mjs";
 import {
   installLocalPlugin,
@@ -45,7 +46,8 @@ async function isInside(root, candidate) {
 }
 
 const USAGE =
-  "usage: npm run plugin:lifecycle:verify -- [--evidence <path>] [--input-digest <sha256>]";
+  "usage: npm run plugin:lifecycle:verify -- [--evidence <path>]" +
+  " [--input-digest <sha256> | --benchmark-manifest <path>]";
 
 function parseArguments(argv) {
   const options = {};
@@ -54,9 +56,14 @@ function parseArguments(argv) {
     invariant(value !== undefined, USAGE);
     if (argv[index] === "--evidence") options.evidencePath = resolve(value);
     else if (argv[index] === "--input-digest") options.inputDigest = value;
+    else if (argv[index] === "--benchmark-manifest") options.benchmarkManifestPath = resolve(value);
     else invariant(false, USAGE);
     index += 1;
   }
+  invariant(
+    options.inputDigest === undefined || options.benchmarkManifestPath === undefined,
+    "--input-digest and --benchmark-manifest are mutually exclusive",
+  );
   if (options.inputDigest !== undefined) {
     invariant(
       /^[a-f0-9]{64}$/u.test(options.inputDigest),
@@ -64,6 +71,15 @@ function parseArguments(argv) {
     );
   }
   return options;
+}
+
+// benchmark/report.mjs requires inputDigest, so CI needs a way to bind evidence to the
+// corpus it is about to benchmark without shelling the digest out of the reporter.
+async function resolveInputDigest(options) {
+  if (options.inputDigest !== undefined) return options.inputDigest;
+  if (options.benchmarkManifestPath === undefined) return undefined;
+  const { inputDigest } = await readBenchmarkManifest(options.benchmarkManifestPath);
+  return inputDigest;
 }
 
 const options = parseArguments(process.argv.slice(2));
@@ -96,23 +112,20 @@ try {
     `lifecycle statuses were ${JSON.stringify(lifecycleStatuses)}, expected ${JSON.stringify(EXPECTED_LIFECYCLE_STATUSES)}`,
   );
 
+  // These three are reported as observed rather than asserted first: an artifact that
+  // records a false observation is what makes the consumer's check on it able to fire.
+  // The invariants below still fail the standalone run, after the evidence is emitted.
   const temporaryCursorRoot = await isInside(tmpdir(), cursorRoot);
-  invariant(temporaryCursorRoot, "cursor root under verification is not inside the system temporary directory");
-
-  const managedDirectoryRemoved = !(await pathExists(join(cursorRoot, "plugins/cursor-harness")));
-  invariant(managedDirectoryRemoved, "managed plugin directory remains after removal");
   const remainingConfig = JSON.parse(await readFile(configPath, "utf8"));
-  const registryEntryRemoved = remainingConfig.plugins?.["cursor-harness"] === undefined;
-  invariant(registryEntryRemoved, "managed plugin registry remains after removal");
-  const installStateRemoved = !(await pathExists(join(cursorRoot, ".cursor-harness-installs")));
-  invariant(installStateRemoved, "local install state remains after removal");
-  const removalVerified = managedDirectoryRemoved && registryEntryRemoved && installStateRemoved;
-
+  const removalVerified =
+    !(await pathExists(join(cursorRoot, "plugins/cursor-harness"))) &&
+    remainingConfig.plugins?.["cursor-harness"] === undefined &&
+    !(await pathExists(join(cursorRoot, ".cursor-harness-installs")));
   const unrelatedRegistrationPreserved =
     remainingConfig.plugins?.concurrent?.path === "plugins/concurrent" &&
     remainingConfig.plugins.concurrent.version === "7.0.0";
-  invariant(unrelatedRegistrationPreserved, "unrelated plugin registry was lost during repair and removal");
 
+  const inputDigest = await resolveInputDigest(options);
   const evidence = {
     schemaVersion: "1.0.0",
     command: "npm run plugin:lifecycle:verify",
@@ -121,7 +134,7 @@ try {
     lifecycleStatuses,
     removalVerified,
     unrelatedRegistrationPreserved,
-    ...(options.inputDigest === undefined ? {} : { inputDigest: options.inputDigest }),
+    ...(inputDigest === undefined ? {} : { inputDigest }),
   };
   const serialized = `${JSON.stringify(evidence, null, 2)}\n`;
   if (options.evidencePath) {
@@ -129,6 +142,10 @@ try {
     await writeFile(options.evidencePath, serialized);
   }
   process.stdout.write(serialized);
+
+  invariant(temporaryCursorRoot, "cursor root under verification is not inside the system temporary directory");
+  invariant(removalVerified, "managed plugin directory, registry, or install state remains after removal");
+  invariant(unrelatedRegistrationPreserved, "unrelated plugin registry was lost during repair and removal");
 } catch (error) {
   process.stderr.write(`Plugin lifecycle verification failed: ${error.message}\n`);
   process.exitCode = 1;
