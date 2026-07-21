@@ -1,7 +1,7 @@
 // Operator-run, strictly read-only inspection of an existing Cursor Editor
 // installation. This script never creates, writes, or removes anything under
-// the Cursor home directory (README.md:81); it only reads paths and emits
-// evidence to an operator-chosen path outside that directory.
+// the Cursor home directory (see Installation in README.md); it only reads
+// paths and emits evidence to an operator-chosen path outside that directory.
 import { lstat, mkdir, readFile, readlink, realpath, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -230,7 +230,7 @@ export async function collectEditorEvidence(options = {}) {
   invariant(
     installation !== null,
     `${pluginId} is not installed under ${cursorHomePath}. Checked: ${candidates.map((candidate) => candidate.path).join(", ")}. ` +
-      "Install it through Cursor Settings -> Customize -> Plugins, or create the documented local-development symlink yourself (README.md:73-81). This script never creates it.",
+      "Install it through Cursor Settings -> Customize -> Plugins, or create the documented local-development symlink yourself (see the Installation section of README.md; the symlink target differs between a git checkout and an extracted release archive). This script never creates it.",
   );
 
   const expected = inventory.components.filter((component) => LOADABLE_KINDS.includes(component.kind));
