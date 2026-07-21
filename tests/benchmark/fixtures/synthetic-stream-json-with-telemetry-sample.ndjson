@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","session_id":"synthetic-session-2","event_id":"synthetic-event-1","started_at":"2026-01-01T00:00:00.000Z"}
+{"type":"tool_call","subtype":"started","call_id":"synthetic-call-1","event_id":"synthetic-event-2","tool_call":{"name":"task"},"started_at":"2026-01-01T00:00:01.000Z"}
+{"type":"assistant","message":{"role":"assistant","usage":{"input_tokens":1234,"output_tokens":56}},"event_id":"synthetic-event-3","parent_id":"synthetic-event-2","started_at":"2026-01-01T00:00:02.000Z"}
+{"type":"tool_call","subtype":"completed","call_id":"synthetic-call-1","event_id":"synthetic-event-4","tool_call":{"name":"task"},"started_at":"2026-01-01T00:00:03.000Z"}
+{"type":"result","subtype":"success","result":"synthetic done","usage":{"total_tokens":1290},"started_at":"2026-01-01T00:00:04.000Z"}

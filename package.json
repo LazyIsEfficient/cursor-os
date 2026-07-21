@@ -18,6 +18,7 @@
     "local-install": "node scripts/local-install.mjs",
     "plugin:lifecycle:verify": "node scripts/verify-plugin-lifecycle.mjs",
     "probe": "node scripts/probe-capabilities.mjs",
+    "probe:cli-telemetry": "node scripts/probe-cli-telemetry.mjs",
     "test": "node --test test/*.test.mjs tests/benchmark/*.test.mjs tests/contracts/*.test.mjs tests/fixtures/*.test.mjs tests/release/*.test.mjs tests/rules/*.test.mjs tests/security/*.test.mjs tests/validator/*.test.mjs tests/workflows/*.test.mjs",
     "benchmark:test": "node --test tests/benchmark/*.test.mjs",
     "benchmark:run": "node benchmark/run.mjs",
