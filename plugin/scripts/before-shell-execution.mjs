@@ -32,7 +32,26 @@ const SEGMENT_OPERATORS = new Set([
   "{",
   "}",
 ]);
-const REDIRECT_OPERATORS = new Set([">", ">>"]);
+// `>|` forces truncation over `noclobber`, and `>&`/`&>`/`&>>` redirect a
+// stream to a file just as `>` does. All of them can destroy a protected file.
+const REDIRECT_OPERATORS = new Set([">", ">>", ">|", ">&", "&>", "&>>"]);
+// Longest match first: `&>>` must win over `&>`, and `>|` over `>`.
+const OPERATOR_LITERALS = [
+  "&>>",
+  "&&",
+  "||",
+  ";;",
+  ">>",
+  "<<",
+  ">|",
+  ">&",
+  "&>",
+  ";",
+  "|",
+  "&",
+  ">",
+  "<",
+];
 // Reserved words that may lead a segment. Skipping them exposes the real
 // executable in `if true; then rm -rf /; fi` style compound commands.
 const SHELL_KEYWORDS = new Set([
@@ -91,13 +110,45 @@ function tokenize(command) {
   let escaped = false;
   let parenDepth = 0;
   let braceDepth = 0;
+  // `case a in x) ...;; esac` arms close with an unpaired `)`. Tracking the
+  // open `case` constructs is what tells that `)` apart from a stray one.
+  const caseStack = [];
+
+  // `case` is a reserved word only in command position. As an argument it is
+  // ordinary text, so `grep case notes.txt` must not open a case construct.
+  let commandPosition = true;
+
+  const noteWord = (word) => {
+    const top = caseStack.at(-1);
+    if (word === "case" && commandPosition) {
+      caseStack.push({ sawIn: false });
+    } else if (word === "esac") {
+      caseStack.pop();
+    } else if (top !== undefined && !top.sawIn && word === "in") {
+      top.sawIn = true;
+    }
+  };
 
   const emitWord = () => {
     if (value.length > 0) {
       tokens.push({ kind: "word", value });
+      noteWord(value);
+      commandPosition = false;
       value = "";
     }
   };
+
+  // After any control operator the next word leads a command again; after a
+  // redirect it names a file, not a command.
+  const pushOperator = (operator) => {
+    tokens.push({ kind: "operator", value: operator });
+    commandPosition = !REDIRECT_OPERATORS.has(operator);
+  };
+
+  // Inside a `case` arm list, `)` terminates a pattern instead of closing a
+  // subshell, so it must not drive `parenDepth` negative.
+  const isCaseArmTerminator = () =>
+    parenDepth === 0 && (caseStack.at(-1)?.sawIn ?? false);
 
   for (let index = 0; index < command.length; index += 1) {
     const character = command[index];
@@ -140,7 +191,7 @@ function tokenize(command) {
 
     if (character === "\n") {
       emitWord();
-      tokens.push({ kind: "operator", value: "\n" });
+      pushOperator("\n");
       continue;
     }
 
@@ -151,11 +202,15 @@ function tokenize(command) {
 
     if (character === "(" || character === ")") {
       emitWord();
+      if (character === ")" && isCaseArmTerminator()) {
+        pushOperator(")");
+        continue;
+      }
       parenDepth += character === "(" ? 1 : -1;
       if (parenDepth < 0) {
         throw new Error("unbalanced shell grouping");
       }
-      tokens.push({ kind: "operator", value: character });
+      pushOperator(character);
       continue;
     }
 
@@ -167,21 +222,17 @@ function tokenize(command) {
       if (braceDepth < 0) {
         throw new Error("unbalanced shell grouping");
       }
-      tokens.push({ kind: "operator", value: character });
+      pushOperator(character);
       continue;
     }
 
-    const pair = command.slice(index, index + 2);
-    if (["&&", "||", ";;", ">>", "<<"].includes(pair)) {
+    const literal = OPERATOR_LITERALS.find(
+      (candidate) => command.slice(index, index + candidate.length) === candidate,
+    );
+    if (literal !== undefined) {
       emitWord();
-      tokens.push({ kind: "operator", value: pair });
-      index += 1;
-      continue;
-    }
-
-    if ([";", "|", "&", ">", "<"].includes(character)) {
-      emitWord();
-      tokens.push({ kind: "operator", value: character });
+      pushOperator(literal);
+      index += literal.length - 1;
       continue;
     }
 
@@ -192,12 +243,15 @@ function tokenize(command) {
     throw new Error("unterminated shell token");
   }
 
+  // Flush first: a trailing `esac` is what closes the last `case` construct.
+  emitWord();
+
   // Grouping we cannot confidently pair is grouping we cannot inspect: deny.
-  if (parenDepth !== 0 || braceDepth !== 0) {
+  // An unterminated `case` is the same situation: its arms were never closed.
+  if (parenDepth !== 0 || braceDepth !== 0 || caseStack.length > 0) {
     throw new Error("unbalanced shell grouping");
   }
 
-  emitWord();
   return tokens;
 }
 
@@ -242,24 +296,92 @@ function isAssignment(value) {
   return /^[A-Za-z_][A-Za-z0-9_]*=/u.test(value);
 }
 
-const XARGS_VALUE_FLAGS = new Set([
-  "-E",
-  "-I",
-  "-L",
-  "-P",
-  "-a",
-  "-d",
-  "-i",
-  "-n",
-  "-s",
-  "--arg-file",
-  "--delimiter",
-  "--eof",
-  "--max-args",
-  "--max-chars",
-  "--max-lines",
-  "--max-procs",
-  "--replace",
+// One table, one loop. Every wrapper declares the flags that consume the next
+// word, so adding a wrapper cannot reintroduce the class of bug where a
+// separated flag value is mistaken for the wrapped executable.
+//
+// `valueFlags` lists only the separated form (`-k 10`); the attached form
+// (`-k10`, `--kill-after=10`) is a single word and needs no entry.
+// `operand` skips one mandatory positional argument that precedes the command.
+const DURATION_OPERAND = /^\d+(?:\.\d+)?[smhd]?$/u;
+const WRAPPERS = new Map([
+  ["builtin", {}],
+  // `command -p` selects a default PATH; it takes no value.
+  ["command", {}],
+  ["nohup", {}],
+  ["time", { valueFlags: ["-o", "--output", "-f", "--format"] }],
+  ["exec", { valueFlags: ["-a"] }],
+  ["env", { valueFlags: ["-u", "--unset", "-C", "--chdir"], assignments: true }],
+  [
+    "sudo",
+    {
+      valueFlags: [
+        "-u",
+        "--user",
+        "-g",
+        "--group",
+        "-h",
+        "--host",
+        "-p",
+        "--prompt",
+        "-C",
+        "--close-from",
+        "-r",
+        "--role",
+        "-t",
+        "--type",
+      ],
+      assignments: true,
+    },
+  ],
+  ["doas", { valueFlags: ["-u", "-C"] }],
+  [
+    "timeout",
+    {
+      valueFlags: ["-s", "--signal", "-k", "--kill-after"],
+      operand: DURATION_OPERAND,
+    },
+  ],
+  ["nice", { valueFlags: ["-n", "--adjustment"] }],
+  ["ionice", { valueFlags: ["-c", "--class", "-n", "--classdata", "-p", "--pid"] }],
+  ["setsid", {}],
+  ["stdbuf", { valueFlags: ["-i", "-o", "-e", "--input", "--output", "--error"] }],
+  // `chrt PRIORITY COMMAND` and `taskset MASK COMMAND` both place a mandatory
+  // operand before the command; without it the operand reads as the executable.
+  ["chrt", { valueFlags: ["-p", "--pid"], operand: /^\d+$/u }],
+  [
+    "taskset",
+    {
+      valueFlags: ["-p", "--pid", "-c", "--cpu-list"],
+      operand: /^(?:0x[0-9a-f]+|[\d,-]+)$/iu,
+    },
+  ],
+  // `chroot NEWROOT COMMAND`: the directory operand is any single word.
+  ["chroot", { valueFlags: ["--userspec", "--groups", "--skip-chdir"], operand: /./u }],
+  [
+    "xargs",
+    {
+      valueFlags: [
+        "-E",
+        "-I",
+        "-L",
+        "-P",
+        "-a",
+        "-d",
+        "-i",
+        "-n",
+        "-s",
+        "--arg-file",
+        "--delimiter",
+        "--eof",
+        "--max-args",
+        "--max-chars",
+        "--max-lines",
+        "--max-procs",
+        "--replace",
+      ],
+    },
+  ],
 ]);
 
 function unwrapCommand(words) {
@@ -280,78 +402,95 @@ function unwrapCommand(words) {
   }
 
   while (index < words.length) {
-    const executable = executableName(words[index]);
-
-    if (executable === "env") {
-      index += 1;
-      while (
-        index < words.length &&
-        (words[index].startsWith("-") || isAssignment(words[index]))
-      ) {
-        if (["-u", "--unset", "-C", "--chdir"].includes(words[index])) {
-          index += 1;
-        }
-        index += 1;
-      }
-      continue;
+    const wrapper = WRAPPERS.get(executableName(words[index]));
+    if (wrapper === undefined) {
+      break;
     }
 
-    if (executable === "sudo") {
+    const valueFlags = new Set(wrapper.valueFlags ?? []);
+    index += 1;
+
+    while (index < words.length) {
+      const word = words[index];
+
+      // `--` ends option parsing; the next word is the command itself.
+      if (word === "--") {
+        index += 1;
+        break;
+      }
+      if (wrapper.assignments === true && isAssignment(word)) {
+        index += 1;
+        continue;
+      }
+      // A bare `-` is an operand (stdin), not a flag.
+      if (!word.startsWith("-") || word === "-") {
+        break;
+      }
+
       index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        if (["-u", "-g", "-h", "-p", "-C"].includes(words[index])) {
-          index += 1;
-        }
+      // Separated value form: the following word belongs to the flag, not to
+      // the command being wrapped.
+      if (valueFlags.has(word) && index < words.length) {
         index += 1;
       }
-      continue;
     }
 
-    if (executable === "exec") {
+    if (
+      wrapper.operand !== undefined &&
+      index < words.length &&
+      wrapper.operand.test(words[index])
+    ) {
       index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        if (words[index] === "-a") {
-          index += 1;
-        }
-        index += 1;
-      }
-      continue;
     }
-
-    if (executable === "xargs") {
-      index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        if (XARGS_VALUE_FLAGS.has(words[index])) {
-          index += 1;
-        }
-        index += 1;
-      }
-      continue;
-    }
-
-    if (["command", "builtin", "nohup", "time", "timeout"].includes(executable)) {
-      index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        index += 1;
-      }
-      // `timeout` takes a mandatory duration operand before the command.
-      if (
-        executable === "timeout" &&
-        index < words.length &&
-        /^\d+(?:\.\d+)?[smhd]?$/u.test(words[index])
-      ) {
-        index += 1;
-      }
-      continue;
-    }
-
-    break;
   }
 
   return {
     executable: index < words.length ? executableName(words[index]) : "",
     arguments: words.slice(index + 1),
   };
+}
+
+const HIGH_IMPACT_TARGETS = new Set([
+  "/",
+  "/*",
+  ".",
+  "..",
+  "*",
+  "~",
+  "~/*",
+  "$HOME",
+  "${HOME}",
+  ".git",
+]);
+
+// `rm -rf //` and `rm -rf /.` delete exactly what `rm -rf /` deletes, so the
+// target is compared in canonical form rather than as raw text. This resolves
+// `.`, `..`, duplicate slashes, and trailing slashes only — it never touches
+// the filesystem and never expands variables or globs.
+function normalizePathTarget(value) {
+  const absolute = value.startsWith("/");
+  const segments = [];
+
+  for (const segment of value.split("/")) {
+    if (segment === "" || segment === ".") {
+      continue;
+    }
+    if (segment === "..") {
+      if (segments.length > 0 && segments.at(-1) !== "..") {
+        segments.pop();
+      } else if (!absolute) {
+        // `..` above a relative root is meaningful; above `/` it is still `/`.
+        segments.push("..");
+      }
+      continue;
+    }
+    segments.push(segment);
+  }
+
+  if (absolute) {
+    return `/${segments.join("/")}`;
+  }
+  return segments.length === 0 ? "." : segments.join("/");
 }
 
 function gitCommand(arguments_) {
@@ -386,11 +525,16 @@ function protectedPathRule(segment, executable, arguments_) {
     }
   }
 
+  // Deliberately coarse: the guard does not model each tool's argument grammar,
+  // so it cannot tell a path operand from pattern text, nor an in-place edit
+  // from a read (sniffing `-i` is unreliable across GNU and BSD variants). Any
+  // mutation-capable tool naming a protected artifact is denied, including
+  // read-only invocations. The rule name reflects that breadth.
   if (
     MUTATING_COMMANDS.has(executable) &&
     arguments_.some((argument) => PROTECTED_PATH_PATTERN.test(argument))
   ) {
-    return "protected-artifact-mutation";
+    return "protected-artifact-reference";
   }
 
   return null;
@@ -407,7 +551,8 @@ function inspectSegment(segment, depth) {
     return protectedRule;
   }
 
-  if (["sh", "bash", "zsh", "dash"].includes(executable) && depth > 0) {
+  // `script -c CMD` runs CMD through a shell, exactly like `sh -c`.
+  if (["sh", "bash", "zsh", "dash", "script"].includes(executable) && depth > 0) {
     const commandIndex = arguments_.findIndex(
       (argument) => argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
     );
@@ -421,23 +566,7 @@ function inspectSegment(segment, depth) {
       arguments_.includes("--recursive") || hasShortFlag(arguments_, "r");
     const forced = arguments_.includes("--force") || hasShortFlag(arguments_, "f");
     const highImpactTarget = arguments_.some((argument) =>
-      [
-        "/",
-        "/*",
-        ".",
-        "./",
-        "..",
-        "../",
-        "*",
-        "./*",
-        "~",
-        "~/",
-        "~/*",
-        "$HOME",
-        "${HOME}",
-        ".git",
-        "./.git",
-      ].includes(argument),
+      HIGH_IMPACT_TARGETS.has(normalizePathTarget(argument)),
     );
     if (recursive && forced && highImpactTarget) {
       return "destructive-filesystem-delete";
@@ -576,7 +705,15 @@ function inspectSubstitutions(command, depth) {
   return null;
 }
 
-function inspectCommand(command, depth = MAX_NESTED_SHELL_DEPTH) {
+// Bash removes a backslash before a newline entirely, so `rm -rf \<newline>/`
+// is byte-for-byte `rm -rf /` by the time the shell runs it. Removing the pair
+// up front denies the guard a way to see a different command than the shell.
+function joinLineContinuations(command) {
+  return command.replaceAll("\\\r\n", "").replaceAll("\\\n", "");
+}
+
+function inspectCommand(rawCommand, depth = MAX_NESTED_SHELL_DEPTH) {
+  const command = joinLineContinuations(rawCommand);
   const substitutionRule = inspectSubstitutions(command, depth);
   if (substitutionRule) return substitutionRule;
   for (const segment of splitSegments(tokenize(command))) {
