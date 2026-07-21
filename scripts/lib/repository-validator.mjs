@@ -18,33 +18,15 @@ const DOCUMENTED_COMPONENT_DOCS = ["README.md", "plugin/README.md"];
 // Prose component lists drift silently from the shipped plugin. Each documented
 // kind is fenced by markers so the claim is checked against the inventory
 // instead of against one exact sentence, which would fail on harmless edits.
+//
+// Hooks and rules are deliberately absent. The inventory models
+// plugin/hooks/hooks.json as one `hook` component, while the READMEs describe
+// the four events that single file registers. Neither is wrong -- they measure
+// different things -- so fencing that prose would compare 4 against 1 forever.
 const DOCUMENTED_COMPONENT_KINDS = new Map([
   ["agent", "agents"],
   ["command", "commands"],
   ["skill", "skills"],
-]);
-const DOCUMENTED_COUNT_WORDS = new Map([
-  ["zero", 0],
-  ["one", 1],
-  ["two", 2],
-  ["three", 3],
-  ["four", 4],
-  ["five", 5],
-  ["six", 6],
-  ["seven", 7],
-  ["eight", 8],
-  ["nine", 9],
-  ["ten", 10],
-  ["eleven", 11],
-  ["twelve", 12],
-  ["thirteen", 13],
-  ["fourteen", 14],
-  ["fifteen", 15],
-  ["sixteen", 16],
-  ["seventeen", 17],
-  ["eighteen", 18],
-  ["nineteen", 19],
-  ["twenty", 20],
 ]);
 const MARKETPLACE_FIELDS = new Set(["metadata", "name", "owner", "plugins"]);
 const MARKETPLACE_PLUGIN_FIELDS = new Set([
@@ -597,7 +579,7 @@ async function validateInventory(repositoryRoot, expected) {
 
 function extractDocumentedRegion(source, kind, label) {
   const starts = [
-    ...source.matchAll(new RegExp(String.raw`<!-- components:${kind}:start count=(\d+) -->`, "gu")),
+    ...source.matchAll(new RegExp(String.raw`<!-- components:${kind}:start -->`, "gu")),
   ];
   const ends = [...source.matchAll(new RegExp(String.raw`<!-- components:${kind}:end -->`, "gu"))];
   invariant(
@@ -611,28 +593,38 @@ function extractDocumentedRegion(source, kind, label) {
     end.index >= bodyStart,
     `${label} components:${kind} end marker appears before its start marker`,
   );
-  return { declaredCount: Number(start[1]), body: source.slice(bodyStart, end.index) };
+  return source.slice(bodyStart, end.index);
 }
 
+// A marker region is prose, so not every backticked kebab token in it is a
+// claim about an installed component: `jest` and `phaser` are ordinary code
+// formatting a maintainer may reasonably reach for. Tokens are collected here
+// and classified against the inventory by the caller rather than assumed.
 function documentedIdentifiers(body) {
   return new Set(
     [...body.matchAll(/`\/?([a-z0-9]+(?:-[a-z0-9]+)*)`/gu)].map(([, identifier]) => identifier),
   );
 }
 
-// Only phrases that actually state a count are checked, so wording stays free.
-function assertDocumentedCountPhrases(body, noun, expected, label) {
-  for (const match of body.matchAll(new RegExp(String.raw`\b([a-z]+|\d+)\s+${noun}\b`, "giu"))) {
-    const token = match[1].toLowerCase();
-    const stated = /^\d+$/u.test(token) ? Number(token) : DOCUMENTED_COUNT_WORDS.get(token);
-    if (stated === undefined) continue;
-    invariant(
-      stated === expected,
-      `${label} states "${match[0]}" but the plugin inventory has ${expected} ${noun}`,
-    );
-  }
-}
-
+// Asserts one property: every installed component of a documented kind is named
+// inside the matching marker region of every documented README. Adding a
+// component therefore fails validation until both READMEs name it.
+//
+// Deliberately not checked, because the regions are prose and enforcing these
+// costs more false failures than the drift they would catch:
+//   - Prose counts. "nineteen skills", "19+ skills" and "a dozen skills" all
+//     pass unread. The name list is the source of truth; the adjective in front
+//     of it is not verified, so a stale count word survives a component being
+//     added. Set equality against the inventory makes a hand-maintained count
+//     attribute redundant, and parsing number words out of prose produced false
+//     failures on correct input ("twenty-one skills" parsed as one).
+//   - Backticked tokens that match no installed id, on their own. A region may
+//     legitimately format tool names as code. Such tokens are surfaced only
+//     when something is also missing -- see the hint below.
+// The consequence of the second exclusion: a component that is removed from the
+// plugin but left named in a README is not caught. Removal is deliberate and
+// rare; silent drift on addition, which this check does catch, is the failure
+// that actually occurred (issue #5).
 async function validateDocumentedComponents(repositoryRoot, inventory) {
   const installed = new Map([...DOCUMENTED_COMPONENT_KINDS.keys()].map((kind) => [kind, new Set()]));
   for (const { kind, id } of inventory.components) {
@@ -644,27 +636,23 @@ async function validateDocumentedComponents(repositoryRoot, inventory) {
     const source = await readFile(absolutePath, "utf8");
     for (const [kind, noun] of DOCUMENTED_COMPONENT_KINDS) {
       const expected = installed.get(kind);
-      const { declaredCount, body } = extractDocumentedRegion(source, kind, documentPath);
-      invariant(
-        declaredCount === expected.size,
-        `${documentPath} declares count=${declaredCount} for ${noun} but the plugin inventory has ${expected.size}`,
-      );
+      const body = extractDocumentedRegion(source, kind, documentPath);
       const documented = documentedIdentifiers(body);
       const missing = [...expected].filter((id) => !documented.has(id)).sort();
+      // Unrecognized tokens are reported with the omission, never on their own:
+      // a misspelled name shows up as both a missing id and an unrecognized one,
+      // which makes the typo self-evident instead of leaving the maintainer to
+      // guess why a name they can see in the file is reported as absent.
+      const unrecognized =
+        missing.length === 0 ? [] : [...documented].filter((id) => !expected.has(id)).sort();
+      const hint =
+        unrecognized.length === 0
+          ? ""
+          : `; unrecognized names in this region (a typo, or prose that is not a component id): ${unrecognized.join(", ")}`;
       invariant(
         missing.length === 0,
-        `${documentPath} omits installed ${noun}: ${missing.join(", ")}`,
+        `${documentPath} omits installed ${noun}: ${missing.join(", ")}${hint}`,
       );
-      const unknown = [...documented].filter((id) => !expected.has(id)).sort();
-      invariant(
-        unknown.length === 0,
-        `${documentPath} documents ${noun} that are not installed: ${unknown.join(", ")}`,
-      );
-      invariant(
-        documented.size === expected.size,
-        `${documentPath} documents ${documented.size} ${noun} but the plugin inventory has ${expected.size}`,
-      );
-      assertDocumentedCountPhrases(body, noun, expected.size, documentPath);
     }
   }
 }

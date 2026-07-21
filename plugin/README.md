@@ -10,11 +10,11 @@ Attribution: Cursor Harness contributors
 
 ## Included components
 
-- **Agents:** <!-- components:agent:start count=9 -->nine agents — `engineer`,
+- **Agents:** <!-- components:agent:start -->nine agents — `engineer`,
   `rust-engineer`, `godot-engineer`, `phaser-engineer`, `code-reviewer`,
   `security-reviewer`, `library-investigator`, `adversarial-claims-reviewer`,
   and `capability-probe`.<!-- components:agent:end -->
-- **Skills:** <!-- components:skill:start count=19 -->nineteen skills.
+- **Skills:** <!-- components:skill:start -->nineteen skills.
   Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
   brief), `planning-and-task-breakdown` (brief to a dependency-aware task
   graph), `incremental-implementation` (small tested increments with
@@ -34,7 +34,7 @@ Attribution: Cursor Harness contributors
   `phaser-engineer` (Phaser 3 with TypeScript). Delivery:
   `deployment-pipelines` (CI/CD workflow authoring) and `release-manager`
   (CHANGELOG, version tags, release comms).<!-- components:skill:end -->
-- **Commands:** <!-- components:command:start count=3 -->three commands —
+- **Commands:** <!-- components:command:start -->three commands —
   `/review-gate`, `/triage-findings`, and
   `/state`.<!-- components:command:end -->
 - **Rules:** factual correctness, orchestrator-first dispatch, deterministic
