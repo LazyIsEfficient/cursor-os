@@ -792,14 +792,51 @@ test("pre-execution evaluator digest mismatch emits reportable invalid records b
 
   await writeFile(evaluatorPath, originalEvaluator);
   const lifecyclePath = join(root, "plugin-lifecycle.json");
-  await writeFile(lifecyclePath, `${JSON.stringify({
-    schemaVersion: "1.0.0",
-    command: "npm run plugin:lifecycle:verify",
-    temporaryCursorRoot: true,
-    pluginSourceSha256: "d".repeat(64),
-    lifecycleStatuses: ["installed", "unchanged", "repaired", "uninstalled"],
-    removalVerified: true,
-  }, null, 2)}\n`);
+  const writeLifecycleEvidence = async (overrides) => {
+    await writeFile(lifecyclePath, `${JSON.stringify({
+      schemaVersion: "1.0.0",
+      command: "npm run plugin:lifecycle:verify",
+      temporaryCursorRoot: true,
+      pluginSourceSha256: await hashTree(join(repositoryRoot, "plugin")),
+      lifecycleStatuses: ["installed", "unchanged", "repaired", "uninstalled"],
+      removalVerified: true,
+      ...overrides,
+    }, null, 2)}\n`);
+  };
+
+  // An artifact whose digest was never derived from plugin/ must not satisfy the gate;
+  // this shape previously reported status "pass".
+  await writeLifecycleEvidence({ pluginSourceSha256: "0".repeat(64) });
+  const forged = spawnSync(process.execPath, [
+    join(repositoryRoot, "benchmark/report.mjs"),
+    manifestPath,
+    execution.recordPath,
+    "--generated-at",
+    "2026-07-20T15:00:00.000Z",
+    "--output-prefix",
+    join(root, "forged-lifecycle-report"),
+    "--plugin-lifecycle-evidence-file",
+    lifecyclePath,
+  ], { cwd: repositoryRoot, encoding: "utf8" });
+  assert.equal(forged.status, 1);
+  assert.match(forged.stderr, /does not match the digest of plugin\//u);
+  await assert.rejects(readFile(join(root, "forged-lifecycle-report.json")), /ENOENT/u);
+
+  // Evidence carrying a run binding for a different benchmark input is refused too.
+  await writeLifecycleEvidence({ inputDigest: "1".repeat(64) });
+  const replayed = spawnSync(process.execPath, [
+    join(repositoryRoot, "benchmark/report.mjs"),
+    manifestPath,
+    execution.recordPath,
+    "--output-prefix",
+    join(root, "replayed-lifecycle-report"),
+    "--plugin-lifecycle-evidence-file",
+    lifecyclePath,
+  ], { cwd: repositoryRoot, encoding: "utf8" });
+  assert.equal(replayed.status, 1);
+  assert.match(replayed.stderr, /bound to a different benchmark run/u);
+
+  await writeLifecycleEvidence({});
   const reportPrefix = join(root, "preflight-digest-report");
   const accepted = spawnSync(process.execPath, [
     join(repositoryRoot, "benchmark/report.mjs"),
@@ -818,7 +855,9 @@ test("pre-execution evaluator digest mismatch emits reportable invalid records b
   assert.equal(report.eligibility.eligible, false);
   assert.deepEqual(report.eligibility.gates.pluginLifecycle, {
     status: "pass",
-    evidence: `command=npm run plugin:lifecycle:verify;artifact=${lifecyclePath}`,
+    evidence:
+      `command=npm run plugin:lifecycle:verify;artifact=${lifecyclePath}` +
+      `;pluginSourceSha256=${await hashTree(join(repositoryRoot, "plugin"))}`,
   });
 
   await writeFile(join(root, "fixtures", "case", "seed", "public.txt"), "different pinned corpus\n");

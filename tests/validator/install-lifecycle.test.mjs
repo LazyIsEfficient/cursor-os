@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { hashTree } from "../../benchmark/lib/util.mjs";
 import {
   installLocalPlugin,
   uninstallLocalPlugin,
@@ -422,6 +423,74 @@ test("lifecycle verifier exercises clean install repair and removal with determi
   assert.equal(firstEvidence.temporaryCursorRoot, true);
   assert.match(firstEvidence.pluginSourceSha256, /^[a-f0-9]{64}$/u);
   assert.equal(firstEvidence.unrelatedRegistrationPreserved, true);
+});
+
+test("lifecycle verifier binds pluginSourceSha256 to the shared digest of plugin/", async () => {
+  const run = spawnSync(process.execPath, [
+    join(root, "scripts/verify-plugin-lifecycle.mjs"),
+  ], { cwd: root, encoding: "utf8" });
+
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(
+    JSON.parse(run.stdout).pluginSourceSha256,
+    await hashTree(sourcePlugin),
+    "verifier digest must equal the helper benchmark/report.mjs re-derives at report time",
+  );
+});
+
+test("lifecycle verifier fails at the point of observation on a wrong status sequence", async () => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "cursor-harness-wrong-statuses-"));
+  try {
+    for (const directory of ["plugin", "benchmark/lib", "scripts/lib"]) {
+      await mkdir(join(temporaryRoot, dirname(directory)), { recursive: true });
+      await cp(join(root, directory), join(temporaryRoot, directory), { recursive: true });
+    }
+    await cp(
+      join(root, "scripts/verify-plugin-lifecycle.mjs"),
+      join(temporaryRoot, "scripts/verify-plugin-lifecycle.mjs"),
+    );
+
+    // Reinstall over an existing install reports "installed" rather than "unchanged",
+    // yielding ["installed", "installed", "repaired", "uninstalled"].
+    await writeFile(join(temporaryRoot, "scripts/lib/local-install-adapter.mjs"), `
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+let calls = 0;
+
+export async function installLocalPlugin({ cursorRoot }) {
+  calls += 1;
+  await mkdir(join(cursorRoot, "plugins/cursor-harness"), { recursive: true });
+  const configPath = join(cursorRoot, "plugins.json");
+  let config = { plugins: {} };
+  try {
+    config = JSON.parse(await readFile(configPath, "utf8"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  config.plugins["cursor-harness"] = { path: "plugins/cursor-harness", version: "0.1.0" };
+  await writeFile(configPath, \`\${JSON.stringify(config, null, 2)}\\n\`);
+  return { status: calls === 3 ? "repaired" : "installed" };
+}
+
+export async function uninstallLocalPlugin() {
+  return { status: "uninstalled" };
+}
+`);
+
+    const run = spawnSync(process.execPath, [
+      join(temporaryRoot, "scripts/verify-plugin-lifecycle.mjs"),
+    ], { cwd: temporaryRoot, encoding: "utf8" });
+
+    assert.equal(run.status, 1);
+    assert.match(
+      run.stderr,
+      /lifecycle statuses were \["installed","installed","repaired","uninstalled"\]/u,
+    );
+    assert.equal(run.stdout, "", "no evidence may be emitted for a wrong status sequence");
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 });
 
 test("adapter refuses the actual user Cursor directory and its descendants", async () => {

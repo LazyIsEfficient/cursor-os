@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { readBenchmarkManifest } from "./lib/manifest.mjs";
 import {
@@ -7,6 +8,11 @@ import {
   writeReportFiles,
 } from "./lib/report.mjs";
 import { validateResultRecords } from "./lib/result.mjs";
+import { hashTree } from "./lib/util.mjs";
+
+// scripts/verify-plugin-lifecycle.mjs produces the artifact this gate consumes and must
+// derive pluginSourceSha256 from the same helper against the same directory.
+const sourcePlugin = join(resolve(dirname(fileURLToPath(import.meta.url)), ".."), "plugin");
 
 function parseArguments(argv) {
   const options = {};
@@ -32,7 +38,7 @@ function parseArguments(argv) {
   return { manifestPath: positional[0], recordPath: positional[1], ...options };
 }
 
-async function lifecycleGate(options) {
+async function lifecycleGate(options, { inputDigest }) {
   if (options.pluginLifecycleEvidenceFile) {
     const evidence = JSON.parse(await readFile(options.pluginLifecycleEvidenceFile, "utf8"));
     if (
@@ -46,9 +52,22 @@ async function lifecycleGate(options) {
     ) {
       throw new Error("plugin lifecycle evidence artifact is invalid");
     }
+    const observedPluginSha256 = await hashTree(sourcePlugin);
+    if (evidence.pluginSourceSha256 !== observedPluginSha256) {
+      throw new Error(
+        "plugin lifecycle evidence pluginSourceSha256 " +
+          `${evidence.pluginSourceSha256} does not match the digest of plugin/ ` +
+          `${observedPluginSha256}; the evidence does not describe the plugin under report`,
+      );
+    }
+    if (evidence.inputDigest !== undefined && evidence.inputDigest !== inputDigest) {
+      throw new Error("plugin lifecycle evidence is bound to a different benchmark run");
+    }
     return {
       status: "pass",
-      evidence: `command=${evidence.command};artifact=${options.pluginLifecycleEvidenceFile}`,
+      evidence:
+        `command=${evidence.command};artifact=${options.pluginLifecycleEvidenceFile}` +
+        `;pluginSourceSha256=${observedPluginSha256}`,
     };
   }
   const status = options.pluginLifecycleStatus ?? "fail";
@@ -78,7 +97,7 @@ try {
       }
     });
   validateResultRecords(records, { loadedManifest: loaded });
-  const pluginLifecycle = await lifecycleGate(options);
+  const pluginLifecycle = await lifecycleGate(options, { inputDigest: loaded.inputDigest });
   const report = aggregateReport({
     benchmarkId: loaded.manifest.benchmarkId,
     profile: loaded.manifest.profile,
