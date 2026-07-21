@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkId": "cursor-harness-corpus-smoke-v1",
+  "profile": "smoke-24",
+  "seed": "cursor-harness-corpus-v1",
+  "repetitions": 1,
+  "fixtures": [
+    "fixtures/correctness-off-by-one/fixture.json",
+    "fixtures/correctness-regression-repair/fixture.json",
+    "fixtures/correctness-state-corruption/fixture.json",
+    "fixtures/dispatch-input-utils/fixture.json",
+    "fixtures/dispatch-record-utils/fixture.json",
+    "fixtures/dispatch-string-utils/fixture.json",
+    "fixtures/conflict-channel-registry/fixture.json",
+    "fixtures/conflict-public-api/fixture.json",
+    "fixtures/quality-api-refactor/fixture.json",
+    "fixtures/quality-mutation-tests/fixture.json",
+    "fixtures/security-path-traversal/fixture.json",
+    "fixtures/security-repository-injection/fixture.json"
+  ],
+  "outputDirectory": "results"
+}

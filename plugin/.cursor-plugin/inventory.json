@@ -1,0 +1,818 @@
+{
+  "schemaVersion": "1.0.0",
+  "plugin": {
+    "id": "cursor-harness",
+    "name": "cursor-harness",
+    "version": "0.1.0",
+    "manifestPath": "plugin/.cursor-plugin/plugin.json",
+    "manifestSha256": "cab9c0ebe2654823eaec20749de0b59c167cbbe3bc02787cab7fdba6af630113"
+  },
+  "components": [
+    {
+      "id": "adversarial-claims-reviewer",
+      "kind": "agent",
+      "path": "plugin/agents/adversarial-claims-reviewer.md",
+      "sha256": "8ef698099d7990cc9c214a17a88a5e7ec2fbf25865145e691c2aed9b9362d2d4"
+    },
+    {
+      "id": "capability-probe",
+      "kind": "agent",
+      "path": "plugin/agents/capability-probe.md",
+      "sha256": "37bf1878f917af9a9fa60bafd57936858dbafed466dcb535d27cca6096bcfc82"
+    },
+    {
+      "id": "code-reviewer",
+      "kind": "agent",
+      "path": "plugin/agents/code-reviewer.md",
+      "sha256": "e02bf447ea41a5836fc44788dab4f804dfd1a5918af7f17eb8df2dc1668bc068"
+    },
+    {
+      "id": "engineer",
+      "kind": "agent",
+      "path": "plugin/agents/engineer.md",
+      "sha256": "e9f58ab7977c874f6cb48e043d99938b24777588cea27a8515c779d6f6f28104"
+    },
+    {
+      "id": "godot-engineer",
+      "kind": "agent",
+      "path": "plugin/agents/godot-engineer.md",
+      "sha256": "ee39917acf751f063b32c63df2f12a8dc3890fac8b1dd5345fbbbb1d5322170a"
+    },
+    {
+      "id": "library-investigator",
+      "kind": "agent",
+      "path": "plugin/agents/library-investigator.md",
+      "sha256": "32303857b2d435abf94aab2c87bd4c084bf5ec2161261b277e37a165b0186f16"
+    },
+    {
+      "id": "phaser-engineer",
+      "kind": "agent",
+      "path": "plugin/agents/phaser-engineer.md",
+      "sha256": "a3bb2b5c83f2279ecd7ce5d033dad88497b3405f39293624a7c714d73661524a"
+    },
+    {
+      "id": "rust-engineer",
+      "kind": "agent",
+      "path": "plugin/agents/rust-engineer.md",
+      "sha256": "fc007dcaec5b89c5561adccf70c0148e896b52017a0582b11770e0cbf1a9c326"
+    },
+    {
+      "id": "security-reviewer",
+      "kind": "agent",
+      "path": "plugin/agents/security-reviewer.md",
+      "sha256": "0623021a85238eacd2562ebdc25c426573cd723c6f5eabfe1b39b79313356cd7"
+    },
+    {
+      "id": "review-gate",
+      "kind": "command",
+      "path": "plugin/commands/review-gate.md",
+      "sha256": "0199e92aab63cea6f7b9c3118453236c9d6637298cc546c22d8fc3fbe408264c"
+    },
+    {
+      "id": "state",
+      "kind": "command",
+      "path": "plugin/commands/state.md",
+      "sha256": "eaa90c6cb6a0f3b9ba5d55abd16c03e3fda21feac8015ef5595be4920221c61e"
+    },
+    {
+      "id": "triage-findings",
+      "kind": "command",
+      "path": "plugin/commands/triage-findings.md",
+      "sha256": "c316f81254ea563c9d2f86fbdc26f96795d4e26029b4aad087caf99da880d839"
+    },
+    {
+      "id": "hooks",
+      "kind": "hook",
+      "path": "plugin/hooks/hooks.json",
+      "sha256": "dd371a14effa0a35c6f7924fb80140a3b2058faadab1ab635c160c4fac9c0da1"
+    },
+    {
+      "id": "actual-diff-verification",
+      "kind": "rule",
+      "path": "plugin/rules/actual-diff-verification.mdc",
+      "sha256": "37e9d27153a1ecd4be3b301953049564ab59afa121221be63ff0837fc8c8e4d7"
+    },
+    {
+      "id": "evidence-review-tiers",
+      "kind": "rule",
+      "path": "plugin/rules/evidence-review-tiers.mdc",
+      "sha256": "d6303eae64f064ea47bd8c82caca2722a1453ab17feb135112cf239e5e7c0c67"
+    },
+    {
+      "id": "factual-correctness",
+      "kind": "rule",
+      "path": "plugin/rules/factual-correctness.mdc",
+      "sha256": "d781e124f331bfb9da537d35c39049b37a580d936bdfb01c9550977e78dfcaa2"
+    },
+    {
+      "id": "orchestrator-first",
+      "kind": "rule",
+      "path": "plugin/rules/orchestrator-first.mdc",
+      "sha256": "cb8fb25ddecc564fc708c30b320dfb71562adeab6ae555e8472c4e004ca6a13f"
+    },
+    {
+      "id": "before-shell-execution",
+      "kind": "script",
+      "path": "plugin/scripts/before-shell-execution.mjs",
+      "sha256": "3fb8ef4f2cdb6fc18b745150d29da5d6863ee7f3142784252b40e4641851b5c9"
+    },
+    {
+      "id": "memory-extract-nudge",
+      "kind": "script",
+      "path": "plugin/scripts/memory-extract-nudge.mjs",
+      "sha256": "d07810b4b77477baa6d342c15fb042a03efca9543faa1c9ac1feaa4c64e12bee"
+    },
+    {
+      "id": "memory-index-inject",
+      "kind": "script",
+      "path": "plugin/scripts/memory-index-inject.mjs",
+      "sha256": "fd0c8e7adff077e99f13130423d390aed8581f74bc2c56430fb25c55a335e856"
+    },
+    {
+      "id": "pre-compact-notice",
+      "kind": "script",
+      "path": "plugin/scripts/pre-compact-notice.mjs",
+      "sha256": "69fe94a9569c716c90913c714ce81973135419360b0c4d979434ddb712fd1fcf"
+    },
+    {
+      "id": "session-state-inject",
+      "kind": "script",
+      "path": "plugin/scripts/session-state-inject.mjs",
+      "sha256": "d48ad7a7759b79055777d7c173f8d7690767fb8351ab150d6f70165e50add81f"
+    },
+    {
+      "id": "adversarial-claims-reviewer",
+      "kind": "skill",
+      "path": "plugin/skills/adversarial-claims-reviewer/SKILL.md",
+      "sha256": "401397379367a99fde80b7564e1f6d001b365ee3e52ca4cb90d298a525feb0dc"
+    },
+    {
+      "id": "skills-adversarial-claims-reviewer-assets-report-template",
+      "kind": "reference",
+      "path": "plugin/skills/adversarial-claims-reviewer/assets/report-template.md",
+      "sha256": "0c1b5f29d368b03d0e46650623ce332c7f2038a42d3bb8682b1a3b21dcd986e1"
+    },
+    {
+      "id": "skills-adversarial-claims-reviewer-references-protocol",
+      "kind": "reference",
+      "path": "plugin/skills/adversarial-claims-reviewer/references/protocol.md",
+      "sha256": "df375ce34852a64ec96a0a2da5356bd5ac0f0afe89d35a5bae9b92fe6b19ddb0"
+    },
+    {
+      "id": "browser-testing-with-devtools",
+      "kind": "skill",
+      "path": "plugin/skills/browser-testing-with-devtools/SKILL.md",
+      "sha256": "02f0bcb180ec8816d68c5c7caf0e4dba88923dd5f931407035e3d5f6b9672dfe"
+    },
+    {
+      "id": "skills-browser-testing-with-devtools-references-debugging-workflows",
+      "kind": "reference",
+      "path": "plugin/skills/browser-testing-with-devtools/references/debugging-workflows.md",
+      "sha256": "72be9bb10045c8ac3fa1cec8284d482178d5ae665d5a2ab5fde488adca384faa"
+    },
+    {
+      "id": "skills-browser-testing-with-devtools-references-devtools-setup",
+      "kind": "reference",
+      "path": "plugin/skills/browser-testing-with-devtools/references/devtools-setup.md",
+      "sha256": "0201c574cfd6f717c591c0f498989afe0f5fd2a7addada80121cbd901246fc49"
+    },
+    {
+      "id": "skills-browser-testing-with-devtools-references-security-boundaries",
+      "kind": "reference",
+      "path": "plugin/skills/browser-testing-with-devtools/references/security-boundaries.md",
+      "sha256": "f83e9564b85285c7802abd8236d1ca5c8915730d6fd06f4494b24c1a7a8fa4a3"
+    },
+    {
+      "id": "code-review-and-quality",
+      "kind": "skill",
+      "path": "plugin/skills/code-review-and-quality/SKILL.md",
+      "sha256": "9065221b9c4b0fbf2fc854614b2e0712dfab5068a387e3094faf8cd9348faefa"
+    },
+    {
+      "id": "skills-code-review-and-quality-references-performance-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/code-review-and-quality/references/performance-checklist.md",
+      "sha256": "0977ff6f0e3235e0fc3871bda85b4712de0acfb2215b9ac91119e6c87d586b56"
+    },
+    {
+      "id": "skills-code-review-and-quality-references-review-axes",
+      "kind": "reference",
+      "path": "plugin/skills/code-review-and-quality/references/review-axes.md",
+      "sha256": "11a24cc937b08a78f1616a35c9f4b59a11ec6db1bb0723ae68e7dd011f8891eb"
+    },
+    {
+      "id": "skills-code-review-and-quality-references-review-process",
+      "kind": "reference",
+      "path": "plugin/skills/code-review-and-quality/references/review-process.md",
+      "sha256": "55f530193fdb6edb830ceb672bcdc6232bd29cc60bbe9de85333035e41359ca0"
+    },
+    {
+      "id": "skills-code-review-and-quality-references-security-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/code-review-and-quality/references/security-checklist.md",
+      "sha256": "316daf7f73d9a780ed189101fd42421baa3931405bee52cab5ee7eb13c41d8b9"
+    },
+    {
+      "id": "deployment-pipelines",
+      "kind": "skill",
+      "path": "plugin/skills/deployment-pipelines/SKILL.md",
+      "sha256": "cabf102dec0f9d0b0f72a13659635ac92f2826e1cf25f42889579f142c3f78a0"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-caching-and-artifacts",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/caching-and-artifacts.md",
+      "sha256": "5497cc53a3ab76213e12c0fc04b951c37e5b9c14f8b01240e4c66ab18e61a125"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-debugging",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/debugging.md",
+      "sha256": "0c4bc84fb4a0fa7bfacb3e4bc66230705d1b37338595f15d3bb5a34a83684548"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-deploy-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/deploy-patterns.md",
+      "sha256": "26490a8d5df51f2f0938917c1d275434b30f9bc0eb170d6e4af1d5fc6cb5fce4"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-oidc-and-secrets",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/oidc-and-secrets.md",
+      "sha256": "4c7415e9a6d562beb02219ca737e6b2e7ba1b0a6aa5433e8afd9c5a34a61f502"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-performance-and-cost",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/performance-and-cost.md",
+      "sha256": "e8cbf5fcbda195c6e3b7db4f25de57829e927566a5ba7ad69d2a80973adbff8a"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-security-hardening",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/security-hardening.md",
+      "sha256": "28f67be873522754263eb84881ec16790fdc72e7ec5d1356341d704f9be5b7e9"
+    },
+    {
+      "id": "skills-deployment-pipelines-references-workflow-structure",
+      "kind": "reference",
+      "path": "plugin/skills/deployment-pipelines/references/workflow-structure.md",
+      "sha256": "7c937fb90dcd2e04f67a2e8ddcc9113069fc682fd347a9d9b461c4df8fe015a6"
+    },
+    {
+      "id": "findings-ledger",
+      "kind": "skill",
+      "path": "plugin/skills/findings-ledger/SKILL.md",
+      "sha256": "5a9c3e9ea1d4b51bfc334d5a2406f11ea0ad120314de330a220e7b583e6b190c"
+    },
+    {
+      "id": "godot-engineer",
+      "kind": "skill",
+      "path": "plugin/skills/godot-engineer/SKILL.md",
+      "sha256": "1964a544830b62ee05fe6ddb83fab34755d9cd90c7a07744e4be715217707f88"
+    },
+    {
+      "id": "skills-godot-engineer-assets-feature-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/assets/feature-checklist.md",
+      "sha256": "c39ba884c0357706b1544f84ca7cb20f460c4fe90b29e63fe803c921fae18812"
+    },
+    {
+      "id": "skills-godot-engineer-assets-project-structure-template",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/assets/project-structure-template.md",
+      "sha256": "cd193776a397482f9f23ea131d650a284789cadab53b1c0efe9748a8cc461181"
+    },
+    {
+      "id": "skills-godot-engineer-references-animation-and-tweens",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/animation-and-tweens.md",
+      "sha256": "f068db814ab03df37b9a3321a638d643ac44c878161f8f81866d10af21487faa"
+    },
+    {
+      "id": "skills-godot-engineer-references-exporting-and-platforms",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/exporting-and-platforms.md",
+      "sha256": "b43d954b381a7ab133f20fff824f43ccb75914cc3f0ffc43e85ee0b6d45ffc8f"
+    },
+    {
+      "id": "skills-godot-engineer-references-gdscript-vs-csharp",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/gdscript-vs-csharp.md",
+      "sha256": "c43f73e8ac2e8b15eed990ffb488de46fcdad2c6bb99c62cce5b351c1fb2f9c4"
+    },
+    {
+      "id": "skills-godot-engineer-references-godot-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/godot-anti-patterns.md",
+      "sha256": "fcb12047b5d4ff701c69af1a1ac697ae6e9e984695f36cf007e1034ae0e9de62"
+    },
+    {
+      "id": "skills-godot-engineer-references-godot-fundamentals",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/godot-fundamentals.md",
+      "sha256": "ff35d88af175fcc688447a3ec4736c077721a420a140ddce1ff7e96fffc825aa"
+    },
+    {
+      "id": "skills-godot-engineer-references-input-and-controls",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/input-and-controls.md",
+      "sha256": "87126b1789905f545d43ddea2270a48cc03d20b71988c9432b1833329fa10881"
+    },
+    {
+      "id": "skills-godot-engineer-references-multiplayer-and-websockets",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/multiplayer-and-websockets.md",
+      "sha256": "906c77c12356da3e690c40857f7a07db1a84ab853e4f0ee57d7b8bbab167baee"
+    },
+    {
+      "id": "skills-godot-engineer-references-nodes-and-architecture",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/nodes-and-architecture.md",
+      "sha256": "8c09c89db418f07a306e7b483a6ea95fba784d1f52f5285f527775a1454fbdc2"
+    },
+    {
+      "id": "skills-godot-engineer-references-performance-and-profiling",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/performance-and-profiling.md",
+      "sha256": "a03d8d2c424531f2fb0ae44549dbe84ea61cc68bb0d20e84e65ef3d49e17946c"
+    },
+    {
+      "id": "skills-godot-engineer-references-physics-and-collision",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/physics-and-collision.md",
+      "sha256": "69cc804483e7f2729c554de0fd672de5c85df6738a73aa78174ad09e2db17b70"
+    },
+    {
+      "id": "skills-godot-engineer-references-rendering-and-shaders",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/rendering-and-shaders.md",
+      "sha256": "4156fea59fabbe6514ccc4be38c70c0026cd9b965d19d76623bab50a0534d703"
+    },
+    {
+      "id": "skills-godot-engineer-references-save-load-and-persistence",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/save-load-and-persistence.md",
+      "sha256": "201b1e952df1bac02c9bf400db1f7788cb8d80b4125be6ce95f1ea1fea8fc8e9"
+    },
+    {
+      "id": "skills-godot-engineer-references-scenes-and-instancing",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/scenes-and-instancing.md",
+      "sha256": "336f2e4c7ffe754d9ec7cb7c0e5a33848613f6340f7ce6eb069f6b98bbee9536"
+    },
+    {
+      "id": "skills-godot-engineer-references-signals-and-events",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/signals-and-events.md",
+      "sha256": "be25c06942271936b647ef7408cdf0776e0a38b18929437f3fb5b3adb2df7a2c"
+    },
+    {
+      "id": "skills-godot-engineer-references-ui-and-controls",
+      "kind": "reference",
+      "path": "plugin/skills/godot-engineer/references/ui-and-controls.md",
+      "sha256": "0953ce772a02d58a9f58812ee7863134bc22c5c111969a54cceaed6047d8c7aa"
+    },
+    {
+      "id": "incremental-implementation",
+      "kind": "skill",
+      "path": "plugin/skills/incremental-implementation/SKILL.md",
+      "sha256": "01a6e40f6dd0f6050549cbd0fd210622f834c527557dac2e6a288261311a2fbf"
+    },
+    {
+      "id": "library-investigator",
+      "kind": "skill",
+      "path": "plugin/skills/library-investigator/SKILL.md",
+      "sha256": "c09876853408aef5fbcd8aaf88d5b502cbdc1a90e6a9c5173a4ba24b6f66ee9a"
+    },
+    {
+      "id": "skills-library-investigator-assets-investigation-report-template",
+      "kind": "reference",
+      "path": "plugin/skills/library-investigator/assets/investigation-report-template.md",
+      "sha256": "d8fb265a33e149e6fa8bea2154867e081dc94cd60ddaf651a5f9263450ec4a58"
+    },
+    {
+      "id": "skills-library-investigator-references-probe-table",
+      "kind": "reference",
+      "path": "plugin/skills/library-investigator/references/probe-table.md",
+      "sha256": "de8ecbc03a37a0ed51d3a1fea8e6e03bc1237ac5b416cb36775b0e1ae8641bc5"
+    },
+    {
+      "id": "skills-library-investigator-references-verdict-taxonomy",
+      "kind": "reference",
+      "path": "plugin/skills/library-investigator/references/verdict-taxonomy.md",
+      "sha256": "b7fb50ccc22102bb6b777726e612571afd1adaf8824735e3c740e11ed3c81d36"
+    },
+    {
+      "id": "memory-extraction",
+      "kind": "skill",
+      "path": "plugin/skills/memory-extraction/SKILL.md",
+      "sha256": "4cd00ac469d284966a66db4d43a64fc2a6337446a62c84ee11db06e836efcc22"
+    },
+    {
+      "id": "phaser-engineer",
+      "kind": "skill",
+      "path": "plugin/skills/phaser-engineer/SKILL.md",
+      "sha256": "5deff6081f1c6dcdf55179751c84dbabd584b21f9ecd94499eb3cc963f468938"
+    },
+    {
+      "id": "skills-phaser-engineer-assets-feature-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/assets/feature-checklist.md",
+      "sha256": "a3bce22e57dd54b0b505aa1efa29928413440978705de53f4866fa93cc1f0291"
+    },
+    {
+      "id": "skills-phaser-engineer-assets-project-structure-template",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/assets/project-structure-template.md",
+      "sha256": "b025d391e7dfd8ed4cb468b02c07f1a20260e6ad07d6fe43f670c6dee33074dd"
+    },
+    {
+      "id": "skills-phaser-engineer-references-phaser-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/references/phaser-anti-patterns.md",
+      "sha256": "84a96e4a0604cdb7225641bf8098a71a74d774b5350287b5d5f814318d41a3c4"
+    },
+    {
+      "id": "skills-phaser-engineer-references-phaser-fundamentals",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/references/phaser-fundamentals.md",
+      "sha256": "fcbac4e0b123802bfc2526f7eeb204ca75c341b6de249552acb85ff02a26dfd5"
+    },
+    {
+      "id": "skills-phaser-engineer-references-physics-arcade",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/references/physics-arcade.md",
+      "sha256": "3f366c1ab4257d00e53888e1c106a2c2be3a7f6413162bdb811e641bbf787345"
+    },
+    {
+      "id": "skills-phaser-engineer-references-project-and-vite",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/references/project-and-vite.md",
+      "sha256": "700ca4f9df30157a930498aa97e30c0823e392e86f7e4eb6dd14252e216b0a2a"
+    },
+    {
+      "id": "skills-phaser-engineer-references-scenes-and-flow",
+      "kind": "reference",
+      "path": "plugin/skills/phaser-engineer/references/scenes-and-flow.md",
+      "sha256": "e2c8bcaea06be4a6b04271a9f3dbf7c809f5e532dee564993ee065f33ae6a157"
+    },
+    {
+      "id": "planning-and-task-breakdown",
+      "kind": "skill",
+      "path": "plugin/skills/planning-and-task-breakdown/SKILL.md",
+      "sha256": "fc5c6df54c7b5fcc4e6e2352394315a069f0f6f13f8519dc16cbe942868494d4"
+    },
+    {
+      "id": "prompt-shaping",
+      "kind": "skill",
+      "path": "plugin/skills/prompt-shaping/SKILL.md",
+      "sha256": "602f25e984c64e04c3accb3f2d000c96810a9f357d1127056cd9a609958bfb2c"
+    },
+    {
+      "id": "release-manager",
+      "kind": "skill",
+      "path": "plugin/skills/release-manager/SKILL.md",
+      "sha256": "06d485fda775a0240e2a35e5a7b081f2d556f15464b5fa5fc4370731e50ab463"
+    },
+    {
+      "id": "skills-release-manager-references-release-cut-mechanics",
+      "kind": "reference",
+      "path": "plugin/skills/release-manager/references/release-cut-mechanics.md",
+      "sha256": "c1c182379a9dca5dbc54133b40a4e4ce6920da2bcb8a8f72465c9709c647d8ce"
+    },
+    {
+      "id": "rust-engineer",
+      "kind": "skill",
+      "path": "plugin/skills/rust-engineer/SKILL.md",
+      "sha256": "fdbf6aeaebf8a3fd233af0f4e692da7b600adc5f6641a8f136f92b6d7a9624b7"
+    },
+    {
+      "id": "skills-rust-engineer-references-async-and-concurrency",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/async-and-concurrency.md",
+      "sha256": "06f971a813159088a7b8869ac175f34ec29451d7c0218616499fdc3d8d2421eb"
+    },
+    {
+      "id": "skills-rust-engineer-references-error-handling",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/error-handling.md",
+      "sha256": "bb2c3620354e98aaf66ec4c57a554718fa08b4cd94c4b41eeb2731adee2f2374"
+    },
+    {
+      "id": "skills-rust-engineer-references-ownership-and-borrowing",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/ownership-and-borrowing.md",
+      "sha256": "e12644849d1a24b6d1639bb2c6e1000fbafe1e99723c45acd09f556cf98b7ed7"
+    },
+    {
+      "id": "skills-rust-engineer-references-performance-and-profiling",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/performance-and-profiling.md",
+      "sha256": "69f7f7ea576043ffb7d4b640599fde3ee104c001e0bec46e2f94cce898fe91b3"
+    },
+    {
+      "id": "skills-rust-engineer-references-preferred-stack",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/preferred-stack.md",
+      "sha256": "a553edf10f7460e920571e4bda5f259c8f71b874d0cd96d127b9e7f8700b0d7a"
+    },
+    {
+      "id": "skills-rust-engineer-references-testing-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/testing-patterns.md",
+      "sha256": "2c8c6177f8ed514f8b94e93da46304186bb94f1ee24d68c2699984b2a9d65614"
+    },
+    {
+      "id": "skills-rust-engineer-references-toolchain-and-conventions",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/toolchain-and-conventions.md",
+      "sha256": "3722cae419ed112640f93eaf1d7b5d433925e57a626fbf84486bb4b17eb3f88d"
+    },
+    {
+      "id": "skills-rust-engineer-references-type-system-and-api-design",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/type-system-and-api-design.md",
+      "sha256": "8e2597b37433bc6f2d4902d2d1c5c7908cbd8720a445fba263b996baa4db6b8d"
+    },
+    {
+      "id": "skills-rust-engineer-references-unsafe-governance",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/unsafe-governance.md",
+      "sha256": "119f8d75020fa211816f7d15e9cf1e7b9e275a4ab682d0e423f44982592f9402"
+    },
+    {
+      "id": "skills-rust-engineer-references-workspace-and-crate-design",
+      "kind": "reference",
+      "path": "plugin/skills/rust-engineer/references/workspace-and-crate-design.md",
+      "sha256": "94947f8380a0f974db3215942fdd7f2c5fce12ebac4dd699e31d4b3d5aec00ed"
+    },
+    {
+      "id": "security-engineering",
+      "kind": "skill",
+      "path": "plugin/skills/security-engineering/SKILL.md",
+      "sha256": "59ffe6db956960cf4083710d80a3511e175e012c1d2af8294749f4b6af01c766"
+    },
+    {
+      "id": "skills-security-engineering-references-agentic-ai-security",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/agentic-ai-security.md",
+      "sha256": "a0baa61006cd319ce81f9bd74ca365b076000d48dca7a6bca28e3976de729521"
+    },
+    {
+      "id": "skills-security-engineering-references-api-security",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/api-security.md",
+      "sha256": "66fe6706552e5ec635ff06c91bafa14126aa26e460da9eb877bc8f048f323597"
+    },
+    {
+      "id": "skills-security-engineering-references-asvs-5",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/asvs-5.md",
+      "sha256": "85650cb9826ebe6c721f28f337cd8a6d8b9731b28f83c00414c57201a9a92666"
+    },
+    {
+      "id": "skills-security-engineering-references-cicd-security",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/cicd-security.md",
+      "sha256": "d6b31ebe39d56f2ed21487d3d28ba7a722c1317250b02e47d0f52ee0791e977b"
+    },
+    {
+      "id": "skills-security-engineering-references-code-review-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/code-review-checklist.md",
+      "sha256": "81271081f4f82723059324a9ceee3c4e0c80a746f56e3667df692c7bc56aa8d0"
+    },
+    {
+      "id": "skills-security-engineering-references-infrastructure-security",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/infrastructure-security.md",
+      "sha256": "369e51e1d5ed9972803e8e831b1da3b33140972ac4ef95aa17f677efc2bded93"
+    },
+    {
+      "id": "skills-security-engineering-references-language-specific",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/language-specific.md",
+      "sha256": "853d8da944494902697af8df8f84e4007b22a45559c44b9945642832de07453e"
+    },
+    {
+      "id": "skills-security-engineering-references-owasp-top-10",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/owasp-top-10.md",
+      "sha256": "1c68d728022c4694b6b9374812329c0ebdd3503adacd675f255810be38585ca5"
+    },
+    {
+      "id": "skills-security-engineering-references-secure-code-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/secure-code-patterns.md",
+      "sha256": "d028ab8a25c52a30ac00d0058b4d96fb0539fedf60e1243e0e66b878fba729fb"
+    },
+    {
+      "id": "skills-security-engineering-references-web3-smart-contracts",
+      "kind": "reference",
+      "path": "plugin/skills/security-engineering/references/web3-smart-contracts.md",
+      "sha256": "aab1923bc8afc9bc58b41ffe990691a08de9b140fd8f9c341ef77ef69ed2ff6a"
+    },
+    {
+      "id": "session-state",
+      "kind": "skill",
+      "path": "plugin/skills/session-state/SKILL.md",
+      "sha256": "99443fb4485b987af34dc6f2a163b0163d0d41b2a5ea7483850e9dc1f8f70ba0"
+    },
+    {
+      "id": "typescript-data-engineering",
+      "kind": "skill",
+      "path": "plugin/skills/typescript-data-engineering/SKILL.md",
+      "sha256": "9f8a577ec60b8755ebb127625ec5a3813fb344fbeea370cfe73cf84255ee1f35"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-architecture",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/architecture.md",
+      "sha256": "de70e3359b493b4b841fdd4a65842c6157f96cd0f01c937ae2bfd18d91eb4433"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-bigquery",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/bigquery.md",
+      "sha256": "05714e652d9f9d961dc96385c7512b7a0f3c69bdc8875e5d38677f3e6b319e8c"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-caching",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/caching.md",
+      "sha256": "8094591f9c09b39883ef1f2144b5381073cd1ef4de2e7ce7701def7dad7b183d"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-data-models",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/data-models.md",
+      "sha256": "f32cf3d28e0aa2c75c2f6dfce20cbf0607af8eb0933d617056d9d9d20e58febb"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-etl-pipelines",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/etl-pipelines.md",
+      "sha256": "d650c614fd0c3785198f3a73fc9125d251940d3bece1c0b81c8c6a211ee4ee90"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-event-sourcing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/event-sourcing.md",
+      "sha256": "326589a721f763b460c3a1abf699f68038ec1e9368a4ffc62801d58aa4a72771"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-message-brokers",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/message-brokers.md",
+      "sha256": "2f9889c77dfab41a7afe9f54bb4337e90a2d29bf081032024881d4be7feb2e58"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-migrations-and-infra",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/migrations-and-infra.md",
+      "sha256": "d00d719e7768dc2411a15f7cbf5a21980b502c23fd3ce9a9a255ee3bb6ed63a4"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-orms",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/orms.md",
+      "sha256": "d7add4862a91863dcc16b61a2ddf742feaa6ab8131b29b32f26dcd515fd5d393"
+    },
+    {
+      "id": "skills-typescript-data-engineering-references-validation-and-cron",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-data-engineering/references/validation-and-cron.md",
+      "sha256": "8105d88ae79ffb5a50a42da04c5452089d6085035d4f6944be169dd6eaca0d5c"
+    },
+    {
+      "id": "typescript-testing-backend",
+      "kind": "skill",
+      "path": "plugin/skills/typescript-testing-backend/SKILL.md",
+      "sha256": "fa8f4b50de73ce9aaac9ad6b55e06a6e672e0348765d420dfbf8bd91e7f0488d"
+    },
+    {
+      "id": "skills-typescript-testing-backend-references-database-testing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-backend/references/database-testing.md",
+      "sha256": "317193fba6f03b72ea2afbc8c529a3dc80fa823fd43e78b378b8a8ae78a1f0b8"
+    },
+    {
+      "id": "skills-typescript-testing-backend-references-framework-and-structure",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-backend/references/framework-and-structure.md",
+      "sha256": "84801a989924f42b7db6863da7a855c2dbe1d08f512047932a4141b47e8adf8b"
+    },
+    {
+      "id": "skills-typescript-testing-backend-references-integration-testing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-backend/references/integration-testing.md",
+      "sha256": "4d79090cc6d5a6007d3aaf4c4885f13d65eb4c759bdbb5612ee724c9a6738547"
+    },
+    {
+      "id": "skills-typescript-testing-backend-references-mock-policy-and-quality",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-backend/references/mock-policy-and-quality.md",
+      "sha256": "7d428f111e25167b3a5686de692fdc9c3dc57789f05ea212c3f62b6e3f28cdb5"
+    },
+    {
+      "id": "skills-typescript-testing-backend-references-unit-testing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-backend/references/unit-testing.md",
+      "sha256": "e3f90f6e3e62886262d83968a5bb803b1b330fa5e91672c93d07d86687a97839"
+    },
+    {
+      "id": "typescript-testing-frontend",
+      "kind": "skill",
+      "path": "plugin/skills/typescript-testing-frontend/SKILL.md",
+      "sha256": "021e794e86f953f424e49023c0c1ff391bf351d55462c2c2b1968e50e68be029"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-component-testing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/component-testing.md",
+      "sha256": "b60f617523b52ec41f41aebceee81b7b3db4490f2109fcda7ee155648a67a68c"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-coverage-and-policy",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/coverage-and-policy.md",
+      "sha256": "b1ee48a6a3d54d827275219e2709e84aeb6c72da0d2410a82e1bb8b1fa094aaa"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-framework-and-setup",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/framework-and-setup.md",
+      "sha256": "e0e3e6c226f3ae9947781e638c8c5b329ae214a3876307584319f6561e54cacc"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-hook-testing",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/hook-testing.md",
+      "sha256": "cd7d39c597e4a2243c49c3c478b6b0c3b0a3f2718f75a9fb53a259ad4a4247a7"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-mocking-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/mocking-patterns.md",
+      "sha256": "d031fe72195da3294033d429ba3eb43fe1dd5bb3b9bd692adadfeed7d294bd59"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-queries-and-async",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/queries-and-async.md",
+      "sha256": "2a0c6ea1b154eaf982bfcac755749f30ceecd64ada543b6e765231e6cede3fd0"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-structure-and-naming",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/structure-and-naming.md",
+      "sha256": "85c8dab23ba177a5aa50e538286398baea64382671e2721f6d9057e9b85c083f"
+    },
+    {
+      "id": "skills-typescript-testing-frontend-references-test-utilities",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-testing-frontend/references/test-utilities.md",
+      "sha256": "1eaac0f3bbbbbeb283e0afcf61863157753204ef558b8b6b677e7575304614e7"
+    }
+  ],
+  "platformCapabilities": [
+    {
+      "capability": "cli-stream-json",
+      "environment": "cli-local",
+      "status": "unverified",
+      "evidence": "Run npm run probe; capability depends on the installed Cursor CLI."
+    },
+    {
+      "capability": "command-hook-blocking",
+      "environment": "editor-local",
+      "status": "unverified",
+      "evidence": "Local hook contracts pass; editor enforcement requires a manual probe."
+    },
+    {
+      "capability": "custom-agent-discovery",
+      "environment": "editor-local",
+      "status": "unverified",
+      "evidence": "Files satisfy discovery contracts; editor loading requires a manual probe."
+    },
+    {
+      "capability": "parallel-subagent-events",
+      "environment": "editor-local",
+      "status": "unverified",
+      "evidence": "No live parallel subagent hook event has been captured."
+    },
+    {
+      "capability": "plugin-loading",
+      "environment": "editor-local",
+      "status": "unverified",
+      "evidence": "Repository layout is valid; installed editor loading requires a manual probe."
+    },
+    {
+      "capability": "token-usage",
+      "environment": "cli-local",
+      "status": "unavailable",
+      "evidence": "Documented stream-json output does not guarantee token usage fields."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "correctness-state-corruption",
+  "category": "localized-correctness",
+  "workspace": {
+    "sourcePath": "workspace",
+    "revision": "fixture-v1",
+    "lockfilePath": "requirements.lock",
+    "lockfileSha256": "c0ae9f1e0039cc3e083ff68185e2cf7dd16186dceddcd226bc08e8cf00667406"
+  },
+  "prompt": "Fix transfer in ledger.py so a rejected overdraft never mutates either account. Keep successful transfers and the existing invalid-amount behavior unchanged. Use only the Python standard library and do not change dependencies.",
+  "expectedWritePaths": [
+    "ledger.py"
+  ],
+  "evaluators": [
+    {
+      "id": "functional",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "python3",
+        "arguments": [
+          "evaluate.py",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 5000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "a25453cdf3114af2f8273ae9cb7ba8aa09b1b7bb6c15ce0971669787017af3c5",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "correctness-state-corruption-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

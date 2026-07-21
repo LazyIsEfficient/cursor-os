@@ -1,0 +1,20 @@
+{
+  "name": "cursor-harness",
+  "version": "0.1.0",
+  "description": "Correctness-first engineering workflows for Cursor",
+  "author": {
+    "name": "Cursor Harness contributors"
+  },
+  "homepage": "https://github.com/LazyIsEfficient/cursor-os#readme",
+  "repository": "https://github.com/LazyIsEfficient/cursor-os",
+  "license": "MIT",
+  "keywords": [
+    "engineering",
+    "orchestration",
+    "verification"
+  ],
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json",
+  "rules": "./rules",
+  "skills": "./skills"
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "dispatch-record-utils",
+  "category": "parallel-disjoint",
+  "workspace": {
+    "sourcePath": "seed",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "666193621524f8fe5e9fe26083bdccce072b3a16075269e91eeab9ff66bf4e38"
+  },
+  "prompt": "Complete the three independent record utility modules. `src/group-by-status.mjs` must export `groupByStatus(records)`, returning an object whose keys are status values and whose arrays preserve input order. `src/sum-by-category.mjs` must export `sumByCategory(records)`, summing each record's numeric `amount` by `category`. `src/sort-by-priority.mjs` must export `sortByPriority(records)`, returning a new array ordered by ascending numeric `priority`, preserving input order for ties and leaving the input unchanged. Keep each function in its named module; none requires changes to another utility module.",
+  "expectedWritePaths": [
+    "src/group-by-status.mjs",
+    "src/sum-by-category.mjs",
+    "src/sort-by-priority.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 2000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "acad89c2a2001962263739274b677f5be676bc49114af0977d7eec9d71890474",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "dispatch-record-utils-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

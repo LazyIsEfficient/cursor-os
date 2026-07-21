@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-harness.local/schemas/plugin-inventory.schema.json",
+  "title": "Cursor Harness Plugin Inventory",
+  "description": "A deterministic inventory of every file-backed plugin component and its probed platform support.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "plugin",
+    "components",
+    "platformCapabilities"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "plugin": {
+      "$ref": "#/$defs/plugin"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "platformCapabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/platformCapability"
+      }
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version",
+        "manifestPath",
+        "manifestSha256"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "manifestPath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "manifestSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "kind": {
+          "enum": [
+            "rule",
+            "skill",
+            "agent",
+            "hook",
+            "command",
+            "script",
+            "reference"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "platformCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "environment",
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "capability": {
+          "enum": [
+            "plugin-loading",
+            "custom-agent-discovery",
+            "parallel-subagent-events",
+            "command-hook-blocking",
+            "cli-stream-json",
+            "token-usage"
+          ]
+        },
+        "environment": {
+          "enum": [
+            "editor-local",
+            "cli-local",
+            "cloud-agent"
+          ]
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "unsupported",
+            "unavailable",
+            "unverified"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

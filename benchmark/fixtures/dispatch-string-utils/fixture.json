@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "dispatch-string-utils",
+  "category": "parallel-disjoint",
+  "workspace": {
+    "sourcePath": "seed",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "4dd190ba8446ce48ca47d9d01f39fce537f9e8b36afaf1f8292f25402def8685"
+  },
+  "prompt": "Complete the three independent string utility modules. `src/slugify.mjs` must export `slugify(value)`, converting trimmed text to lowercase, replacing each run of non-alphanumeric characters with one hyphen, and removing edge hyphens. `src/title-case.mjs` must export `titleCase(value)`, collapsing surrounding and repeated whitespace and capitalizing the first character of each word while lowercasing the remainder. `src/word-count.mjs` must export `wordCount(value)`, returning the number of non-empty whitespace-delimited tokens. Keep each function in its named module; none of these modules needs another utility module.",
+  "expectedWritePaths": [
+    "src/slugify.mjs",
+    "src/title-case.mjs",
+    "src/word-count.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 2000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "a77437c97495053e2c62d62d0a553b43ac12f2ef1a6030370f18e33b16103312",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "dispatch-string-utils-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

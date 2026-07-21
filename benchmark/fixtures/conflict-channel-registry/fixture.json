@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "conflict-channel-registry",
+  "category": "shared-interface-conflict",
+  "workspace": {
+    "sourcePath": "seed",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "e358a4b6c540f6e30e582647f2c0e1078a8762c596108ad842347e338e34ae29"
+  },
+  "prompt": "Extend the notification package with both channels. Add `sendEmail({ recipient, body })` in `src/email.mjs`, returning `email:<recipient>:<body>`, and add `sendSms({ recipient, body })` in `src/sms.mjs`, returning `sms:<recipient>:<body>` while throwing `RangeError` when body exceeds 160 characters. Register both handlers in the shared `src/channels.mjs` registry so `deliver(channel, message)` dispatches `email` and `sms`; preserve the existing `console` channel and the existing unknown-channel error behavior.",
+  "expectedWritePaths": [
+    "src/email.mjs",
+    "src/sms.mjs",
+    "src/channels.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 2000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "5536692cb9bd8820689f348f4402d2b2866b24b8089253e1bcbb4f4dae16a3bd",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "conflict-channel-registry-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

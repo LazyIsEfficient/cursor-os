@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "conflict-public-api",
+  "category": "shared-interface-conflict",
+  "workspace": {
+    "sourcePath": "seed",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "161b3d13c9a04fff811fd245cb614977d609b768caf6509d6c33e2eef8fde36e"
+  },
+  "prompt": "Extend the key codec package with both capabilities. Add `encodeKey(parts)` in `src/encode-key.mjs`; it must URI-encode each string part and join parts with `:`. Update `src/write-record.mjs` so `writeRecord(parts, value)` returns `{ key: encodeKey(parts), value }`. Add `decodeKey(key)` in `src/decode-key.mjs`; it must split on `:` and URI-decode every part. Update `src/read-record.mjs` so `readRecord(record)` returns `{ parts: decodeKey(record.key), value: record.value }`. Consumers import both codec functions from the shared `src/index.mjs` public interface, so expose both named exports there while preserving its existing `codecVersion` export.",
+  "expectedWritePaths": [
+    "src/encode-key.mjs",
+    "src/decode-key.mjs",
+    "src/write-record.mjs",
+    "src/read-record.mjs",
+    "src/index.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 2000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "80ca8ce404122f6e3cf4024ed6552a3cdd89e8ce8ce4900e86635027dec9b1b5",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "conflict-public-api-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

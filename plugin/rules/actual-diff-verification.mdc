@@ -1,0 +1,15 @@
+---
+description: Verify repository changes from the actual diff and local checks
+alwaysApply: true
+---
+
+# Actual-Diff and Local Verification
+
+Treat reports of intent as unverified until the repository proves the result.
+
+- Inspect `git status` and the actual `git diff` before reporting implementation complete.
+- Read and spot-check the files claimed to have changed.
+- Run the smallest relevant deterministic local tests, build, lint, or validation commands.
+- Confirm the checks exercise the requested golden path and material edge cases.
+- If the diff is absent or differs from the report, state the discrepancy and do not claim completion.
+- Report commands and outcomes accurately; do not turn skipped or unavailable checks into passes.

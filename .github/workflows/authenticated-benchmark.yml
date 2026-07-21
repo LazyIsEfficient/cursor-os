@@ -1,0 +1,88 @@
+name: Authenticated benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Versioned benchmark profile
+        required: true
+        type: choice
+        options:
+          - smoke-24
+          - release-72
+      environment:
+        description: Protected GitHub Environment for the pre-authenticated runner
+        required: true
+        type: environment
+      confirm_authenticated_run:
+        description: Confirm this run makes authenticated model calls
+        required: true
+        type: boolean
+
+permissions: {}
+
+jobs:
+  benchmark:
+    if: inputs.confirm_authenticated_run
+    runs-on:
+      - self-hosted
+      - cursor-benchmark
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      CURSOR_CONFIG_TEMPLATE: ${{ vars.CURSOR_CONFIG_TEMPLATE }}
+      BENCHMARK_SECRET_CANARY_FILE: ${{ vars.BENCHMARK_SECRET_CANARY_FILE }}
+      BENCHMARK_RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+      RAW_RUN_ROOT: benchmark/results/gha-${{ github.run_id }}-${{ github.run_attempt }}
+      SANITIZED_EXPORT_ROOT: benchmark/sanitized/gha-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Configure Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate before authenticated execution
+        run: npm run validate
+      - name: Run agent status preflight
+        run: |
+          test -n "$CURSOR_CONFIG_TEMPLATE"
+          test -d "$CURSOR_CONFIG_TEMPLATE"
+          test -n "$BENCHMARK_SECRET_CANARY_FILE"
+          test -f "$BENCHMARK_SECRET_CANARY_FILE"
+          npm run benchmark:preflight -- --cursor-config-template "$CURSOR_CONFIG_TEMPLATE"
+      - name: Verify plugin lifecycle before authenticated execution
+        run: npm run plugin:lifecycle:verify -- --evidence "$RAW_RUN_ROOT/plugin-lifecycle.json"
+      - name: Run authenticated 24-trial smoke
+        if: inputs.profile == 'smoke-24'
+        run: npm run benchmark:smoke:authenticated -- --cursor-config-template "$CURSOR_CONFIG_TEMPLATE" --run-id "$BENCHMARK_RUN_ID"
+      - name: Run authenticated 72-trial release
+        if: inputs.profile == 'release-72'
+        run: npm run benchmark:release:authenticated -- --cursor-config-template "$CURSOR_CONFIG_TEMPLATE" --run-id "$BENCHMARK_RUN_ID"
+      - name: Build evidence report
+        run: |
+          node benchmark/report.mjs \
+            "benchmark/${{ inputs.profile }}.v1.json" \
+            "$RAW_RUN_ROOT/results.ndjson" \
+            --output-prefix "$RAW_RUN_ROOT/report" \
+            --plugin-lifecycle-evidence-file "$RAW_RUN_ROOT/plugin-lifecycle.json"
+      - name: Sanitize benchmark evidence
+        id: sanitize
+        run: |
+          npm run benchmark:export -- \
+            --run-root "$RAW_RUN_ROOT" \
+            --export-root "$SANITIZED_EXPORT_ROOT" \
+            --secret-canary-file "$BENCHMARK_SECRET_CANARY_FILE"
+      - name: Upload sanitized benchmark evidence
+        if: steps.sanitize.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: benchmark-${{ inputs.profile }}-${{ github.run_id }}
+          path: ${{ env.SANITIZED_EXPORT_ROOT }}
+          if-no-files-found: error
+          retention-days: 30

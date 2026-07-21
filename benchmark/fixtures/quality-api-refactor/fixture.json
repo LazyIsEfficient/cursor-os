@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "quality-api-refactor",
+  "category": "objective-quality",
+  "workspace": {
+    "sourcePath": "workspace",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "30942eeb8cd4ea8e81d0e73093a10e84f4c4ae2832659a5599dd301b3f4253d3"
+  },
+  "prompt": "Refactor src/format-record.mjs without changing the exported formatRecord API or behavior. Remove the duplicated normalization work and reduce branching so each field is normalized in one place. Keep the implementation dependency-free.",
+  "expectedWritePaths": [
+    "src/format-record.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "functional",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": ["functional.mjs", "{workspace}"],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 10000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    },
+    {
+      "id": "objective-quality",
+      "kind": "objective-quality",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": ["objective-quality.mjs", "{workspace}"],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 10000,
+      "expectedExitCode": 0,
+      "severity": "objective-quality"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "d3decc2ef75a3c8c0f4d7eaac5e7cb1776c5f5bbed50fec6711ca9f6992a3328",
+    "protectedPaths": ["evaluators/**", "canaries/**"],
+    "canaryIds": ["quality-api-refactor-canary"],
+    "networkPolicy": "deny"
+  }
+}

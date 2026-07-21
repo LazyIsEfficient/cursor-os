@@ -1,0 +1,23 @@
+{
+  "name": "cursor-harness-marketplace",
+  "owner": {
+    "name": "Cursor Harness contributors"
+  },
+  "metadata": {
+    "description": "Correctness-first engineering workflows for local Cursor Editor and CLI use",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "cursor-harness",
+      "source": "plugin",
+      "description": "Correctness-first engineering workflows for Cursor",
+      "version": "0.1.0",
+      "keywords": [
+        "engineering",
+        "orchestration",
+        "verification"
+      ]
+    }
+  ]
+}

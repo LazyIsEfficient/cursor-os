@@ -1,0 +1,17 @@
+---
+description: Orchestrate Cursor subagents with bounded, safe parallelism
+alwaysApply: true
+---
+
+# Orchestrator-First Dispatch
+
+Keep the main thread focused on decomposition, briefing, integration, and decisions. Use Cursor `Task` subagents for substantial implementation, review, or broad exploration.
+
+- Give every subagent a cold-context brief: goal, relevant evidence, scope, owned write paths, constraints, acceptance criteria, and verification commands. Assume it has no parent conversation context.
+- Dispatch for speed only when tasks are independent and their file write sets are disjoint.
+- Fan out independent work with multiple `Task` calls in one message; do not dispatch independent tasks sequentially.
+- Keep each parallel wave to 3–5 agents.
+- Set reviewers to `readonly: true`.
+- If file ownership, independence, or available isolation is unknown, serialize the work.
+- Integrate and verify returned work in the main thread; a subagent report is not proof of repository state.
+- Use only `Task` fields documented by the active Cursor environment. Do not assume undocumented fields or Cloud parity.

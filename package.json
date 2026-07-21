@@ -1,0 +1,34 @@
+{
+  "name": "cursor-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maintainer tooling for the Cursor Harness plugin",
+  "author": "Cursor Harness contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LazyIsEfficient/cursor-os"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "inventory": "node scripts/generate-plugin-inventory.mjs",
+    "local-install": "node scripts/local-install.mjs",
+    "plugin:lifecycle:verify": "node scripts/verify-plugin-lifecycle.mjs",
+    "probe": "node scripts/probe-capabilities.mjs",
+    "test": "node --test test/*.test.mjs tests/benchmark/*.test.mjs tests/contracts/*.test.mjs tests/fixtures/*.test.mjs tests/release/*.test.mjs tests/rules/*.test.mjs tests/security/*.test.mjs tests/validator/*.test.mjs tests/workflows/*.test.mjs",
+    "benchmark:test": "node --test tests/benchmark/*.test.mjs",
+    "benchmark:run": "node benchmark/run.mjs",
+    "benchmark:corpus-smoke": "node benchmark/corpus-smoke.mjs",
+    "benchmark:smoke:authenticated": "node benchmark/run.mjs benchmark/smoke-24.v1.json",
+    "benchmark:release:authenticated": "node benchmark/run.mjs benchmark/release-72.v1.json",
+    "benchmark:preflight": "node benchmark/preflight.mjs",
+    "benchmark:export": "node benchmark/export-artifacts.mjs",
+    "benchmark:report": "node benchmark/report.mjs",
+    "release:dry-run": "node scripts/release.mjs",
+    "release:test": "node --test tests/release/*.test.mjs",
+    "validate": "node scripts/validate.mjs"
+  }
+}

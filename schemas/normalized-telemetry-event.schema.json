@@ -1,0 +1,529 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-harness.local/schemas/normalized-telemetry-event.schema.json",
+  "title": "Cursor Harness Normalized Telemetry Event",
+  "description": "One append-only NDJSON event normalized from a paired benchmark trial without inferring unavailable measurements.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "runId",
+    "trialId",
+    "fixtureId",
+    "arm",
+    "sequence",
+    "occurredAt",
+    "event"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "eventId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trialId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixtureId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "arm": {
+      "enum": [
+        "harness-off",
+        "harness-on"
+      ]
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/runStarted"
+        },
+        {
+          "$ref": "#/$defs/toolCall"
+        },
+        {
+          "$ref": "#/$defs/subagent"
+        },
+        {
+          "$ref": "#/$defs/evaluator"
+        },
+        {
+          "$ref": "#/$defs/security"
+        },
+        {
+          "$ref": "#/$defs/tamper"
+        },
+        {
+          "$ref": "#/$defs/metric"
+        },
+        {
+          "$ref": "#/$defs/runCompleted"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "runStarted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "armOrder",
+        "workspaceRevision"
+      ],
+      "properties": {
+        "type": {
+          "const": "run-started"
+        },
+        "armOrder": {
+          "enum": [
+            "off-then-on",
+            "on-then-off"
+          ]
+        },
+        "workspaceRevision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "toolCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "callId",
+        "toolName",
+        "phase",
+        "durationMs"
+      ],
+      "properties": {
+        "type": {
+          "const": "tool-call"
+        },
+        "callId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentCallId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "toolName": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phase": {
+          "enum": [
+            "started",
+            "completed",
+            "failed"
+          ]
+        },
+        "durationMs": {
+          "$ref": "#/$defs/metricValue"
+        }
+      }
+    },
+    "subagent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "subagentCallId",
+        "phase",
+        "durationMs"
+      ],
+      "properties": {
+        "type": {
+          "const": "subagent"
+        },
+        "subagentCallId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentCallId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agentType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "phase": {
+          "enum": [
+            "started",
+            "completed",
+            "failed"
+          ]
+        },
+        "durationMs": {
+          "$ref": "#/$defs/metricValue"
+        }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "evaluatorId",
+        "kind",
+        "outcome",
+        "exitCode",
+        "durationMs",
+        "evidenceSha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "evaluator"
+        },
+        "evaluatorId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "functional",
+            "objective-quality",
+            "security",
+            "tamper"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "pass",
+            "fail",
+            "error",
+            "timeout"
+          ]
+        },
+        "exitCode": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "durationMs": {
+          "$ref": "#/$defs/metricValue"
+        },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "controlId",
+        "severity",
+        "outcome",
+        "evidence"
+      ],
+      "properties": {
+        "type": {
+          "const": "security-outcome"
+        },
+        "controlId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "non-critical"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "pass",
+            "violation",
+            "error"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "tamper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "target",
+        "outcome",
+        "expectedSha256",
+        "actualSha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "tamper-outcome"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outcome": {
+          "enum": [
+            "intact",
+            "modified",
+            "missing",
+            "unexpected",
+            "error"
+          ]
+        },
+        "expectedSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actualSha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "name",
+        "unit",
+        "measurement"
+      ],
+      "properties": {
+        "type": {
+          "const": "metric"
+        },
+        "name": {
+          "enum": [
+            "wall-duration",
+            "tool-calls",
+            "subagent-calls",
+            "max-concurrent-subagents",
+            "input-tokens",
+            "output-tokens",
+            "total-tokens"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "milliseconds",
+            "count",
+            "tokens"
+          ]
+        },
+        "measurement": {
+          "$ref": "#/$defs/metricValue"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "enum": [
+                  "input-tokens",
+                  "output-tokens",
+                  "total-tokens"
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "const": "tokens"
+              },
+              "measurement": {
+                "$ref": "#/$defs/tokenMetricValue"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "runCompleted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "status",
+        "exitCode"
+      ],
+      "properties": {
+        "type": {
+          "const": "run-completed"
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "failed",
+            "timed-out",
+            "invalid"
+          ]
+        },
+        "exitCode": {
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "metricValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observedMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "tokenMetricValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/probeObservedTokenMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "observedMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "source"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "enum": [
+            "documented-stream-json",
+            "monotonic-clock",
+            "deterministic-evaluator",
+            "verified-platform-probe"
+          ]
+        },
+        "probeEvidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "probeObservedTokenMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "source",
+        "probeEvidence"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "const": "verified-platform-probe"
+        },
+        "probeEvidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "unavailableMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": [
+            "not-emitted",
+            "unsupported",
+            "unverified",
+            "correlation-unavailable",
+            "run-failed-before-measurement"
+          ]
+        }
+      }
+    }
+  }
+}

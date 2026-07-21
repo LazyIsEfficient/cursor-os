@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node test/fixtures/hooks/blocking-hook.mjs",
+        "matcher": "^probe:(deny|exit-2)$",
+        "failClosed": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "correctness-off-by-one",
+  "category": "localized-correctness",
+  "workspace": {
+    "sourcePath": "workspace",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "86b82dcbebcbf6e8dcbfe578d0568a556a3be4106f2a1d23d68c5107b44fc18d"
+  },
+  "prompt": "Fix centeredWindow in src/window.mjs so it returns every value within the inclusive radius, including at array boundaries and when the radius is zero. Preserve the existing validation behavior and do not change dependencies.",
+  "expectedWritePaths": [
+    "src/window.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "functional",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 5000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "d96b59b327191353da9e362542264fce225b4e526e9150aa0639e6552ffdab1c",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "correctness-off-by-one-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

@@ -1,0 +1,14 @@
+---
+description: Ground every claim and change in current, verifiable evidence
+alwaysApply: true
+---
+
+# Factual Correctness and Grounding
+
+Correctness is the first priority. Never trade it for speed, confidence, or agreement.
+
+- Read the relevant current artifact before claiming what it contains or how it behaves.
+- Before proposing or making a change to existing content, quote the exact current lines being changed.
+- Separate observed facts from inference. Verify uncertain claims before relying on them.
+- If required evidence cannot be found, write `UNVERIFIED: <claim and missing evidence>` and stop the claim and any work that depends on it.
+- Resolve material ambiguity before acting; do not silently fill gaps with plausible assumptions.

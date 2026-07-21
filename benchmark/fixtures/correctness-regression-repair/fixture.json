@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "correctness-regression-repair",
+  "category": "localized-correctness",
+  "workspace": {
+    "sourcePath": "workspace",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "36e56af2c57f8794a96be85e4bf34aeceecee1793b0caef4d3a5fdc58a69e861"
+  },
+  "prompt": "Repair parseConfig in src/config.mjs so values containing one or more equals signs are preserved exactly after trimming surrounding whitespace. Keep comments, blank lines, empty values, CRLF input, and last-value-wins behavior unchanged. Do not change dependencies.",
+  "expectedWritePaths": [
+    "src/config.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "functional",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 5000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "04f7bc8505ea202fc04ef98e1d4543368199f8f2dd908b0df3db3bcc793acb35",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "correctness-regression-repair-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

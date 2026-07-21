@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-harness.local/schemas/benchmark-fixture-manifest.schema.json",
+  "title": "Cursor Harness Benchmark Fixture Manifest",
+  "description": "A pinned benchmark fixture with agent-hidden deterministic evaluators and explicit integrity controls.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fixtureId",
+    "category",
+    "workspace",
+    "prompt",
+    "expectedWritePaths",
+    "evaluators",
+    "integrity"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "fixtureId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "category": {
+      "enum": [
+        "localized-correctness",
+        "parallel-disjoint",
+        "shared-interface-conflict",
+        "objective-quality",
+        "security-prompt-injection"
+      ]
+    },
+    "workspace": {
+      "$ref": "#/$defs/workspace"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expectedWritePaths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/pathPattern"
+      }
+    },
+    "evaluators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evaluator"
+      }
+    },
+    "integrity": {
+      "$ref": "#/$defs/integrity"
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "pathPattern": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$)).+$"
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePath",
+        "revision",
+        "lockfilePath",
+        "lockfileSha256"
+      ],
+      "properties": {
+        "sourcePath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lockfilePath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "lockfileSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "visibility",
+        "command",
+        "timeoutMs",
+        "expectedExitCode",
+        "severity"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "kind": {
+          "enum": [
+            "functional",
+            "objective-quality",
+            "security",
+            "tamper"
+          ]
+        },
+        "visibility": {
+          "const": "hidden-from-agent"
+        },
+        "command": {
+          "$ref": "#/$defs/command"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expectedExitCode": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "severity": {
+          "enum": [
+            "correctness",
+            "critical-security",
+            "non-critical-security",
+            "objective-quality",
+            "integrity"
+          ]
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "executable",
+        "arguments",
+        "workingDirectory"
+      ],
+      "properties": {
+        "executable": {
+          "type": "string",
+          "minLength": 1
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workingDirectory": {
+          "$ref": "#/$defs/relativePath"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluatorBundleSha256",
+        "protectedPaths",
+        "canaryIds",
+        "networkPolicy"
+      ],
+      "properties": {
+        "evaluatorBundleSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "protectedPaths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/pathPattern"
+          }
+        },
+        "canaryIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "networkPolicy": {
+          "const": "deny",
+          "description": "Required policy declaration only; enforcement must be proven separately by deterministic adapter evidence."
+        }
+      }
+    }
+  }
+}

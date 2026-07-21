@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs\"",
+        "timeout": 5,
+        "failClosed": true
+      }
+    ],
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/session-state-inject.mjs\"",
+        "timeout": 5
+      },
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/memory-index-inject.mjs\"",
+        "timeout": 5
+      }
+    ],
+    "preCompact": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/pre-compact-notice.mjs\"",
+        "timeout": 5
+      }
+    ],
+    "stop": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/memory-extract-nudge.mjs\"",
+        "timeout": 5,
+        "loop_limit": 1
+      }
+    ]
+  }
+}

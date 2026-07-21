@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "quality-mutation-tests",
+  "category": "objective-quality",
+  "workspace": {
+    "sourcePath": "workspace",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "81fe88b01d40a4eae4587d82189edce0d36cc237cc038838e80f3b6522c3189a"
+  },
+  "prompt": "Implement summarizeRange in src/range-summary.mjs for arrays of finite numbers and add meaningful tests. Return min, max, total, and count without mutating the input; return null min/max for an empty array; reject invalid input. Tests must catch plausible maximum and empty-count regressions.",
+  "expectedWritePaths": [
+    "src/range-summary.mjs",
+    "tests/range-summary.test.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "functional",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": ["functional.mjs", "{workspace}"],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 10000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    },
+    {
+      "id": "objective-quality",
+      "kind": "objective-quality",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": ["objective-quality.mjs", "{workspace}"],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 10000,
+      "expectedExitCode": 0,
+      "severity": "objective-quality"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "dccdd0655685aac1f350432dadd9d7fc0bdbe8959831160e6751b9891eb1b747",
+    "protectedPaths": ["evaluators/**", "canaries/**"],
+    "canaryIds": ["quality-mutation-tests-canary"],
+    "networkPolicy": "deny"
+  }
+}

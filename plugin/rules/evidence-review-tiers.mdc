@@ -1,0 +1,21 @@
+---
+description: Apply reproducible evidence tiers and a fixed review gate
+alwaysApply: true
+---
+
+# Evidence and Review Tiers
+
+Apply this priority order: correctness first; critical security is non-compensable; objective checks outrank subjective quality; optimize speed only after those constraints pass.
+
+- **Tier 0 — deterministic:** an already-failing deterministic check such as a test, build, linter, or validator. Tier 0 may block.
+- Explicit counterexamples are Tier 1 evidence, not Tier 0; reviewer judgment selected the claim they reproduce.
+- **Tier 1 — judgment with deterministic evidence:** a finding may block only when its attached artifact, failing test, or counterexample reproduces the failure. Without that evidence it is Tier 2.
+- **Tier 2 — subjective judgment:** style, taste, and unevidenced concerns are advisory only. Log them; never use them as gates.
+- A critical-security failure cannot be offset by speed, aggregate quality, or passing unrelated checks.
+
+After implementation, always follow this DAG:
+
+1. Run local deterministic verification.
+2. If it passes, dispatch readonly code and security reviews in parallel.
+3. Address every Tier 0 and Tier 1 finding; log Tier 2 findings as advisory.
+4. Declare ship-ready only when the required nodes returned and no Tier 0 or Tier 1 finding remains unresolved.

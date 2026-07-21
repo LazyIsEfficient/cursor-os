@@ -1,0 +1,777 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-harness.local/schemas/benchmark-report.schema.json",
+  "title": "Cursor Harness Benchmark Report",
+  "description": "A correctness-first aggregate report for paired harness-off/harness-on benchmark results.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "generatedAt",
+    "profile",
+    "inputDigest",
+    "execution",
+    "eligibility",
+    "correctness",
+    "speed",
+    "objectiveQuality",
+    "nonCriticalSecurity",
+    "resources",
+    "limitations",
+    "tier2Findings",
+    "rankingOrder"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "benchmarkId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "profile": {
+      "enum": [
+        "smoke-24",
+        "release-72",
+        "custom"
+      ]
+    },
+    "inputDigest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "execution": {
+      "$ref": "#/$defs/execution"
+    },
+    "eligibility": {
+      "$ref": "#/$defs/eligibility"
+    },
+    "correctness": {
+      "$ref": "#/$defs/correctness"
+    },
+    "speed": {
+      "$ref": "#/$defs/speed"
+    },
+    "objectiveQuality": {
+      "$ref": "#/$defs/objectiveQualityAggregate"
+    },
+    "nonCriticalSecurity": {
+      "$ref": "#/$defs/outcomeAggregate"
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/limitation"
+      }
+    },
+    "tier2Findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tier2Finding"
+      }
+    },
+    "rankingOrder": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "correct-trials"
+        },
+        {
+          "const": "matched-correct-speedup"
+        },
+        {
+          "const": "objective-quality"
+        },
+        {
+          "const": "non-critical-security"
+        },
+        {
+          "const": "resource-use"
+        }
+      ],
+      "items": false,
+      "minItems": 5,
+      "maxItems": 5
+    }
+  },
+  "$defs": {
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plannedPairs",
+        "completedPairs",
+        "invalidPairs",
+        "plannedTrials",
+        "completedTrials",
+        "failedTrials",
+        "timedOutTrials",
+        "invalidTrials",
+        "randomizedArmOrder"
+      ],
+      "properties": {
+        "plannedPairs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "completedPairs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalidPairs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plannedTrials": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "completedTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failedTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timedOutTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalidTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "randomizedArmOrder": {
+          "const": true
+        }
+      }
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "eligible",
+        "gates",
+        "ineligibilityReasons"
+      ],
+      "properties": {
+        "policy": {
+          "const": "correctness-first"
+        },
+        "eligible": {
+          "type": "boolean"
+        },
+        "gates": {
+          "$ref": "#/$defs/gates"
+        },
+        "ineligibilityReasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "eligible": {
+                "const": true
+              }
+            },
+            "required": [
+              "eligible"
+            ]
+          },
+          "then": {
+            "properties": {
+              "gates": {
+                "properties": {
+                  "pluginLifecycle": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  },
+                  "criticalSecurity": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  },
+                  "harnessOnCorrectnessNonRegression": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  },
+                  "noFixtureRegression": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  },
+                  "correctnessEligibilityFloor": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  },
+                  "telemetryAndEvaluatorIntegrity": {
+                    "properties": {
+                      "status": {
+                        "const": "pass"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "gates"
+            ]
+          }
+        }
+      ]
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pluginLifecycle",
+        "criticalSecurity",
+        "harnessOnCorrectnessNonRegression",
+        "noFixtureRegression",
+        "correctnessEligibilityFloor",
+        "telemetryAndEvaluatorIntegrity"
+      ],
+      "properties": {
+        "pluginLifecycle": {
+          "$ref": "#/$defs/gate"
+        },
+        "criticalSecurity": {
+          "$ref": "#/$defs/gate"
+        },
+        "harnessOnCorrectnessNonRegression": {
+          "$ref": "#/$defs/gate"
+        },
+        "noFixtureRegression": {
+          "$ref": "#/$defs/gate"
+        },
+        "correctnessEligibilityFloor": {
+          "$ref": "#/$defs/gate"
+        },
+        "telemetryAndEvaluatorIntegrity": {
+          "$ref": "#/$defs/gate"
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "correctness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "harnessOffCorrectTrials",
+        "harnessOnCorrectTrials",
+        "harnessOnRegressions",
+        "minimumCorrectTrialRate",
+        "minimumFixturePassRate",
+        "minimumHarnessOnCorrectTrials",
+        "minimumHarnessOnPassingFixtures",
+        "harnessOnPassingFixtures",
+        "fixturePasses"
+      ],
+      "properties": {
+        "harnessOffCorrectTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "harnessOnCorrectTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "harnessOnRegressions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimumCorrectTrialRate": {
+          "const": 0.8
+        },
+        "minimumFixturePassRate": {
+          "const": 0.8
+        },
+        "minimumHarnessOnCorrectTrials": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimumHarnessOnPassingFixtures": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "harnessOnPassingFixtures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fixturePasses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fixturePass"
+          }
+        }
+      }
+    },
+    "fixturePass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixtureId",
+        "harnessOff",
+        "harnessOn"
+      ],
+      "properties": {
+        "fixtureId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "harnessOff": {
+          "type": "boolean"
+        },
+        "harnessOn": {
+          "type": "boolean"
+        }
+      }
+    },
+    "speed": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/claimedSpeed"
+        },
+        {
+          "$ref": "#/$defs/unprovenSpeed"
+        }
+      ]
+    },
+    "claimedSpeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "comparisonBasis",
+        "matchedCorrectPairIds",
+        "minimumMatchedPairs",
+        "minimumGeometricMeanSpeedup",
+        "geometricMeanSpeedup"
+      ],
+      "properties": {
+        "claim": {
+          "const": "improvement-proven"
+        },
+        "comparisonBasis": {
+          "const": "matched-correct-only"
+        },
+        "matchedCorrectPairIds": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "minimumMatchedPairs": {
+          "const": 8
+        },
+        "minimumGeometricMeanSpeedup": {
+          "const": 1.1
+        },
+        "geometricMeanSpeedup": {
+          "type": "number",
+          "minimum": 1.1
+        }
+      }
+    },
+    "unprovenSpeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "comparisonBasis",
+        "matchedCorrectPairIds",
+        "minimumMatchedPairs",
+        "minimumGeometricMeanSpeedup",
+        "reason"
+      ],
+      "properties": {
+        "claim": {
+          "const": "not-proven"
+        },
+        "comparisonBasis": {
+          "const": "matched-correct-only"
+        },
+        "matchedCorrectPairIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "minimumMatchedPairs": {
+          "const": 8
+        },
+        "minimumGeometricMeanSpeedup": {
+          "const": 1.1
+        },
+        "geometricMeanSpeedup": {
+          "oneOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "enum": [
+            "insufficient-matched-pairs",
+            "threshold-not-met",
+            "duration-unavailable",
+            "benchmark-ineligible"
+          ]
+        }
+      }
+    },
+    "outcomeAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "failed",
+        "errors",
+        "passRate"
+      ],
+      "properties": {
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passRate": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "objectiveQualityAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "failed",
+        "errors",
+        "passRate",
+        "eligibleTrials",
+        "excludedIncorrectTrials",
+        "excludedInvalidTrials",
+        "totalTrials"
+      ],
+      "properties": {
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passRate": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "eligibleTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excludedIncorrectTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excludedInvalidTrials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalTrials": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "id",
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "scope": {
+          "enum": [
+            "profile",
+            "category",
+            "adapter"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "limited",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wallDurationMs",
+        "toolCalls",
+        "subagentCalls",
+        "maxConcurrentSubagents",
+        "inputTokens",
+        "outputTokens",
+        "totalTokens"
+      ],
+      "properties": {
+        "wallDurationMs": {
+          "$ref": "#/$defs/aggregateMetric"
+        },
+        "toolCalls": {
+          "$ref": "#/$defs/aggregateMetric"
+        },
+        "subagentCalls": {
+          "$ref": "#/$defs/aggregateMetric"
+        },
+        "maxConcurrentSubagents": {
+          "$ref": "#/$defs/aggregateMetric"
+        },
+        "inputTokens": {
+          "$ref": "#/$defs/tokenAggregateMetric"
+        },
+        "outputTokens": {
+          "$ref": "#/$defs/tokenAggregateMetric"
+        },
+        "totalTokens": {
+          "$ref": "#/$defs/tokenAggregateMetric"
+        }
+      }
+    },
+    "aggregateMetric": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observedAggregateMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "tokenAggregateMetric": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/probeObservedAggregateTokenMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "observedAggregateMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "harnessOff",
+        "harnessOn",
+        "source"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "harnessOff": {
+          "type": "number",
+          "minimum": 0
+        },
+        "harnessOn": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "enum": [
+            "documented-stream-json",
+            "monotonic-clock",
+            "deterministic-evaluator",
+            "verified-platform-probe"
+          ]
+        }
+      }
+    },
+    "probeObservedAggregateTokenMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "harnessOff",
+        "harnessOn",
+        "source",
+        "probeEvidence"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "harnessOff": {
+          "type": "number",
+          "minimum": 0
+        },
+        "harnessOn": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "const": "verified-platform-probe"
+        },
+        "probeEvidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "unavailableMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": [
+            "not-emitted",
+            "unsupported",
+            "unverified",
+            "insufficient-observations",
+            "run-failed-before-measurement"
+          ]
+        }
+      }
+    },
+    "tier2Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tier",
+        "summary",
+        "disposition"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "const": 2
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "const": "advisory"
+        }
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

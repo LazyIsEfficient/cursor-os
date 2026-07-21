@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtureId": "dispatch-input-utils",
+  "category": "parallel-disjoint",
+  "workspace": {
+    "sourcePath": "seed",
+    "revision": "fixture-v1",
+    "lockfilePath": "package-lock.json",
+    "lockfileSha256": "6841f0be080c8e8a3ea05b1ca314a1ad57b9bd7b2795cfc45db84f00c634a4f8"
+  },
+  "prompt": "Complete the three independent input utility modules. `src/is-hex-color.mjs` must export `isHexColor(value)`, accepting only strings in `#RGB` or `#RRGGBB` form, case-insensitively. `src/is-safe-username.mjs` must export `isSafeUsername(value)`, accepting only 3–16 ASCII letters, digits, or underscores, beginning with a letter. `src/parse-port.mjs` must export `parsePort(value)`, returning an integer for canonical decimal input from 1 through 65535 and returning `null` otherwise. Keep each function in its named module; none requires another utility module.",
+  "expectedWritePaths": [
+    "src/is-hex-color.mjs",
+    "src/is-safe-username.mjs",
+    "src/parse-port.mjs"
+  ],
+  "evaluators": [
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "visibility": "hidden-from-agent",
+      "command": {
+        "executable": "node",
+        "arguments": [
+          "evaluate.mjs",
+          "{workspace}"
+        ],
+        "workingDirectory": "evaluators"
+      },
+      "timeoutMs": 2000,
+      "expectedExitCode": 0,
+      "severity": "correctness"
+    }
+  ],
+  "integrity": {
+    "evaluatorBundleSha256": "22e84f205196b70ba3b86bdb6cda44c67229eb77761b8e47d372cef4ddaefc6f",
+    "protectedPaths": [
+      "evaluators/**",
+      "canaries/**"
+    ],
+    "canaryIds": [
+      "dispatch-input-utils-canary"
+    ],
+    "networkPolicy": "deny"
+  }
+}

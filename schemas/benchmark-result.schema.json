@@ -1,0 +1,775 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-harness.local/schemas/benchmark-result.schema.json",
+  "title": "Cursor Harness Paired Benchmark Result",
+  "description": "One harness-off/harness-on fixture pair with deterministic outcomes and explicitly sourced or unavailable metrics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "inputDigest",
+    "runId",
+    "pairId",
+    "fixtureId",
+    "fixtureCategory",
+    "armOrder",
+    "harnessOff",
+    "harnessOn",
+    "matchedCorrect",
+    "speedComparison"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "inputDigest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pairId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixtureId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "fixtureCategory": {
+      "enum": [
+        "localized-correctness",
+        "parallel-disjoint",
+        "shared-interface-conflict",
+        "objective-quality",
+        "security-prompt-injection"
+      ]
+    },
+    "armOrder": {
+      "enum": [
+        "off-then-on",
+        "on-then-off"
+      ]
+    },
+    "harnessOff": {
+      "$ref": "#/$defs/armResult"
+    },
+    "harnessOn": {
+      "$ref": "#/$defs/armResult"
+    },
+    "matchedCorrect": {
+      "type": "boolean"
+    },
+    "speedComparison": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/comparableSpeed"
+        },
+        {
+          "$ref": "#/$defs/unavailableSpeed"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "matchedCorrect": {
+            "const": true
+          }
+        },
+        "required": [
+          "matchedCorrect"
+        ]
+      },
+      "then": {
+        "properties": {
+          "harnessOff": {
+            "properties": {
+              "correctness": {
+                "const": "pass"
+              }
+            }
+          },
+          "harnessOn": {
+            "properties": {
+              "correctness": {
+                "const": "pass"
+              }
+            }
+          },
+          "speedComparison": {
+            "$ref": "#/$defs/comparableSpeed"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "speedComparison": {
+            "$ref": "#/$defs/unavailableSpeed"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "armResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trialId",
+        "status",
+        "correctness",
+        "evaluators",
+        "securityOutcomes",
+        "tamperOutcomes",
+        "metrics",
+        "findings",
+        "networkEnforcement",
+        "networkAttemptEvidence",
+        "adapter"
+      ],
+      "properties": {
+        "trialId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "completed",
+            "failed",
+            "timed-out",
+            "invalid"
+          ]
+        },
+        "correctness": {
+          "enum": [
+            "pass",
+            "fail",
+            "error"
+          ]
+        },
+        "evaluators": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evaluatorOutcome"
+          }
+        },
+        "securityOutcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/securityOutcome"
+          }
+        },
+        "tamperOutcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/tamperOutcome"
+          }
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "networkEnforcement": {
+          "$ref": "#/$defs/networkEnforcement"
+        },
+        "networkAttemptEvidence": {
+          "$ref": "#/$defs/networkAttemptEvidence"
+        },
+        "adapter": {
+          "$ref": "#/$defs/adapter"
+        }
+      }
+    },
+    "evaluatorOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluatorId",
+        "kind",
+        "severity",
+        "outcome",
+        "expectedExitCode",
+        "actualExitCode",
+        "contractSha256",
+        "evidenceSha256"
+      ],
+      "properties": {
+        "evaluatorId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "functional",
+            "objective-quality",
+            "security",
+            "tamper"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "correctness",
+            "critical-security",
+            "non-critical-security",
+            "objective-quality",
+            "integrity"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "pass",
+            "fail",
+            "error",
+            "timeout"
+          ]
+        },
+        "expectedExitCode": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "actualExitCode": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contractSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evidenceSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "securityOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controlId",
+        "severity",
+        "outcome",
+        "evidence"
+      ],
+      "properties": {
+        "controlId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "non-critical"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "pass",
+            "violation",
+            "error"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "tamperOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "outcome",
+        "expectedSha256",
+        "actualSha256"
+      ],
+      "properties": {
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outcome": {
+          "enum": [
+            "intact",
+            "modified",
+            "missing",
+            "unexpected",
+            "error"
+          ]
+        },
+        "expectedSha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actualSha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wallDurationMs",
+        "toolCalls",
+        "subagentCalls",
+        "maxConcurrentSubagents",
+        "inputTokens",
+        "outputTokens",
+        "totalTokens"
+      ],
+      "properties": {
+        "wallDurationMs": {
+          "$ref": "#/$defs/metricValue"
+        },
+        "toolCalls": {
+          "$ref": "#/$defs/metricValue"
+        },
+        "subagentCalls": {
+          "$ref": "#/$defs/metricValue"
+        },
+        "maxConcurrentSubagents": {
+          "$ref": "#/$defs/metricValue"
+        },
+        "inputTokens": {
+          "$ref": "#/$defs/tokenMetricValue"
+        },
+        "outputTokens": {
+          "$ref": "#/$defs/tokenMetricValue"
+        },
+        "totalTokens": {
+          "$ref": "#/$defs/tokenMetricValue"
+        }
+      }
+    },
+    "metricValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observedMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "tokenMetricValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/probeObservedTokenMetric"
+        },
+        {
+          "$ref": "#/$defs/unavailableMetric"
+        }
+      ]
+    },
+    "observedMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "source"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "enum": [
+            "documented-stream-json",
+            "monotonic-clock",
+            "deterministic-evaluator",
+            "verified-platform-probe"
+          ]
+        }
+      }
+    },
+    "probeObservedTokenMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "source",
+        "probeEvidence"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source": {
+          "const": "verified-platform-probe"
+        },
+        "probeEvidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "unavailableMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": [
+            "not-emitted",
+            "unsupported",
+            "unverified",
+            "correlation-unavailable",
+            "run-failed-before-measurement"
+          ]
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tier",
+        "summary",
+        "disposition"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceArtifact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "enum": [
+            "gate-failed",
+            "gate-passed",
+            "advisory"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": 1
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "required": [
+              "evidenceArtifact"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": 2
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "disposition": {
+                "const": "advisory"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "limitations"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/adapterLimitation"
+          }
+        }
+      }
+    },
+    "networkEnforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "policySha256Before",
+        "policySha256After",
+        "source",
+        "sandboxMode",
+        "cliSandboxArgument"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "enforced",
+            "error"
+          ]
+        },
+        "policySha256Before": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policySha256After": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "const": "workspace:.cursor/sandbox.json"
+        },
+        "sandboxMode": {
+          "enum": [
+            "enabled",
+            "unknown"
+          ]
+        },
+        "cliSandboxArgument": {
+          "enum": [
+            "--sandbox=enabled",
+            null
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "enforced"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "policySha256Before": {
+                "$ref": "#/$defs/sha256"
+              },
+              "policySha256After": {
+                "$ref": "#/$defs/sha256"
+              },
+              "sandboxMode": {
+                "const": "enabled"
+              },
+              "cliSandboxArgument": {
+                "const": "--sandbox=enabled"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "reason"
+            ]
+          }
+        }
+      ]
+    },
+    "networkAttemptEvidence": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "count",
+            "sha256"
+          ],
+          "properties": {
+            "status": {
+              "const": "observed"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "error"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "adapterLimitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "reason"
+      ],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "comparableSpeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "harnessOffDurationMs",
+        "harnessOnDurationMs",
+        "speedupRatio"
+      ],
+      "properties": {
+        "status": {
+          "const": "matched-correct"
+        },
+        "harnessOffDurationMs": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "harnessOnDurationMs": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "speedupRatio": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "unavailableSpeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "not-comparable"
+        },
+        "reason": {
+          "enum": [
+            "harness-off-incorrect",
+            "harness-on-incorrect",
+            "both-incorrect",
+            "invalid-trial",
+            "duration-unavailable"
+          ]
+        }
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
