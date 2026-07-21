@@ -669,13 +669,18 @@ function protectedPathRule(segment, executable, arguments_) {
 const UNRESOLVABLE_NAME_PATTERN = /[$`*?[\]{}]/u;
 // `[` and `[[` are the test builtins, not globs: `[ -f x ]` is ordinary shell.
 const TEST_BUILTINS = new Set(["[", "[["]);
-// A word that is *entirely* one command substitution is the exception. Its body
-// has already been inspected by inspectSubstitutions, and with no operands
-// beside it there is nothing further the guard can evaluate — the result is
-// unknowable either way. Denying it would block `eval "$(direnv hook zsh)"`,
-// `eval "$(ssh-agent -s)"` and every other shell-init idiom, and a guard people
-// switch off protects nothing. Operands alongside it put it straight back into
-// the deny path, which is what keeps `$(echo rm) -rf /` blocked.
+// A word that is entirely one command substitution, e.g. `$(tool init)`.
+//
+// In COMMAND position this is never an exception: bash runs the substitution's
+// *output* as the command line, so inspecting the body proves nothing. The body
+// of `$(printf 'rm -rf /')` is a harmless `printf`, yet the command that runs is
+// `rm -rf /`. An earlier revision allowed a lone substitution here on the
+// grounds that its body was benign and nothing sat beside it; that was a
+// general-purpose arbitrary-command bypass — `rm -rf /` denied while
+// `$(printf 'rm -rf /')` allowed. The output is not statically knowable, so
+// command position always fails closed.
+//
+// The pattern survives only for OPERAND position — see the `eval` handling.
 const WHOLE_SUBSTITUTION_PATTERN = /^(?:\$\(.*\)|`.*`)$/su;
 
 // This takes the raw word rather than the basename, because executableName()
@@ -685,11 +690,8 @@ const WHOLE_SUBSTITUTION_PATTERN = /^(?:\$\(.*\)|`.*`)$/su;
 // An empty name is deliberately excluded. It means the segment consisted only
 // of assignments (`FOO=1`) or reserved words (`fi`, `done`), both of which are
 // legitimate and execute nothing.
-function isUnresolvableCommandName(word, arguments_) {
+function isUnresolvableCommandName(word) {
   if (word === "" || TEST_BUILTINS.has(word)) {
-    return false;
-  }
-  if (WHOLE_SUBSTITUTION_PATTERN.test(word) && arguments_.length === 0) {
     return false;
   }
   // A leading `-` is a flag, never an executable.
@@ -756,9 +758,18 @@ function inspectSegment(segment, depth) {
     if (depth <= 0) {
       return "nested-shell-depth-exceeded";
     }
-    const rule = inspectCommand(arguments_.join(" "), depth - 1);
-    if (rule) {
-      return rule;
+    const joined = arguments_.join(" ");
+    // A lone substitution reached `eval` as an OPERAND, and its body has
+    // already been inspected in that position by inspectSubstitutions.
+    // Recursing would re-tokenize it into command position, where the
+    // unresolvable-name rule denies `eval "$(direnv hook zsh)"` and every other
+    // shell-init idiom. This is the only place the whole-substitution carve-out
+    // applies; a substitution that names a command outright still fails closed.
+    if (!WHOLE_SUBSTITUTION_PATTERN.test(joined)) {
+      const rule = inspectCommand(joined, depth - 1);
+      if (rule) {
+        return rule;
+      }
     }
   }
 
@@ -776,7 +787,7 @@ function inspectSegment(segment, depth) {
     }
   }
 
-  if (isUnresolvableCommandName(executableWord, arguments_)) {
+  if (isUnresolvableCommandName(executableWord)) {
     return "unresolvable-command-name";
   }
 
@@ -950,6 +961,30 @@ function extractHereDocumentBodies(rawCommand) {
   let index = 0;
   let quote = null;
   let escaped = false;
+  let pending = [];
+
+  // Reads one body per queued opener, in order, starting at the current index.
+  const consumePendingBodies = () => {
+    for (const { operator, delimiter } of pending) {
+      const lines = [];
+      while (index < rawCommand.length) {
+        let line = "";
+        while (index < rawCommand.length && rawCommand[index] !== "\n") {
+          line += rawCommand[index];
+          index += 1;
+        }
+        index += 1;
+        // `<<-` strips leading tabs from the body and from the delimiter line.
+        const stripped = operator === "<<-" ? line.replace(/^\t+/u, "") : line;
+        if (stripped === delimiter) {
+          break;
+        }
+        lines.push(stripped);
+      }
+      bodies.push(lines.join("\n"));
+    }
+    pending = [];
+  };
 
   while (index < rawCommand.length) {
     const character = rawCommand[index];
@@ -978,6 +1013,13 @@ function extractHereDocumentBodies(rawCommand) {
       quote = character;
       command += character;
       index += 1;
+      continue;
+    }
+    // End of the opener line: every here-document queued on it starts here.
+    if (character === "\n") {
+      command += "\n";
+      index += 1;
+      consumePendingBodies();
       continue;
     }
     // `<<<` is a here-string: its payload is on the same line, not a body.
@@ -1029,41 +1071,17 @@ function extractHereDocumentBodies(rawCommand) {
     }
 
     command += delimiter;
-    if (delimiter === "") {
-      continue;
+    if (delimiter !== "") {
+      pending.push({ operator, delimiter });
     }
-
-    // The rest of the opener line stays in the command: redirects and pipes
-    // written after `<<EOF` still belong to the reader.
-    while (index < rawCommand.length && rawCommand[index] !== "\n") {
-      command += rawCommand[index];
-      index += 1;
-    }
-    if (index >= rawCommand.length) {
-      bodies.push("");
-      continue;
-    }
-    command += "\n";
-    index += 1;
-
-    const lines = [];
-    while (index < rawCommand.length) {
-      let line = "";
-      while (index < rawCommand.length && rawCommand[index] !== "\n") {
-        line += rawCommand[index];
-        index += 1;
-      }
-      index += 1;
-      // `<<-` strips leading tabs from the body and from the delimiter line.
-      const stripped = operator === "<<-" ? line.replace(/^\t+/u, "") : line;
-      if (stripped === delimiter) {
-        break;
-      }
-      lines.push(stripped);
-    }
-    bodies.push(lines.join("\n"));
   }
 
+  // A command may open several here-documents at once (`cat <<A <<B`). Their
+  // bodies follow the *opener line* one after another, in operator order, so
+  // the openers are queued while the line is scanned and drained when it ends.
+  // Draining at the first opener instead left B's body in the token stream to
+  // be parsed as commands, desynchronising every later pairing.
+  consumePendingBodies();
   return { command, bodies };
 }
 

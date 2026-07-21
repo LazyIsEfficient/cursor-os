@@ -524,11 +524,40 @@ test("treats here-string payloads as data for non-interpreters", () => {
   }
 });
 
-// A word that is entirely one substitution has already had its body inspected,
-// and with no operands beside it there is nothing more to evaluate. Denying it
-// blocked the ubiquitous shell-init idioms, and a guard people switch off
-// protects nothing. Operands alongside it put it back in the deny path.
-test("allows a whole-substitution command with no operands", () => {
+// A lone command substitution in COMMAND position is unresolvable, full stop.
+// bash runs the substitution's *output* as the command line, so inspecting the
+// body proves nothing: the body of `$(printf 'rm -rf /')` is a harmless printf
+// while the command that runs is `rm -rf /`. An earlier revision allowed these
+// when no operand sat beside them, on the grounds that the body was benign —
+// a general-purpose arbitrary-command bypass, and a decision differential
+// against a protected path (`rm -rf /` denied, `$(printf 'rm -rf /')` allowed).
+test("blocks a lone command substitution in command position", () => {
+  for (const command of [
+    "$(echo rm -rf /)",
+    "$(printf 'rm -rf /')",
+    "`printf 'rm -rf /'`",
+    "`echo rm -rf /`",
+    "$(cat payload.sh)",
+    "$(<payload.sh)",
+    "$(base64 -d p.b64)",
+    '$(echo "git push --force")',
+    "git status; $(printf 'rm -rf /')",
+    "$(rm -rf /)",
+    "`rm -rf /`",
+    // Operands beside the substitution were always denied and stay denied.
+    "$(echo rm) -rf /",
+    "$(echo git) push --force origin main",
+    "$(echo npm) publish",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// The carve-out survives for OPERAND position only. `eval "$(tool init)"` is
+// `eval` plus an operand whose body has already been inspected in that
+// position, and these idioms are ubiquitous enough that denying them gets the
+// guard switched off. `eval "$@"` is not a substitution and stays denied.
+test("allows a substitution operand passed to eval", () => {
   for (const command of [
     'eval "$(direnv hook zsh)"',
     'eval "$(direnv hook bash)"',
@@ -538,17 +567,42 @@ test("allows a whole-substitution command with no operands", () => {
     assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
   }
 
-  // Operands beside the substitution, or a body that is itself destructive.
+  for (const command of ['eval "$@"', "eval rm -rf /", "eval 'rm -rf /'"]) {
+    assertDenied(command);
+  }
+});
+
+// `cat <<A <<B` opens two here-documents on one line and their bodies follow in
+// operator order. Draining the queue at the first opener left B's body in the
+// token stream to be parsed as commands, desynchronising every later pairing.
+test("pairs each here-document body with the operator that opened it", () => {
+  // Both bodies are data when the reader is not an interpreter.
   for (const command of [
-    "$(echo rm) -rf /",
-    "$(echo git) push --force origin main",
-    "$(echo npm) publish",
-    "$(rm -rf /)",
-    "`rm -rf /`",
-    'eval "$@"',
+    "cat <<A <<B\nbodyA\nA\nrm -rf /\nB",
+    "cat <<A <<B\nrm -rf /\nA\nrm -rf /\nB",
+    "cat <<A <<B <<C\nx\nA\ny\nB\nrm -rf /\nC",
+    "cat <<-A <<B\n\tbodyA\n\tA\nbodyB\nB",
+    "cat <<'A' <<\"B\"\nrm -rf /\nA\nrm -rf /\nB",
+    "cat <<A <<B\nx\nA\nrm -rf /",
+    "cat <<A <<B\nx\nA\ny\nB\nls -la",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+
+  // An interpreter runs every body it opens, whichever one is destructive.
+  for (const command of [
+    "bash <<A <<B\nbodyA\nA\nrm -rf /\nB",
+    "bash <<A <<B\nrm -rf /\nA\nbodyB\nB",
+    "bash <<A <<B <<C\nx\nA\ny\nB\nrm -rf /\nC",
+    "sh <<-A <<B\n\tbodyA\n\tA\nrm -rf /\nB",
+    "bash <<'A' <<\"B\"\nprose\nA\nrm -rf /\nB",
+    "bash <<A <<B\nx\nA\nrm -rf /",
   ]) {
     assertDenied(command);
   }
+
+  // Commands written after the last body are still ordinary commands.
+  assertDenied("cat <<A <<B\nx\nA\ny\nB\nrm -rf /");
 });
 
 // Regression for the same review: consuming `$(...)` as one word must not lose

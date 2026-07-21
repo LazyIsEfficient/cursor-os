@@ -114,7 +114,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "2b109bac4681491f6c1f76c3f1d3aa5f04ea15dd901c15c94a814a69fabfe065"
+      "sha256": "3e0452b5073007dbe62234069a58137b0367865592fc1d68a93781c08c8e4403"
     },
     {
       "id": "memory-extract-nudge",
