@@ -92,9 +92,14 @@ configuration and script contract, not Cursor's enforcement implementation.
 The guard itself denies malformed JSON, missing or invalid commands, malformed
 shell quoting or command substitutions, oversized input, and recognized
 destructive forms, including destructive commands nested in `$()` or
-backticks. Single-quoted substitution text remains inert. It allows
-commands outside its narrow denylist so ordinary development is not converted
-into a broad policy gate.
+backticks. Single-quoted substitution text remains inert. Recognition also
+survives subshell and brace grouping (`(rm -rf /)`, `{ npm publish; }`), a
+leading reserved word (`if true; then rm -rf /; fi`), and the
+`env`/`sudo`/`command`/`builtin`/`nohup`/`exec`/`time`/`timeout`/`xargs`
+wrappers. Grouping the tokenizer cannot pair — an unbalanced `(`, `)`, `{`, or
+`}` — is denied rather than parsed on a guess. It allows commands outside its
+narrow denylist so ordinary development is not converted into a broad policy
+gate.
 
 The runtime is Node.js standard library only and network-free. It has no
 dynamic evaluation, subprocess execution, filesystem access, environment
@@ -109,7 +114,7 @@ replacement.
 | Loss of local Git work | Deny hard reset, forced clean, and force branch deletion, including nested command substitutions | Other Git or filesystem operations can still discard work |
 | Remote history or object destruction | Deny force pushes and selected `gh` deletion forms | Normal pushes and other remote clients remain allowed |
 | Package registry mutation | Deny direct npm/pnpm publish and unpublish forms | Other clients, wrappers, or APIs remain outside scope |
-| Evaluator or canary tampering | Deny obvious shell path mutation; require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |
+| Evaluator or canary tampering | Deny obvious shell path mutation, including the copy, truncate, link, and in-place edit tools (`cp`, `tee`, `dd`, `ln`, `install`, `sed`); require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |
 | Prompt, seed, or overlay tampering | Before/after workspace snapshots enforce expected writes and recorded overlay hashes | Filesystem metadata and empty-directory changes are outside the file-content snapshot |
 | Agent network access | Exact hash-stable per-trial policy plus `--sandbox enabled`; normalized direct network tool attempts, absolute client paths, and common command wrappers are critical violations | A runner whose CLI lacks documented sandbox support cannot execute an eligible trial; model API traffic required by Cursor itself remains outside evaluated tool traffic |
 | Malformed or failed hook | Deterministic denial plus Cursor `failClosed` and timeout configuration | Cursor enforcement must still be verified in the actual local client |

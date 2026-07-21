@@ -1,19 +1,61 @@
 const MAX_INPUT_BYTES = 1024 * 1024;
 const MAX_NESTED_SHELL_DEPTH = 3;
 
+// `=` is a boundary so `dd of=evaluators/x.json` style operands are covered.
 const PROTECTED_PATH_PATTERN =
-  /(?:^|[/\\._-])(?:evaluators?|canaries?)(?:$|[/\\._-])/i;
+  /(?:^|[/\\._=-])(?:evaluators?|canar(?:y|ies))(?:$|[/\\._-])/i;
 const MUTATING_COMMANDS = new Set([
   "chmod",
   "chown",
+  "cp",
+  "dd",
+  "install",
+  "ln",
   "mv",
   "rm",
+  "sed",
   "shred",
+  "tee",
   "truncate",
   "unlink",
 ]);
-const SEGMENT_OPERATORS = new Set([";", ";;", "&&", "||", "|", "&", "\n"]);
+const SEGMENT_OPERATORS = new Set([
+  ";",
+  ";;",
+  "&&",
+  "||",
+  "|",
+  "&",
+  "\n",
+  "(",
+  ")",
+  "{",
+  "}",
+]);
 const REDIRECT_OPERATORS = new Set([">", ">>"]);
+// Reserved words that may lead a segment. Skipping them exposes the real
+// executable in `if true; then rm -rf /; fi` style compound commands.
+const SHELL_KEYWORDS = new Set([
+  "!",
+  "case",
+  "coproc",
+  "do",
+  "done",
+  "elif",
+  "else",
+  "esac",
+  "fi",
+  "for",
+  "function",
+  "if",
+  "in",
+  "select",
+  "then",
+  "until",
+  "while",
+  "{",
+  "}",
+]);
 
 function decision(permission, rule) {
   if (permission === "allow") {
@@ -28,11 +70,27 @@ function decision(permission, rule) {
   };
 }
 
+// A reserved-word brace is only a brace when it stands alone as a word, so
+// `${HOME}`, `{a,b}` and `find . -exec rm {} \;` keep their current meaning.
+function isStandaloneBrace(command, index, pendingValue) {
+  if (pendingValue.length > 0) {
+    return false;
+  }
+  const next = command[index + 1];
+  return (
+    next === undefined ||
+    /\s/u.test(next) ||
+    [";", "&", "|", "(", ")"].includes(next)
+  );
+}
+
 function tokenize(command) {
   const tokens = [];
   let value = "";
   let quote = null;
   let escaped = false;
+  let parenDepth = 0;
+  let braceDepth = 0;
 
   const emitWord = () => {
     if (value.length > 0) {
@@ -91,6 +149,28 @@ function tokenize(command) {
       continue;
     }
 
+    if (character === "(" || character === ")") {
+      emitWord();
+      parenDepth += character === "(" ? 1 : -1;
+      if (parenDepth < 0) {
+        throw new Error("unbalanced shell grouping");
+      }
+      tokens.push({ kind: "operator", value: character });
+      continue;
+    }
+
+    if (
+      (character === "{" || character === "}") &&
+      isStandaloneBrace(command, index, value)
+    ) {
+      braceDepth += character === "{" ? 1 : -1;
+      if (braceDepth < 0) {
+        throw new Error("unbalanced shell grouping");
+      }
+      tokens.push({ kind: "operator", value: character });
+      continue;
+    }
+
     const pair = command.slice(index, index + 2);
     if (["&&", "||", ";;", ">>", "<<"].includes(pair)) {
       emitWord();
@@ -110,6 +190,11 @@ function tokenize(command) {
 
   if (quote !== null || escaped) {
     throw new Error("unterminated shell token");
+  }
+
+  // Grouping we cannot confidently pair is grouping we cannot inspect: deny.
+  if (parenDepth !== 0 || braceDepth !== 0) {
+    throw new Error("unbalanced shell grouping");
   }
 
   emitWord();
@@ -157,11 +242,41 @@ function isAssignment(value) {
   return /^[A-Za-z_][A-Za-z0-9_]*=/u.test(value);
 }
 
+const XARGS_VALUE_FLAGS = new Set([
+  "-E",
+  "-I",
+  "-L",
+  "-P",
+  "-a",
+  "-d",
+  "-i",
+  "-n",
+  "-s",
+  "--arg-file",
+  "--delimiter",
+  "--eof",
+  "--max-args",
+  "--max-chars",
+  "--max-lines",
+  "--max-procs",
+  "--replace",
+]);
+
 function unwrapCommand(words) {
   let index = 0;
 
-  while (index < words.length && isAssignment(words[index])) {
-    index += 1;
+  while (index < words.length) {
+    // Reserved words are matched literally: `IF` and `/usr/bin/if` are not
+    // keywords, so they must not be skipped.
+    if (SHELL_KEYWORDS.has(words[index])) {
+      index += 1;
+      continue;
+    }
+    if (isAssignment(words[index])) {
+      index += 1;
+      continue;
+    }
+    break;
   }
 
   while (index < words.length) {
@@ -192,9 +307,39 @@ function unwrapCommand(words) {
       continue;
     }
 
-    if (["command", "builtin", "nohup"].includes(executable)) {
+    if (executable === "exec") {
       index += 1;
       while (index < words.length && words[index].startsWith("-")) {
+        if (words[index] === "-a") {
+          index += 1;
+        }
+        index += 1;
+      }
+      continue;
+    }
+
+    if (executable === "xargs") {
+      index += 1;
+      while (index < words.length && words[index].startsWith("-")) {
+        if (XARGS_VALUE_FLAGS.has(words[index])) {
+          index += 1;
+        }
+        index += 1;
+      }
+      continue;
+    }
+
+    if (["command", "builtin", "nohup", "time", "timeout"].includes(executable)) {
+      index += 1;
+      while (index < words.length && words[index].startsWith("-")) {
+        index += 1;
+      }
+      // `timeout` takes a mandatory duration operand before the command.
+      if (
+        executable === "timeout" &&
+        index < words.length &&
+        /^\d+(?:\.\d+)?[smhd]?$/u.test(words[index])
+      ) {
         index += 1;
       }
       continue;
