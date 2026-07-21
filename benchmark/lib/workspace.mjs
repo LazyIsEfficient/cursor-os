@@ -1,4 +1,5 @@
-import { lstat, mkdir, realpath, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
+import { lstat, mkdir, realpath, rm, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import {
@@ -72,6 +73,68 @@ export async function writeTrialSandboxPolicy(workspacePath) {
   };
 }
 
+// Config homes that exist on disk right now. A signal handler needs this because the async
+// `finally` in the engine never runs when the process dies on a default-disposition signal.
+const activeCursorHomePaths = new Set();
+const CREDENTIAL_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
+let installedSignalHandlers = null;
+let signalHandlerDepth = 0;
+
+function removeActiveCursorHomesSync() {
+  const removed = [];
+  for (const cursorHomePath of activeCursorHomePaths) {
+    try {
+      // Synchronous by necessity: the process is about to terminate, so an awaited rm would
+      // not finish before the default disposition kills us.
+      rmSync(cursorHomePath, { recursive: true, force: true });
+      removed.push(cursorHomePath);
+    } catch (error) {
+      process.stderr.write(`failed to remove Cursor config home ${cursorHomePath}: ${error.message}\n`);
+    }
+  }
+  activeCursorHomePaths.clear();
+  return removed;
+}
+
+// Removes credential copies on Ctrl-C or runner cancellation, then re-raises with the default
+// disposition so the exit code CI observes is the signal's, not ours.
+export function installCredentialSignalHandlers() {
+  signalHandlerDepth += 1;
+  if (installedSignalHandlers === null) {
+    installedSignalHandlers = new Map();
+    for (const signal of CREDENTIAL_SIGNALS) {
+      const handler = () => {
+        removeActiveCursorHomesSync();
+        uninstallCredentialSignalHandlers({ force: true });
+        process.kill(process.pid, signal);
+      };
+      installedSignalHandlers.set(signal, handler);
+      process.on(signal, handler);
+    }
+  }
+  return () => uninstallCredentialSignalHandlers();
+}
+
+function uninstallCredentialSignalHandlers({ force = false } = {}) {
+  signalHandlerDepth = force ? 0 : Math.max(0, signalHandlerDepth - 1);
+  if (signalHandlerDepth > 0 || installedSignalHandlers === null) return;
+  for (const [signal, handler] of installedSignalHandlers) process.removeListener(signal, handler);
+  installedSignalHandlers = null;
+}
+
+// Fail closed: a credential copy that cannot be removed stays loud. But when an error was already
+// in flight, keep it — the adapter's diagnostic is the more useful of the two.
+export async function removeCursorHome(cursorHomePath, { cause } = {}) {
+  activeCursorHomePaths.delete(cursorHomePath);
+  try {
+    await rm(cursorHomePath, { recursive: true, force: true });
+  } catch (error) {
+    const message = `failed to remove Cursor config home ${cursorHomePath}`;
+    if (cause === undefined) throw new Error(message, { cause: error });
+    throw new AggregateError([cause, error], message);
+  }
+}
+
 export async function prepareTrialWorkspace({
   fixtureEntry,
   fixture,
@@ -83,26 +146,37 @@ export async function prepareTrialWorkspace({
   const workspacePath = join(trialRoot, "workspace");
   const cursorHomePath = join(trialRoot, "cursor-home");
   const artifactPath = join(trialRoot, "artifacts");
+  invariant(!cursorHomePath.startsWith(`${workspacePath}/`), "Cursor config home must be outside the agent workspace");
   await mkdir(join(runRoot, "trials"), { recursive: true });
   await mkdir(trialRoot);
   await Promise.all([
     mkdir(cursorHomePath),
     mkdir(artifactPath),
   ]);
+  activeCursorHomePaths.add(cursorHomePath);
 
-  await copyTree(fixtureEntry.workspaceSourcePath, workspacePath);
-  if (cursorConfigTemplatePath !== undefined) {
-    const template = await validateCursorConfigTemplate(cursorConfigTemplatePath, { workspacePath });
-    await copyTree(template.realPath, cursorHomePath);
+  let sandboxPolicy;
+  try {
+    // Fixture workspaces carry no credentials, but the harness runs them as the invoking user
+    // and the corpus has no executable files, so owner-only is the correct floor here too.
+    await copyTree(fixtureEntry.workspaceSourcePath, workspacePath, { mode: 0o600 });
+    if (cursorConfigTemplatePath !== undefined) {
+      const template = await validateCursorConfigTemplate(cursorConfigTemplatePath, { workspacePath });
+      await copyTree(template.realPath, cursorHomePath, { mode: 0o600 });
+    }
+    const promptDirectory = join(workspacePath, ".cursor-harness");
+    await mkdir(promptDirectory);
+    [, sandboxPolicy] = await Promise.all([
+      writeFile(join(promptDirectory, "prompt.txt"), `${fixture.prompt}\n`, { flag: "wx", mode: 0o600 }),
+      writeTrialSandboxPolicy(workspacePath),
+    ]);
+  } catch (error) {
+    // A partially prepared trial must not leave copied credentials behind. Preserve the
+    // preparation failure: a failing rm must not swallow the error that caused it.
+    await removeCursorHome(cursorHomePath, { cause: error });
+    throw error;
   }
-  const promptDirectory = join(workspacePath, ".cursor-harness");
-  await mkdir(promptDirectory);
-  const [, sandboxPolicy] = await Promise.all([
-    writeFile(join(promptDirectory, "prompt.txt"), `${fixture.prompt}\n`, { flag: "wx", mode: 0o600 }),
-    writeTrialSandboxPolicy(workspacePath),
-  ]);
 
-  invariant(!cursorHomePath.startsWith(`${workspacePath}/`), "Cursor config home must be outside the agent workspace");
   return {
     trialRoot,
     workspacePath,

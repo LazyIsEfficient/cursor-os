@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { spawn, spawnSync } from "node:child_process";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
@@ -20,10 +20,11 @@ import {
   validateResultRecords,
 } from "../../benchmark/lib/result.mjs";
 import { normalizeCliNdjson } from "../../benchmark/lib/telemetry.mjs";
-import { globPatternToRegExp, hashFile, hashTree, sha256 } from "../../benchmark/lib/util.mjs";
+import { copyTree, globPatternToRegExp, hashFile, hashTree, sha256 } from "../../benchmark/lib/util.mjs";
 import {
   compareWorkspaceSnapshot,
   prepareTrialWorkspace,
+  removeCursorHome,
   SANDBOX_POLICY,
   SANDBOX_POLICY_BYTES,
   writeTrialSandboxPolicy,
@@ -373,6 +374,206 @@ test("trial setup copies only a validated external Cursor config template", asyn
     }),
     /symbolic link/u,
   );
+});
+
+test("copied Cursor config files are owner-only and removed after every trial", async () => {
+  const { root, manifestPath } = await makeFixtureRoot();
+  const loaded = await readBenchmarkManifest(manifestPath);
+  const templatePath = join(root, "cleanup-config-template");
+  await mkdir(templatePath);
+  await mkdir(join(templatePath, "nested"));
+  await writeFile(join(templatePath, "auth.json"), "{\"synthetic\":\"non-secret\"}\n");
+  await writeFile(join(templatePath, "nested", "session.json"), "{\"synthetic\":\"non-secret\"}\n");
+
+  const observed = [];
+  const makeAdapter = (behaviour) => ({
+    adapterKind: "cleanup-mock",
+    async run({ cursorHomePath, workspacePath, captureWorkspaceBaseline }) {
+      await captureWorkspaceBaseline();
+      observed.push({
+        cursorHomePath,
+        authMode: (await stat(join(cursorHomePath, "auth.json"))).mode & 0o777,
+        nestedMode: (await stat(join(cursorHomePath, "nested", "session.json"))).mode & 0o777,
+      });
+      if (behaviour === "throw") throw new Error("synthetic adapter failure");
+      await writeFile(join(workspacePath, "answer.txt"), "correct\n");
+      return {
+        status: "completed",
+        exitCode: 0,
+        metrics: {
+          wallDurationMs: metric(5),
+          toolCalls: { status: "observed", value: 0, source: "documented-stream-json" },
+          subagentCalls: { status: "unavailable", reason: "correlation-unavailable" },
+          maxConcurrentSubagents: { status: "unavailable", reason: "correlation-unavailable" },
+          inputTokens: { status: "unavailable", reason: "not-emitted" },
+          outputTokens: { status: "unavailable", reason: "not-emitted" },
+          totalTokens: { status: "unavailable", reason: "not-emitted" },
+        },
+        findings: [],
+      };
+    },
+  });
+
+  for (const [behaviour, runId] of [["complete", "cleanup-run"], ["throw", "cleanup-failure-run"]]) {
+    const execution = await runBenchmark({
+      loadedManifest: loaded,
+      agentAdapter: makeAdapter(behaviour),
+      runId,
+      outputRoot: join(root, `cleanup-output-${behaviour}`),
+      cursorConfigTemplatePath: templatePath,
+    });
+    // Artifacts the run is expected to keep must survive the credential cleanup.
+    assert.match(await readFile(execution.recordPath, "utf8"), /"pairId"/u);
+  }
+
+  // Derived, not hardcoded: every pair runs both arms, and the loop above runs the corpus twice.
+  const trialsPerRun = deriveRunPlan(loaded).pairs.length * 2;
+  assert.equal(
+    observed.length,
+    trialsPerRun * 2,
+    `expected each of ${trialsPerRun} trials to be observed in both the completing and throwing run`,
+  );
+  for (const { cursorHomePath, authMode, nestedMode } of observed) {
+    assert.equal(authMode, 0o600);
+    assert.equal(nestedMode, 0o600);
+    await assert.rejects(stat(cursorHomePath), /ENOENT/u);
+    await assert.rejects(readFile(join(cursorHomePath, "auth.json")), /ENOENT/u);
+    assert.equal((await stat(join(dirname(cursorHomePath), "artifacts", "telemetry.ndjson"))).isFile(), true);
+  }
+  assert.equal((await stat(join(templatePath, "auth.json"))).isFile(), true);
+});
+
+test("a trial that fails during preparation leaves no copied Cursor config behind", async () => {
+  const { root, fixture } = await makeFixtureRoot();
+  const templatePath = join(root, "preparation-failure-template");
+  await mkdir(templatePath);
+  await writeFile(join(templatePath, "auth.json"), "{\"synthetic\":\"non-secret\"}\n");
+  const runRoot = join(root, "preparation-failure-run");
+
+  await assert.rejects(
+    prepareTrialWorkspace({
+      fixtureEntry: { workspaceSourcePath: join(root, "does-not-exist") },
+      fixture,
+      runRoot,
+      trialId: "trial-prepare-failure",
+      cursorConfigTemplatePath: templatePath,
+    }),
+    /ENOENT/u,
+  );
+  await assert.rejects(
+    stat(join(runRoot, "trials", "trial-prepare-failure", "cursor-home")),
+    /ENOENT/u,
+  );
+});
+
+test("copyTree defaults to owner-only and honours an explicit mode", async () => {
+  const root = await mkdtemp(join(tmpdir(), "cursor-copytree-mode-"));
+  const source = join(root, "source");
+  await mkdir(join(source, "nested"), { recursive: true });
+  await writeFile(join(source, "top.txt"), "top\n", { mode: 0o644 });
+  await writeFile(join(source, "nested", "inner.txt"), "inner\n", { mode: 0o644 });
+
+  // The default is what protects credential copies; it must not depend on the source mode.
+  await copyTree(source, join(root, "default"));
+  assert.equal((await stat(join(root, "default", "top.txt"))).mode & 0o777, 0o600);
+  assert.equal((await stat(join(root, "default", "nested", "inner.txt"))).mode & 0o777, 0o600);
+
+  await copyTree(source, join(root, "explicit"), { mode: 0o640 });
+  assert.equal((await stat(join(root, "explicit", "top.txt"))).mode & 0o777, 0o640);
+  assert.equal((await stat(join(root, "explicit", "nested", "inner.txt"))).mode & 0o777, 0o640);
+
+  // Directories must stay traversable regardless of the file mode.
+  assert.equal((await stat(join(root, "explicit", "nested"))).mode & 0o777, 0o755);
+  await rm(root, { recursive: true, force: true });
+});
+
+test("SIGINT during a trial removes the live Cursor config home and preserves the signal exit status", async () => {
+  const { root, manifestPath } = await makeFixtureRoot();
+  const templatePath = join(root, "signal-config-template");
+  await mkdir(templatePath);
+  await writeFile(join(templatePath, "auth.json"), "{\"synthetic\":\"non-secret\"}\n");
+  const readyPath = join(root, "signal-ready.txt");
+  const runnerPath = join(root, "signal-runner.mjs");
+  await writeFile(runnerPath, [
+    "import { writeFile } from 'node:fs/promises';",
+    `import { runBenchmark } from ${JSON.stringify(join(repositoryRoot, "benchmark/lib/engine.mjs"))};`,
+    `import { readBenchmarkManifest } from ${JSON.stringify(join(repositoryRoot, "benchmark/lib/manifest.mjs"))};`,
+    "const [manifestPath, templatePath, outputRoot, readyPath] = process.argv.slice(2);",
+    "await runBenchmark({",
+    "  loadedManifest: await readBenchmarkManifest(manifestPath),",
+    "  agentAdapter: {",
+    "    adapterKind: 'signal-mock',",
+    "    async run({ cursorHomePath, captureWorkspaceBaseline }) {",
+    "      await captureWorkspaceBaseline();",
+    "      await writeFile(readyPath, `${cursorHomePath}\\n`);",
+    // A timer keeps the loop alive so the process is genuinely mid-trial when the signal lands.
+    "      await new Promise((resolve) => setTimeout(resolve, 30_000));",
+    "      throw new Error('signal never arrived');",
+    "    },",
+    "  },",
+    "  runId: 'signal-run',",
+    "  outputRoot,",
+    "  cursorConfigTemplatePath: templatePath,",
+    "});",
+  ].join("\n"));
+
+  const child = spawn(
+    process.execPath,
+    [runnerPath, manifestPath, templatePath, join(root, "signal-output"), readyPath],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+  const exited = new Promise((resolve) => {
+    child.on("exit", (code, signal) => resolve({ code, signal }));
+  });
+
+  let cursorHomePath = "";
+  try {
+    for (let attempt = 0; attempt < 200 && cursorHomePath === ""; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      cursorHomePath = (await readFile(readyPath, "utf8").catch(() => "")).trim();
+    }
+    assert.notEqual(cursorHomePath, "", "adapter never reported a live Cursor config home");
+    assert.equal((await stat(join(cursorHomePath, "auth.json"))).isFile(), true);
+    child.kill("SIGINT");
+  } finally {
+    const outcome = await exited;
+    // Re-raising with the default disposition is what keeps CI's exit status honest.
+    assert.equal(outcome.signal, "SIGINT");
+    assert.equal(outcome.code, null);
+  }
+  await assert.rejects(stat(cursorHomePath), /ENOENT/u);
+});
+
+test("a failing Cursor config removal stays loud without discarding the error already in flight", async () => {
+  const root = await mkdtemp(join(tmpdir(), "cursor-cleanup-error-"));
+  const missingPath = join(root, "no-such-cursor-home");
+  // A path whose parent is a file cannot be removed, so rm fails for a reason the harness cannot fix.
+  const blockedParent = join(root, "blocked");
+  await writeFile(blockedParent, "not a directory\n");
+  const blockedPath = join(blockedParent, "cursor-home");
+
+  await removeCursorHome(missingPath);
+
+  const inFlight = new Error("synthetic adapter failure");
+  await assert.rejects(
+    removeCursorHome(blockedPath, { cause: inFlight }),
+    (error) => {
+      assert.equal(error instanceof AggregateError, true);
+      assert.match(error.message, /failed to remove Cursor config home/u);
+      assert.equal(error.errors[0], inFlight);
+      assert.equal(error.errors[1].code, "ENOTDIR");
+      return true;
+    },
+  );
+  await assert.rejects(
+    removeCursorHome(blockedPath),
+    (error) => {
+      assert.match(error.message, /failed to remove Cursor config home/u);
+      assert.equal(error.cause.code, "ENOTDIR");
+      return true;
+    },
+  );
+  await rm(root, { recursive: true, force: true });
 });
 
 test("authentication preflight uses a copied synthetic config and fails clearly when missing", async () => {

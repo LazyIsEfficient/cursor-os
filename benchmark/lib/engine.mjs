@@ -7,7 +7,9 @@ import { appendJsonLine, sha256, unavailable } from "./util.mjs";
 import {
   captureWorkspaceSnapshot,
   compareWorkspaceSnapshot,
+  installCredentialSignalHandlers,
   prepareTrialWorkspace,
+  removeCursorHome,
 } from "./workspace.mjs";
 
 function failedMetrics() {
@@ -169,22 +171,29 @@ async function writeTelemetry({
   });
 }
 
-async function runTrial({
-  loadedManifest,
-  plan,
-  trial,
-  runRoot,
-  agentAdapter,
-  cursorConfigTemplatePath,
-}) {
-  const fixture = plan.fixtureEntry.manifest;
+async function runTrial({ loadedManifest, plan, trial, runRoot, agentAdapter, cursorConfigTemplatePath }) {
   const prepared = await prepareTrialWorkspace({
     fixtureEntry: plan.fixtureEntry,
-    fixture,
+    fixture: plan.fixtureEntry.manifest,
     runRoot,
     trialId: trial.trialId,
     cursorConfigTemplatePath,
   });
+  let trialError;
+  try {
+    return await executeTrial({ loadedManifest, plan, trial, agentAdapter }, prepared);
+  } catch (error) {
+    trialError = error;
+    throw error;
+  } finally {
+    // The config home holds a copy of the authenticated Cursor credentials; it must not outlive
+    // the trial. Passing the in-flight error keeps the adapter diagnostic if the removal also fails.
+    await removeCursorHome(prepared.cursorHomePath, { cause: trialError });
+  }
+}
+
+async function executeTrial({ plan, trial, agentAdapter }, prepared) {
+  const fixture = plan.fixtureEntry.manifest;
   const integrityFailures = [];
   const integrityFindings = [];
   let beforeIntegrity;
@@ -399,33 +408,40 @@ export async function runBenchmark({
   const runRoot = join(resolvedOutputRoot, runPlan.runId);
   const recordPath = join(runRoot, "results.ndjson");
   const results = [];
-  for (const pair of runPlan.pairs) {
-    const orderedArms = pair.armOrder === "off-then-on"
-      ? ["harness-off", "harness-on"]
-      : ["harness-on", "harness-off"];
-    const armResults = {};
-    for (const arm of orderedArms) {
-      armResults[arm] = await runTrial({
-        loadedManifest,
-        plan: pair,
-        trial: pair.trials[arm],
-        runRoot,
-        agentAdapter,
-        cursorConfigTemplatePath,
+  // Ctrl-C and runner cancellation bypass the per-trial finally; these handlers unwind the
+  // credential copy that is live at the moment the signal arrives.
+  const uninstallSignalHandlers = installCredentialSignalHandlers();
+  try {
+    for (const pair of runPlan.pairs) {
+      const orderedArms = pair.armOrder === "off-then-on"
+        ? ["harness-off", "harness-on"]
+        : ["harness-on", "harness-off"];
+      const armResults = {};
+      for (const arm of orderedArms) {
+        armResults[arm] = await runTrial({
+          loadedManifest,
+          plan: pair,
+          trial: pair.trials[arm],
+          runRoot,
+          agentAdapter,
+          cursorConfigTemplatePath,
+        });
+      }
+      const result = buildPairResult({
+        inputDigest: loadedManifest.inputDigest,
+        runId: pair.runId,
+        pairId: pair.pairId,
+        fixtureId: pair.fixtureId,
+        fixtureCategory: pair.fixtureEntry.manifest.category,
+        armOrder: pair.armOrder,
+        harnessOff: armResults["harness-off"],
+        harnessOn: armResults["harness-on"],
       });
+      await appendResultRecord(recordPath, result, { loadedManifest });
+      results.push(result);
     }
-    const result = buildPairResult({
-      inputDigest: loadedManifest.inputDigest,
-      runId: pair.runId,
-      pairId: pair.pairId,
-      fixtureId: pair.fixtureId,
-      fixtureCategory: pair.fixtureEntry.manifest.category,
-      armOrder: pair.armOrder,
-      harnessOff: armResults["harness-off"],
-      harnessOn: armResults["harness-on"],
-    });
-    await appendResultRecord(recordPath, result, { loadedManifest });
-    results.push(result);
+  } finally {
+    uninstallSignalHandlers();
   }
   return { runId: runPlan.runId, runRoot, recordPath, results };
 }
