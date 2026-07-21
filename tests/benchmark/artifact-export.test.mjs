@@ -23,6 +23,8 @@ test("sanitized export allowlists evidence, excludes raw roots, and writes verif
     const runRoot = join(root, "raw", "run-1");
     const artifactRoot = join(runRoot, "trials", "trial-1", "artifacts");
     const exportRoot = join(root, "sanitized", "run-1");
+    const canaryFile = join(root, "secret-canary.txt");
+    await writeFile(canaryFile, "absent-secret-canary");
     await Promise.all([
       mkdir(artifactRoot, { recursive: true }),
       mkdir(join(runRoot, "trials", "trial-1", "workspace"), { recursive: true }),
@@ -39,7 +41,7 @@ test("sanitized export allowlists evidence, excludes raw roots, and writes verif
       writeFile(join(runRoot, "trials", "trial-1", "cursor-home", "auth.json"), "private auth config\n"),
     ]);
 
-    const manifest = await exportSanitizedArtifacts({ runRoot, exportRoot });
+    const manifest = await exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] });
 
     assert.deepEqual(manifest.files.map(({ path }) => path), [
       "plugin-lifecycle.json",
@@ -83,8 +85,258 @@ test("sanitized export fails closed on exact canaries and credential patterns", 
 
     await writeFile(join(artifactRoot, "stderr.log"), Buffer.from("CURSOR_API_KEY=cur_live_abcdefghijklmnopqrstuvwxyz123456"));
     await assert.rejects(
-      exportSanitizedArtifacts({ runRoot, exportRoot }),
+      exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
       /credential pattern/u,
+    );
+    assert.equal(await exists(exportRoot), false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// JSON.stringify escapes `"`, `\`, and control characters, so a secret carrying any
+// of them used to survive a raw-byte comparison against the canary and reach the
+// published export.
+const JSON_ESCAPED_SECRETS = [
+  ["a double quote", `sec${String.fromCharCode(34)}ret-quote-1234`],
+  ["a backslash", `sec${String.fromCharCode(92)}ret-backslash-1234`],
+  ["a newline", `line1${String.fromCharCode(10)}line2-secret-1234`],
+  ["a unicode escape", `secret${String.fromCharCode(1)}control-1234`],
+  ["a literal non-ascii character", `sec${String.fromCharCode(233)}ret-caf${String.fromCharCode(233)}-1234`],
+];
+
+for (const [label, secret] of JSON_ESCAPED_SECRETS) {
+  test(`sanitized export refuses a canary containing ${label} after JSON encoding`, async () => {
+    const root = await mkdtemp(join(tmpdir(), "benchmark-export-escaped-"));
+    try {
+      const runRoot = join(root, "raw", "run-3");
+      const exportRoot = join(root, "sanitized", "run-3");
+      const canaryFile = join(root, "secret-canary.txt");
+      await mkdir(runRoot, { recursive: true });
+      await writeFile(
+        join(runRoot, "results.ndjson"),
+        `${JSON.stringify({ result: "ok", note: secret })}\n`,
+      );
+      await writeFile(canaryFile, secret);
+
+      await assert.rejects(
+        exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+        /secret canary/u,
+      );
+      assert.equal(await exists(exportRoot), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+}
+
+test("sanitized export refuses to run when no secret canary is supplied", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-nocanary-"));
+  try {
+    const runRoot = join(root, "raw", "run-4");
+    const exportRoot = join(root, "sanitized", "run-4");
+    await mkdir(runRoot, { recursive: true });
+    await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+
+    await assert.rejects(
+      exportSanitizedArtifacts({ runRoot, exportRoot }),
+      /at least one --secret-canary-file/u,
+    );
+    await assert.rejects(
+      exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [] }),
+      /at least one --secret-canary-file/u,
+    );
+    assert.equal(await exists(exportRoot), false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("sanitized export fails closed when JSON evidence cannot be parsed for scanning", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-unparsable-"));
+  try {
+    const runRoot = join(root, "raw", "run-5");
+    const exportRoot = join(root, "sanitized", "run-5");
+    const canaryFile = join(root, "secret-canary.txt");
+    await mkdir(runRoot, { recursive: true });
+    await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+    await writeFile(join(runRoot, "report.json"), "{ truncated evidence");
+    await writeFile(canaryFile, "absent-secret-canary");
+
+    await assert.rejects(
+      exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+      /could not be parsed for credential scanning/u,
+    );
+    assert.equal(await exists(exportRoot), false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// stream.ndjson mirrors Cursor CLI stdout verbatim, so non-JSON lines are normal and
+// must not abort the export -- but any escaped secret on a line that does parse is
+// still caught.
+test("sanitized export tolerates non-JSON lines in third-party stream.ndjson", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-stream-"));
+  try {
+    const runRoot = join(root, "raw", "run-7");
+    const artifactRoot = join(runRoot, "trials", "trial-1", "artifacts");
+    const exportRoot = join(root, "sanitized", "run-7");
+    const canaryFile = join(root, "secret-canary.txt");
+    await mkdir(artifactRoot, { recursive: true });
+    await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+    await writeFile(
+      join(artifactRoot, "stream.ndjson"),
+      "Cursor CLI banner: not JSON\n{\"type\":\"result\",\"subtype\":\"ok\"}\n",
+    );
+    await writeFile(canaryFile, "absent-secret-canary");
+
+    const manifest = await exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] });
+    assert.ok(manifest.files.some(({ path }) => path.endsWith("stream.ndjson")));
+
+    // A secret escaped inside a parseable line of that same file is still refused.
+    await rm(exportRoot, { recursive: true, force: true });
+    const secret = `sec${String.fromCharCode(34)}ret-in-stream-1234`;
+    await writeFile(
+      join(artifactRoot, "stream.ndjson"),
+      `Cursor CLI banner: not JSON\n${JSON.stringify({ type: "result", note: secret })}\n`,
+    );
+    await writeFile(canaryFile, secret);
+    await assert.rejects(
+      exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+      /secret canary/u,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// `echo "$SECRET" > canary.txt` is the obvious way to write a canary file and it appends
+// a newline. An untrimmed canary matched nothing, so the scan silently passed and the
+// export shipped the plaintext secret -- a defeat an operator triggers by accident.
+const PADDED_CANARY_FILES = [
+  ["a trailing newline", (secret) => `${secret}\n`],
+  ["a trailing CRLF", (secret) => `${secret}\r\n`],
+  ["surrounding whitespace", (secret) => `  ${secret}  \n`],
+  ["a trailing tab", (secret) => `${secret}\t`],
+];
+
+for (const [label, decorate] of PADDED_CANARY_FILES) {
+  test(`sanitized export refuses a secret when the canary file has ${label}`, async () => {
+    const root = await mkdtemp(join(tmpdir(), "benchmark-export-padded-"));
+    try {
+      const runRoot = join(root, "raw", "run-8");
+      const exportRoot = join(root, "sanitized", "run-8");
+      const canaryFile = join(root, "secret-canary.txt");
+      const secret = "sk-live-padded-canary-1234";
+      await mkdir(runRoot, { recursive: true });
+      await writeFile(
+        join(runRoot, "results.ndjson"),
+        `${JSON.stringify({ result: "ok", note: secret })}\n`,
+      );
+      await writeFile(canaryFile, decorate(secret));
+
+      await assert.rejects(
+        exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+        /secret canary/u,
+      );
+      assert.equal(await exists(exportRoot), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+}
+
+test("sanitized export rejects a whitespace-only canary instead of scanning with it", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-blank-canary-"));
+  try {
+    const runRoot = join(root, "raw", "run-9");
+    const exportRoot = join(root, "sanitized", "run-9");
+    const canaryFile = join(root, "secret-canary.txt");
+    await mkdir(runRoot, { recursive: true });
+    await writeFile(
+      join(runRoot, "results.ndjson"),
+      `${JSON.stringify({ result: "ok", note: "sk-live-blank-canary-1234" })}\n`,
+    );
+
+    // A whitespace-only canary is non-empty on disk but can never match; it must fail the
+    // export rather than disable canary coverage for the whole run.
+    for (const contents of [" \n", "\n", "\t", "  "]) {
+      await writeFile(canaryFile, contents);
+      await assert.rejects(
+        exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+        /secret canary must not be empty or whitespace-only/u,
+      );
+      assert.equal(await exists(exportRoot), false);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+// The raw-byte scan compares the canary encoded as utf8, utf16le, and latin1, so a secret
+// logged in an encoding that never decodes as UTF-8 is still caught.
+for (const encoding of ["utf16le", "latin1"]) {
+  test(`sanitized export refuses a secret written to a log as ${encoding}`, async () => {
+    const root = await mkdtemp(join(tmpdir(), "benchmark-export-encoding-"));
+    try {
+      const runRoot = join(root, "raw", "run-10");
+      const artifactRoot = join(runRoot, "trials", "trial-1", "artifacts");
+      const exportRoot = join(root, "sanitized", "run-10");
+      const canaryFile = join(root, "secret-canary.txt");
+      const secret = "sk-live-encoded-canary-1234";
+      await mkdir(artifactRoot, { recursive: true });
+      await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+      await writeFile(join(artifactRoot, "stdout.log"), Buffer.from(secret, encoding));
+      await writeFile(canaryFile, `${secret}\n`);
+
+      await assert.rejects(
+        exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+        /secret canary/u,
+      );
+      assert.equal(await exists(exportRoot), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+}
+
+test("sanitized export still succeeds when a padded canary is absent from evidence", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-padded-ok-"));
+  try {
+    const runRoot = join(root, "raw", "run-11");
+    const exportRoot = join(root, "sanitized", "run-11");
+    const canaryFile = join(root, "secret-canary.txt");
+    await mkdir(runRoot, { recursive: true });
+    await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+    await writeFile(canaryFile, "absent-secret-canary\n");
+
+    const manifest = await exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] });
+    assert.deepEqual(manifest.files.map(({ path }) => path), ["results.ndjson"]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("sanitized export scans non-JSON evidence and JSON embedded in logs", async () => {
+  const root = await mkdtemp(join(tmpdir(), "benchmark-export-log-"));
+  try {
+    const runRoot = join(root, "raw", "run-6");
+    const artifactRoot = join(runRoot, "trials", "trial-1", "artifacts");
+    const exportRoot = join(root, "sanitized", "run-6");
+    const canaryFile = join(root, "secret-canary.txt");
+    const secret = `sec${String.fromCharCode(34)}ret-in-log-1234`;
+    await mkdir(artifactRoot, { recursive: true });
+    await writeFile(join(runRoot, "results.ndjson"), "{\"result\":\"ok\"}\n");
+    await writeFile(
+      join(artifactRoot, "stderr.log"),
+      `plain diagnostic line\n${JSON.stringify({ message: secret })}\n`,
+    );
+    await writeFile(canaryFile, secret);
+
+    await assert.rejects(
+      exportSanitizedArtifacts({ runRoot, exportRoot, secretCanaryFiles: [canaryFile] }),
+      /secret canary/u,
     );
     assert.equal(await exists(exportRoot), false);
   } finally {
