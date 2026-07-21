@@ -9,10 +9,14 @@ The project is source-available under the [MIT License](LICENSE). It is not
 currently claimed to be published in Cursor Marketplace or proven by a live
 authenticated benchmark.
 
-Cursor Harness is a port of the **agentic-os** project to Cursor's plugin
-format; the workflow concepts it implements originate there. The Cursor plugin
-manifest, hooks, validator, benchmark, and release tooling in this repository
-are separate work.
+Cursor Harness is a port of the
+[agentic-os](https://github.com/LazyIsEfficient/agentic-os) project to Cursor's
+plugin format. The skill library under `plugin/skills/` is carried over from
+agentic-os largely verbatim — most reference files are byte-identical, and the
+edits are frontmatter and cross-link adaptations for Cursor. The agents,
+commands, Cursor plugin manifest, hooks, validator, benchmark, and release
+tooling in this repository are separate work; they share no code with
+agentic-os's equivalents. Both projects are MIT-licensed under the same owner.
 
 ## Goals and gates
 
