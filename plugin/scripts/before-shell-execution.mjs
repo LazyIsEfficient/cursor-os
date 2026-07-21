@@ -36,12 +36,18 @@ const SEGMENT_OPERATORS = new Set([
   "{",
   "}",
   "<<<",
+  "<<-",
   "<<",
 ]);
 // Here-documents and here-strings both feed their payload to the command on
 // stdin. For an interpreter that payload *is* the script, so it is inspected as
 // one rather than treated as inert data.
-const HERE_OPERATORS = new Set(["<<<", "<<"]);
+//
+// `<<-` is listed separately because it must out-match `<<`: without it the
+// tab-stripping form tokenized as `<<` plus a word `-EOF`, and that leading
+// dash then read as an unresolvable command name, denying every `cat <<-EOF`.
+const HERE_OPERATORS = new Set(["<<<", "<<-", "<<"]);
+const HERE_DOCUMENT_OPERATORS = new Set(["<<-", "<<"]);
 // `>|` forces truncation over `noclobber`, and `>&`/`&>`/`&>>` redirect a
 // stream to a file just as `>` does. All of them can destroy a protected file.
 const REDIRECT_OPERATORS = new Set([">", ">>", ">|", ">&", "&>", "&>>"]);
@@ -53,6 +59,7 @@ const OPERATOR_LITERALS = [
   ";;",
   ">>",
   "<<<",
+  "<<-",
   "<<",
   ">|",
   ">&",
@@ -173,8 +180,8 @@ function tokenize(command) {
 
   // After any control operator the next word leads a command again; after a
   // redirect it names a file, not a command.
-  const pushOperator = (operator) => {
-    tokens.push({ kind: "operator", value: operator });
+  const pushOperator = (operator, caseArm = false) => {
+    tokens.push({ kind: "operator", value: operator, caseArm });
     commandPosition = !REDIRECT_OPERATORS.has(operator);
   };
 
@@ -233,10 +240,28 @@ function tokenize(command) {
       continue;
     }
 
+    // A command substitution is a single word to the shell, so it is consumed
+    // whole rather than split on its parentheses. Splitting it stranded the
+    // operands that followed in a segment of their own, which is how
+    // `$(echo rm) -rf /` came to parse `-rf` as a command name while the
+    // substitution that actually named `rm` sat in a segment by itself.
+    if (character === "$" && command[index + 1] === "(") {
+      const end = substitutionEnd(command, index + 2, "dollar");
+      value += command.slice(index, end + 1);
+      index = end;
+      continue;
+    }
+    if (character === "`") {
+      const end = substitutionEnd(command, index + 1, "backtick");
+      value += command.slice(index, end + 1);
+      index = end;
+      continue;
+    }
+
     if (character === "(" || character === ")") {
       emitWord();
       if (character === ")" && isCaseArmTerminator()) {
-        pushOperator(")");
+        pushOperator(")", true);
         continue;
       }
       parenDepth += character === "(" ? 1 : -1;
@@ -291,16 +316,33 @@ function tokenize(command) {
 function splitSegments(tokens) {
   const segments = [];
   let segment = [];
+  let skipPayloadWord = false;
 
   for (const token of tokens) {
     if (token.kind === "operator" && SEGMENT_OPERATORS.has(token.value)) {
+      // The words before a case arm's `)` are its match patterns, not a
+      // command: `*) pwd;;` matches anything, it does not run `*`. Inspecting
+      // them denied every wildcard arm once globs became unresolvable names.
+      if (token.caseArm === true) {
+        segment = [];
+        continue;
+      }
       if (segment.length > 0) {
         segments.push(segment);
         segment = [];
       }
-    } else {
-      segment.push(token);
+      // The word after a here-operator is a delimiter or a here-string payload:
+      // stdin data, never a command name. inspectHereDocuments has already run
+      // it as a script for the interpreters that genuinely do so. Leaving it in
+      // command position denied `grep foo <<< "$INPUT"` on its own payload.
+      skipPayloadWord = HERE_OPERATORS.has(token.value);
+      continue;
     }
+    if (skipPayloadWord && token.kind === "word") {
+      skipPayloadWord = false;
+      continue;
+    }
+    segment.push(token);
   }
 
   if (segment.length > 0) {
@@ -425,9 +467,17 @@ const WRAPPERS = new Map([
   ],
 ]);
 
+const NO_COMMAND = {
+  executable: "",
+  executableWord: "",
+  arguments: [],
+  joinsOperands: false,
+};
+
 function unwrapCommand(words) {
   let index = 0;
   let joinsOperands = false;
+  let sawSubjectKeyword = false;
 
   while (index < words.length) {
     // Reserved words are matched literally: `IF` and `/usr/bin/if` are not
@@ -435,8 +485,19 @@ function unwrapCommand(words) {
     if (SHELL_KEYWORDS.has(words[index])) {
       const keyword = words[index];
       index += 1;
-      if (KEYWORDS_WITH_SUBJECT.has(keyword) && index < words.length) {
-        index += 1;
+      if (KEYWORDS_WITH_SUBJECT.has(keyword)) {
+        sawSubjectKeyword = true;
+        if (index < words.length) {
+          index += 1;
+        }
+      }
+      // `in` opens the word list of a `for`/`select`/`case`, and that list is
+      // data: `for f in *.log` names files to loop over, not a program to run.
+      // Reading it as a command resolved the executable to `*.log` and denied
+      // an ordinary loop. Any command in the construct lives in the `do`/arm
+      // segments, which are split off by `;` and inspected on their own.
+      if (keyword === "in" && sawSubjectKeyword) {
+        return NO_COMMAND;
       }
       continue;
     }
@@ -599,6 +660,24 @@ function protectedPathRule(segment, executable, arguments_) {
 // so no rule can fire and the command falls through as "unrecognised, allow".
 // A name the guard cannot resolve is a name it cannot police: fail closed.
 //
+// Everything the shell rewrites before it decides what to run: substitutions
+// and variables (`$`, backtick), and the glob and brace metacharacters. A name
+// holding any of them is not the name of the program that executes — `/bin/r?`
+// runs `/bin/rm` and `{rm,x}` expands to `rm x` — so no rule below can match it
+// and the command would fall through as "unrecognised, allow". A reviewer
+// deleted a real directory this way with `/bin/r? -rf ./victim`.
+const UNRESOLVABLE_NAME_PATTERN = /[$`*?[\]{}]/u;
+// `[` and `[[` are the test builtins, not globs: `[ -f x ]` is ordinary shell.
+const TEST_BUILTINS = new Set(["[", "[["]);
+// A word that is *entirely* one command substitution is the exception. Its body
+// has already been inspected by inspectSubstitutions, and with no operands
+// beside it there is nothing further the guard can evaluate — the result is
+// unknowable either way. Denying it would block `eval "$(direnv hook zsh)"`,
+// `eval "$(ssh-agent -s)"` and every other shell-init idiom, and a guard people
+// switch off protects nothing. Operands alongside it put it straight back into
+// the deny path, which is what keeps `$(echo rm) -rf /` blocked.
+const WHOLE_SUBSTITUTION_PATTERN = /^(?:\$\(.*\)|`.*`)$/su;
+
 // This takes the raw word rather than the basename, because executableName()
 // erases the evidence: it slices at the last `/`, so `eval$IFS'rm -rf /'` —
 // one word ending in a slash — reduces to the empty string.
@@ -606,14 +685,15 @@ function protectedPathRule(segment, executable, arguments_) {
 // An empty name is deliberately excluded. It means the segment consisted only
 // of assignments (`FOO=1`) or reserved words (`fi`, `done`), both of which are
 // legitimate and execute nothing.
-function isUnresolvableCommandName(word) {
-  if (word === "") {
+function isUnresolvableCommandName(word, arguments_) {
+  if (word === "" || TEST_BUILTINS.has(word)) {
     return false;
   }
-  // A leading `-` is a flag, never an executable. It is the residue left behind
-  // when a substitution supplied the command name: `$(echo rm) -rf /` splits
-  // into a `$` segment and a `[-rf, /]` segment.
-  return word.includes("$") || word.includes("`") || word.startsWith("-");
+  if (WHOLE_SUBSTITUTION_PATTERN.test(word) && arguments_.length === 0) {
+    return false;
+  }
+  // A leading `-` is a flag, never an executable.
+  return UNRESOLVABLE_NAME_PATTERN.test(word) || word.startsWith("-");
 }
 
 // PRODUCT DECISION PENDING — deliberately not wired into the deny path.
@@ -696,7 +776,7 @@ function inspectSegment(segment, depth) {
     }
   }
 
-  if (isUnresolvableCommandName(executableWord)) {
+  if (isUnresolvableCommandName(executableWord, arguments_)) {
     return "unresolvable-command-name";
   }
 
@@ -855,13 +935,145 @@ function joinLineContinuations(command) {
   return command.replaceAll("\\\r\n", "").replaceAll("\\\n", "");
 }
 
-// Splitting the segment stops the payload being read as an argument, but the
-// payload of `bash <<< 'rm -rf /'` is a whole script and lands in a segment of
-// its own whose executable is meaningless. This pass pairs each here-operator
-// with the command it feeds and, when that command is an interpreter, inspects
-// the payload as the command string it actually is.
-function inspectHereDocuments(tokens, depth) {
+// A here-document body is data: the shell copies it verbatim to the reader's
+// stdin until the delimiter line, and only an interpreter turns that text back
+// into commands. Lifting the body out before tokenizing is what stops
+// `cat <<EOF > notes.md` followed by the prose line `rm -rf / destroys
+// everything` from parsing that prose as a command and denying a document.
+//
+// The stripped command keeps its `<<`/`<<-` operator and delimiter so the token
+// stream still shows which command reads which body; the bodies are returned in
+// operator order so each pairs with its reader.
+function extractHereDocumentBodies(rawCommand) {
+  const bodies = [];
+  let command = "";
+  let index = 0;
+  let quote = null;
+  let escaped = false;
+
+  while (index < rawCommand.length) {
+    const character = rawCommand[index];
+
+    if (escaped) {
+      command += character;
+      escaped = false;
+      index += 1;
+      continue;
+    }
+    if (character === "\\") {
+      command += character;
+      escaped = true;
+      index += 1;
+      continue;
+    }
+    if (quote !== null) {
+      if (character === quote) {
+        quote = null;
+      }
+      command += character;
+      index += 1;
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      quote = character;
+      command += character;
+      index += 1;
+      continue;
+    }
+    // `<<<` is a here-string: its payload is on the same line, not a body.
+    if (rawCommand.startsWith("<<<", index)) {
+      command += "<<<";
+      index += 3;
+      continue;
+    }
+    if (!rawCommand.startsWith("<<", index)) {
+      command += character;
+      index += 1;
+      continue;
+    }
+
+    const operator = rawCommand.startsWith("<<-", index) ? "<<-" : "<<";
+    command += operator;
+    index += operator.length;
+
+    while (index < rawCommand.length && /[ \t]/u.test(rawCommand[index])) {
+      command += rawCommand[index];
+      index += 1;
+    }
+
+    // Quoting the delimiter only disables expansion inside the body; the
+    // delimiter itself is the unquoted text, so `<<'EOF'` still ends at `EOF`.
+    let delimiter = "";
+    let delimiterQuote = null;
+    while (index < rawCommand.length) {
+      const delimiterCharacter = rawCommand[index];
+      if (delimiterQuote !== null) {
+        index += 1;
+        if (delimiterCharacter === delimiterQuote) {
+          delimiterQuote = null;
+        } else {
+          delimiter += delimiterCharacter;
+        }
+        continue;
+      }
+      if (delimiterCharacter === "'" || delimiterCharacter === '"') {
+        delimiterQuote = delimiterCharacter;
+        index += 1;
+        continue;
+      }
+      if (/[\s;&|<>()]/u.test(delimiterCharacter)) {
+        break;
+      }
+      delimiter += delimiterCharacter;
+      index += 1;
+    }
+
+    command += delimiter;
+    if (delimiter === "") {
+      continue;
+    }
+
+    // The rest of the opener line stays in the command: redirects and pipes
+    // written after `<<EOF` still belong to the reader.
+    while (index < rawCommand.length && rawCommand[index] !== "\n") {
+      command += rawCommand[index];
+      index += 1;
+    }
+    if (index >= rawCommand.length) {
+      bodies.push("");
+      continue;
+    }
+    command += "\n";
+    index += 1;
+
+    const lines = [];
+    while (index < rawCommand.length) {
+      let line = "";
+      while (index < rawCommand.length && rawCommand[index] !== "\n") {
+        line += rawCommand[index];
+        index += 1;
+      }
+      index += 1;
+      // `<<-` strips leading tabs from the body and from the delimiter line.
+      const stripped = operator === "<<-" ? line.replace(/^\t+/u, "") : line;
+      if (stripped === delimiter) {
+        break;
+      }
+      lines.push(stripped);
+    }
+    bodies.push(lines.join("\n"));
+  }
+
+  return { command, bodies };
+}
+
+// Pairs each here-operator with the command that reads it. A payload is only
+// inspected as a script when its reader is an interpreter — for anything else
+// it is stdin data, which is why `cat <<< 'rm -rf /'` and prose here-docs stay
+// allowed while `bash <<< 'rm -rf /'` does not.
+function inspectHereDocuments(tokens, depth, bodies) {
   let words = [];
+  let bodyIndex = 0;
 
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
@@ -872,18 +1084,19 @@ function inspectHereDocuments(tokens, depth) {
     }
 
     if (HERE_OPERATORS.has(token.value)) {
-      const payload = tokens[index + 1];
+      const payload = HERE_DOCUMENT_OPERATORS.has(token.value)
+        ? bodies[bodyIndex++]
+        : tokens[index + 1]?.value;
       const { executable } = unwrapCommand(words);
-      if (payload?.kind === "word" && SHELL_INTERPRETERS.has(executable)) {
+      if (typeof payload === "string" && SHELL_INTERPRETERS.has(executable)) {
         if (depth <= 0) {
           return "nested-shell-depth-exceeded";
         }
-        const rule = inspectCommand(payload.value, depth - 1);
+        const rule = inspectCommand(payload, depth - 1);
         if (rule) {
           return rule;
         }
       }
-      words = [];
       continue;
     }
 
@@ -896,11 +1109,13 @@ function inspectHereDocuments(tokens, depth) {
 }
 
 function inspectCommand(rawCommand, depth = MAX_NESTED_SHELL_DEPTH) {
-  const command = joinLineContinuations(rawCommand);
+  const { command, bodies } = extractHereDocumentBodies(
+    joinLineContinuations(rawCommand),
+  );
   const substitutionRule = inspectSubstitutions(command, depth);
   if (substitutionRule) return substitutionRule;
   const tokens = tokenize(command);
-  const hereRule = inspectHereDocuments(tokens, depth);
+  const hereRule = inspectHereDocuments(tokens, depth, bodies);
   if (hereRule) return hereRule;
   for (const segment of splitSegments(tokens)) {
     const rule = inspectSegment(segment, depth);

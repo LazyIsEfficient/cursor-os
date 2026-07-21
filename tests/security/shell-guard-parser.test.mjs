@@ -444,6 +444,125 @@ test("still allows watch over non-destructive commands", () => {
   }
 });
 
+// Adversarial re-review of e3263ab: glob and brace metacharacters in command
+// position were unguarded. `/bin/r?` expands to `/bin/rm`, and the reviewer ran
+// `/bin/r? -rf ./victim` against a real directory and deleted it. The name a
+// glob resolves to is exactly as unknowable as `$(...)`, so it fails closed.
+test("blocks glob and brace expansion in command position", () => {
+  for (const command of [
+    "/bin/r? -rf ./victim",
+    "/bin/[r]m -rf /",
+    "/bin/r[m] -rf /",
+    "/bin/*m -rf /",
+    "/bin/?m -rf /",
+    "/bin/r* -rf /",
+    "/usr/bin/r?? -rf /",
+    "r? -rf /",
+    "{rm,x} -rf /",
+    "bash << EOF\n/bin/r? -rf /\nEOF",
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// Globs are only unresolvable in *command* position. As operands they are
+// ordinary, and `[`/`[[` are the test builtins rather than character classes.
+test("still allows globs in argument position and the test builtins", () => {
+  for (const command of [
+    "ls *.log",
+    "rm -rf ./dist/*",
+    "npm run build && ls dist/*.js",
+    "for f in *.log; do echo $f; done",
+    "if [ -f x ]; then npm test; fi",
+    '[ -z "$x" ] && echo empty',
+    "[[ -f x ]] && npm test",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// A here-document body is stdin data, not source. Parsing it as commands denied
+// ordinary documents: `cat <<EOF > notes.md` followed by prose that happens to
+// contain `rm -rf /` was blocked. The body is a script only when an interpreter
+// reads it, and `<<-` must tokenize as its own operator or the tab-stripping
+// form leaves `-EOF` parsing as a command name.
+test("treats here-document bodies as data unless an interpreter reads them", () => {
+  for (const command of [
+    "cat <<EOF > doc.md\nrm -rf / destroys everything\nEOF",
+    "cat <<-EOF\nhello\nEOF",
+    "cat <<-EOF > doc.md\n\trm -rf / is bad\n\tEOF",
+    "cat <<'EOF'\nrm -rf /\nEOF",
+    "python <<EOF\nprint('rm -rf /')\nEOF",
+    "cat <<EOF\nunterminated body rm -rf /",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+
+  // An interpreter still runs the body, tab-stripped and quoted forms included.
+  for (const command of [
+    "bash << EOF\nrm -rf /\nEOF",
+    "sh <<-EOF\nrm -rf /\nEOF",
+    "bash <<'EOF'\nrm -rf /\nEOF",
+  ]) {
+    assertDenied(command);
+  }
+
+  // The reader's own redirects survive body extraction.
+  assertDenied("cat <<EOF > canary.txt\nhello\nEOF");
+});
+
+// The here-string payload is the reader's stdin, so it is never a command name.
+// Treating it as one denied `grep foo <<< "$INPUT"` on its own payload.
+test("treats here-string payloads as data for non-interpreters", () => {
+  for (const command of [
+    'grep foo <<< "$INPUT"',
+    'sort <<< "${x}"',
+    "cat <<< 'rm -rf /'",
+    "bash <<< 'npm test'",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+// A word that is entirely one substitution has already had its body inspected,
+// and with no operands beside it there is nothing more to evaluate. Denying it
+// blocked the ubiquitous shell-init idioms, and a guard people switch off
+// protects nothing. Operands alongside it put it back in the deny path.
+test("allows a whole-substitution command with no operands", () => {
+  for (const command of [
+    'eval "$(direnv hook zsh)"',
+    'eval "$(direnv hook bash)"',
+    'eval "$(ssh-agent -s)"',
+    'eval "$(brew shellenv)"',
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+
+  // Operands beside the substitution, or a body that is itself destructive.
+  for (const command of [
+    "$(echo rm) -rf /",
+    "$(echo git) push --force origin main",
+    "$(echo npm) publish",
+    "$(rm -rf /)",
+    "`rm -rf /`",
+    'eval "$@"',
+  ]) {
+    assertDenied(command);
+  }
+});
+
+// Regression for the same review: consuming `$(...)` as one word must not lose
+// the substitution-body inspection that runs before tokenizing.
+test("still inspects substitution bodies after whole-word tokenization", () => {
+  for (const command of [
+    "echo $(rm -rf /)",
+    "x=$(rm -rf /)",
+    "$(rm -rf /",
+  ]) {
+    assertDenied(command);
+  }
+});
+
 // Running out of nesting budget means the guard has stopped reading a command
 // string it knows is there. That is exactly when it must not degrade to allow.
 test("fails closed when nested shell depth is exhausted", () => {
@@ -452,6 +571,23 @@ test("fails closed when nested shell depth is exhausted", () => {
     'eval "eval \\"eval \\\\\\"eval rm -rf /\\\\\\"\\""',
   ]) {
     assertDenied(command);
+  }
+});
+
+// OPEN PRODUCT DECISION — this test pins current behaviour, not desired
+// behaviour. `find -exec CMD` is arbitrary command execution that no rule
+// inspects, and `find . -exec rm -rf {} \;` was a confirmed canary deletion.
+// before-shell-execution.mjs implements findExecutesMutatingCommand behind
+// `DENY_FIND_EXEC = false`; flipping that constant makes the first case below
+// deny and is a deliberate tradeoff, because the guard cannot tell scoped
+// cleanup (`-name '*.tmp' -exec rm {}`) from `-exec rm -rf {}`. Whoever flips
+// it owns this assertion.
+test("find -exec stays allowed pending a product decision", () => {
+  for (const command of [
+    'find . -name "*.log" -exec rm {} \\;',
+    "find . -type f -exec chmod 644 {} \\;",
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
   }
 });
 
