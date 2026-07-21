@@ -25,12 +25,14 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install locked dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Validate repository contracts
         run: npm run validate
       - name: Run complete test suite
         run: npm test
       - name: Verify install lifecycle
         run: node --test tests/validator/install-lifecycle.test.mjs
+      - name: Verify plugin installation lifecycle end to end
+        run: npm run plugin:lifecycle:verify
       - name: Run deterministic 24-trial corpus smoke
         run: npm run benchmark:corpus-smoke
