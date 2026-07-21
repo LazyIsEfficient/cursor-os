@@ -10,14 +10,33 @@ Attribution: Cursor Harness contributors
 
 ## Included components
 
-- **Agents:** `engineer`, `rust-engineer`, `godot-engineer`,
-  `phaser-engineer`, `code-reviewer`, `security-reviewer`,
-  `library-investigator`, `adversarial-claims-reviewer`, and
-  `capability-probe`.
-- **Skills:** prompt shaping, dependency-aware planning, incremental
-  implementation, a recurrence-based findings ledger, session state, and
-  memory extraction.
-- **Commands:** `/review-gate`, `/triage-findings`, and `/state`.
+- **Agents:** <!-- components:agent:start -->nine agents — `engineer`,
+  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `code-reviewer`,
+  `security-reviewer`, `library-investigator`, `adversarial-claims-reviewer`,
+  and `capability-probe`.<!-- components:agent:end -->
+- **Skills:** <!-- components:skill:start -->nineteen skills.
+  Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
+  brief), `planning-and-task-breakdown` (brief to a dependency-aware task
+  graph), `incremental-implementation` (small tested increments with
+  risk-proportional verification), `session-state` (state that survives
+  compaction), `memory-extraction` (durable cross-session facts), and
+  `findings-ledger` (recurrence-based triage of advisory findings).
+  Review and audit: `code-review-and-quality` (multi-axis review method),
+  `security-engineering` (cross-stack security audit method),
+  `library-investigator` (forensic, evidence-only audit of this plugin's own
+  component files), and `adversarial-claims-reviewer` (verifies equations and
+  quantitative claims in a document). Stack-specific:
+  `typescript-testing-backend` (Jest and Supertest),
+  `typescript-testing-frontend` (Jest and React Testing Library),
+  `typescript-data-engineering` (pipelines, brokers, warehouses),
+  `browser-testing-with-devtools` (real-browser verification via Chrome
+  DevTools MCP), `rust-engineer`, `godot-engineer` (Godot 4 with C#), and
+  `phaser-engineer` (Phaser 3 with TypeScript). Delivery:
+  `deployment-pipelines` (CI/CD workflow authoring) and `release-manager`
+  (CHANGELOG, version tags, release comms).<!-- components:skill:end -->
+- **Commands:** <!-- components:command:start -->three commands —
+  `/review-gate`, `/triage-findings`, and
+  `/state`.<!-- components:command:end -->
 - **Rules:** factual correctness, orchestrator-first dispatch, deterministic
   diff verification, and evidence review tiers.
 - **Hooks:** four events. A fail-closed `beforeShellExecution` command guard

@@ -30,11 +30,27 @@ resource savings cannot offset a failed gate. See the
 
 The consumer plugin in [`plugin/`](plugin/README.md) contains:
 
-- agents for capability probing, implementation, code review, and security
-  review;
-- six skills: prompt shaping, task planning, incremental implementation,
-  findings-ledger management, session state, and memory extraction;
-- three commands: `/review-gate`, `/triage-findings`, and `/state`;
+- <!-- components:agent:start -->nine agents: `engineer`,
+  `rust-engineer`, `godot-engineer`, and `phaser-engineer` for dispatched
+  implementation; `code-reviewer` and `security-reviewer` for read-only review;
+  `library-investigator` and `adversarial-claims-reviewer` for evidence-only
+  audit; and `capability-probe` for capability
+  detection;<!-- components:agent:end -->
+- <!-- components:skill:start -->nineteen skills: `prompt-shaping`,
+  `planning-and-task-breakdown`, `incremental-implementation`,
+  `code-review-and-quality`, and `security-engineering` for the core
+  shape/plan/implement/review path; `findings-ledger`, `session-state`, and
+  `memory-extraction` for finding recurrence and durable state;
+  `typescript-testing-backend`, `typescript-testing-frontend`,
+  `typescript-data-engineering`, and `browser-testing-with-devtools` for
+  TypeScript and browser work; `rust-engineer`, `godot-engineer`, and
+  `phaser-engineer` for the Rust and game stacks; `deployment-pipelines` and
+  `release-manager` for pipelines and release coordination; and
+  `library-investigator` and `adversarial-claims-reviewer` for auditing this
+  plugin's own surfaces and documents that make formal
+  claims;<!-- components:skill:end -->
+- <!-- components:command:start -->three commands: `/review-gate`,
+  `/triage-findings`, and `/state`;<!-- components:command:end -->
 - always-applied factual-correctness, orchestration, review-tier, and
   actual-diff rules; and
 - four hook events backed by dependency-free Node scripts: a fail-closed
