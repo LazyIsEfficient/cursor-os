@@ -77,6 +77,10 @@ async function selectedEvidenceFiles(runRoot) {
 }
 
 async function loadSecretCanaries(secretCanaryFiles, runRoot, exportRoot) {
+  invariant(
+    Array.isArray(secretCanaryFiles) && secretCanaryFiles.length > 0,
+    "sanitized export requires at least one --secret-canary-file; refusing to export with zero canary coverage",
+  );
   const canaries = [];
   for (const path of secretCanaryFiles) {
     invariant(typeof path === "string" && isAbsolute(path), "secret canary file paths must be absolute");
@@ -93,13 +97,93 @@ async function loadSecretCanaries(secretCanaryFiles, runRoot, exportRoot) {
   return canaries;
 }
 
+function collectStrings(value, collected) {
+  if (typeof value === "string") collected.push(value);
+  else if (Array.isArray(value)) for (const entry of value) collectStrings(entry, collected);
+  else if (value !== null && typeof value === "object") {
+    for (const [key, entry] of Object.entries(value)) {
+      collected.push(key);
+      collectStrings(entry, collected);
+    }
+  }
+  return collected;
+}
+
+// JSON encoding hides a secret from a raw-byte scan: `"` becomes `\"`, `\` becomes
+// `\\`, and control characters become `\n` or `\uXXXX`. Scanning the decoded field
+// values is what catches those. The raw scan is kept as well, so this is strictly
+// additive and non-UTF8 payloads stay covered.
+//
+// Only harness-generated evidence is required to parse. These files are written by
+// `JSON.stringify` (`appendJsonLine`), so a parse failure means truncation or
+// corruption and must fail the export rather than leave bytes unscanned. Everything
+// else -- `stream.ndjson`, `stdout.log`, `stderr.log`, `evaluator-*.log` -- is a
+// verbatim third-party capture where non-JSON lines are normal; `normalizeCliNdjson`
+// tolerates them too. Those still get the raw scan plus opportunistic decoding, so no
+// file is ever skipped.
+const STRICT_JSON_DOCUMENTS = new Set(["plugin-lifecycle.json", "report.json"]);
+const STRICT_JSON_LINES = new Set(["results.ndjson", "telemetry.ndjson"]);
+
+function decodedStrings(bytes, path) {
+  const text = bytes.toString("utf8");
+  const name = basename(path);
+  const collected = [];
+  if (STRICT_JSON_LINES.has(name)) {
+    for (const [index, line] of text.split("\n").entries()) {
+      if (line.trim() === "") continue;
+      let record;
+      try {
+        record = JSON.parse(line);
+      } catch (error) {
+        throw new Error(
+          `selected artifact ${path} line ${index + 1} could not be parsed for credential scanning: ${error.message}`,
+        );
+      }
+      collectStrings(record, collected);
+    }
+    return collected;
+  }
+  if (STRICT_JSON_DOCUMENTS.has(name)) {
+    let document;
+    try {
+      document = JSON.parse(text);
+    } catch (error) {
+      throw new Error(
+        `selected artifact ${path} could not be parsed for credential scanning: ${error.message}`,
+      );
+    }
+    return collectStrings(document, collected);
+  }
+  for (const line of text.split("\n")) {
+    if (line.trim() === "") continue;
+    try {
+      collectStrings(JSON.parse(line), collected);
+    } catch {
+      continue;
+    }
+  }
+  return collected;
+}
+
 function assertNoCredentials(bytes, canaries, path) {
+  const candidates = [bytes.toString("utf8"), ...decodedStrings(bytes, path)];
   for (const canary of canaries) {
     invariant(!bytes.includes(canary), `selected artifact ${path} contains an exact secret canary`);
+    const canaryText = canary.toString("utf8");
+    for (const candidate of candidates) {
+      invariant(
+        !candidate.includes(canaryText),
+        `selected artifact ${path} contains an exact secret canary`,
+      );
+    }
   }
-  const text = bytes.toString("utf8");
   for (const pattern of HIGH_CONFIDENCE_CREDENTIALS) {
-    invariant(!pattern.test(text), `selected artifact ${path} contains a high-confidence credential pattern`);
+    for (const candidate of candidates) {
+      invariant(
+        !pattern.test(candidate),
+        `selected artifact ${path} contains a high-confidence credential pattern`,
+      );
+    }
   }
 }
 
