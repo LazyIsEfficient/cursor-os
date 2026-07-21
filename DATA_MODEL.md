@@ -79,7 +79,7 @@ Input must be a JSON object no larger than 1 MiB. The guard normalizes absolute 
 | Field | Value |
 |---|---|
 | **Kind** | `api` |
-| **Ingestion route** | `npm run benchmark:export -- --run-root <raw-run-root> --export-root <sanitized-export-root> [--secret-canary-file <absolute-path>]...` emits one JSON line to standard output after a successful sanitized export |
+| **Ingestion route** | `npm run benchmark:export -- --run-root <raw-run-root> --export-root <sanitized-export-root> --secret-canary-file <absolute-path> [--secret-canary-file <absolute-path>]...` emits one JSON line to standard output after a successful sanitized export |
 | **Source** | `benchmark/export-artifacts.mjs` (argument parser and successful standard-output result); `benchmark/lib/artifact-export.mjs` (`exportSanitizedArtifacts`); `package.json` (`benchmark:export`) |
 
 #### Shape

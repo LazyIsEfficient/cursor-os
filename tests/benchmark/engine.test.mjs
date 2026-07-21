@@ -1602,7 +1602,16 @@ test("integrity-baseline capture failure records an attributable cause that surv
   }
 
   const exportRoot = join(root, "integrity-baseline-export");
-  const exportManifest = await exportSanitizedArtifacts({ runRoot: execution.runRoot, exportRoot });
+  // The sanitized export refuses to run without canary coverage, so supply a canary that
+  // is absent from the evidence: this test is about the failure cause surviving the
+  // export, not about canary matching.
+  const canaryFile = join(root, "integrity-baseline-canary.txt");
+  await writeFile(canaryFile, "absent-secret-canary-integrity-baseline");
+  const exportManifest = await exportSanitizedArtifacts({
+    runRoot: execution.runRoot,
+    exportRoot,
+    secretCanaryFiles: [canaryFile],
+  });
   assert.ok(exportManifest.files.some(({ path }) => path === "results.ndjson"));
   const exported = await readFile(join(exportRoot, "results.ndjson"), "utf8");
   for (const summary of summaries) assert.ok(exported.includes(summary));
