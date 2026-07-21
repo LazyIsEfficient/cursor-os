@@ -82,7 +82,8 @@ export async function copyTree(source, destination) {
     const relativePath = relative(source, sourcePath);
     const destinationPath = join(destination, relativePath);
     await mkdir(dirname(destinationPath), { recursive: true });
-    await writeFile(destinationPath, await readFile(sourcePath), { flag: "wx" });
+    // Copies can carry authenticated Cursor config material; keep them owner-only at rest.
+    await writeFile(destinationPath, await readFile(sourcePath), { flag: "wx", mode: 0o600 });
   }
 }
 

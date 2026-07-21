@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
@@ -371,6 +371,90 @@ test("trial setup copies only a validated external Cursor config template", asyn
       cursorConfigTemplatePath: linkedTemplate,
     }),
     /symbolic link/u,
+  );
+});
+
+test("copied Cursor config files are owner-only and removed after every trial", async () => {
+  const { root, manifestPath } = await makeFixtureRoot();
+  const loaded = await readBenchmarkManifest(manifestPath);
+  const templatePath = join(root, "cleanup-config-template");
+  await mkdir(templatePath);
+  await mkdir(join(templatePath, "nested"));
+  await writeFile(join(templatePath, "auth.json"), "{\"synthetic\":\"non-secret\"}\n");
+  await writeFile(join(templatePath, "nested", "session.json"), "{\"synthetic\":\"non-secret\"}\n");
+
+  const observed = [];
+  const makeAdapter = (behaviour) => ({
+    adapterKind: "cleanup-mock",
+    async run({ cursorHomePath, workspacePath, captureWorkspaceBaseline }) {
+      await captureWorkspaceBaseline();
+      observed.push({
+        cursorHomePath,
+        authMode: (await stat(join(cursorHomePath, "auth.json"))).mode & 0o777,
+        nestedMode: (await stat(join(cursorHomePath, "nested", "session.json"))).mode & 0o777,
+      });
+      if (behaviour === "throw") throw new Error("synthetic adapter failure");
+      await writeFile(join(workspacePath, "answer.txt"), "correct\n");
+      return {
+        status: "completed",
+        exitCode: 0,
+        metrics: {
+          wallDurationMs: metric(5),
+          toolCalls: { status: "observed", value: 0, source: "documented-stream-json" },
+          subagentCalls: { status: "unavailable", reason: "correlation-unavailable" },
+          maxConcurrentSubagents: { status: "unavailable", reason: "correlation-unavailable" },
+          inputTokens: { status: "unavailable", reason: "not-emitted" },
+          outputTokens: { status: "unavailable", reason: "not-emitted" },
+          totalTokens: { status: "unavailable", reason: "not-emitted" },
+        },
+        findings: [],
+      };
+    },
+  });
+
+  for (const [behaviour, runId] of [["complete", "cleanup-run"], ["throw", "cleanup-failure-run"]]) {
+    const execution = await runBenchmark({
+      loadedManifest: loaded,
+      agentAdapter: makeAdapter(behaviour),
+      runId,
+      outputRoot: join(root, `cleanup-output-${behaviour}`),
+      cursorConfigTemplatePath: templatePath,
+    });
+    // Artifacts the run is expected to keep must survive the credential cleanup.
+    assert.match(await readFile(execution.recordPath, "utf8"), /"pairId"/u);
+  }
+
+  assert.equal(observed.length, 8);
+  for (const { cursorHomePath, authMode, nestedMode } of observed) {
+    assert.equal(authMode, 0o600);
+    assert.equal(nestedMode, 0o600);
+    await assert.rejects(stat(cursorHomePath), /ENOENT/u);
+    await assert.rejects(readFile(join(cursorHomePath, "auth.json")), /ENOENT/u);
+    assert.equal((await stat(join(dirname(cursorHomePath), "artifacts", "telemetry.ndjson"))).isFile(), true);
+  }
+  assert.equal((await stat(join(templatePath, "auth.json"))).isFile(), true);
+});
+
+test("a trial that fails during preparation leaves no copied Cursor config behind", async () => {
+  const { root, fixture } = await makeFixtureRoot();
+  const templatePath = join(root, "preparation-failure-template");
+  await mkdir(templatePath);
+  await writeFile(join(templatePath, "auth.json"), "{\"synthetic\":\"non-secret\"}\n");
+  const runRoot = join(root, "preparation-failure-run");
+
+  await assert.rejects(
+    prepareTrialWorkspace({
+      fixtureEntry: { workspaceSourcePath: join(root, "does-not-exist") },
+      fixture,
+      runRoot,
+      trialId: "trial-prepare-failure",
+      cursorConfigTemplatePath: templatePath,
+    }),
+    /ENOENT/u,
+  );
+  await assert.rejects(
+    stat(join(runRoot, "trials", "trial-prepare-failure", "cursor-home")),
+    /ENOENT/u,
   );
 });
 

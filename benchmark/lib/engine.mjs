@@ -1,3 +1,4 @@
+import { rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import { captureIntegrity, runEvaluators } from "./evaluator.mjs";
@@ -169,22 +170,24 @@ async function writeTelemetry({
   });
 }
 
-async function runTrial({
-  loadedManifest,
-  plan,
-  trial,
-  runRoot,
-  agentAdapter,
-  cursorConfigTemplatePath,
-}) {
-  const fixture = plan.fixtureEntry.manifest;
+async function runTrial(options) {
   const prepared = await prepareTrialWorkspace({
-    fixtureEntry: plan.fixtureEntry,
-    fixture,
-    runRoot,
-    trialId: trial.trialId,
-    cursorConfigTemplatePath,
+    fixtureEntry: options.plan.fixtureEntry,
+    fixture: options.plan.fixtureEntry.manifest,
+    runRoot: options.runRoot,
+    trialId: options.trial.trialId,
+    cursorConfigTemplatePath: options.cursorConfigTemplatePath,
   });
+  try {
+    return await executeTrial(options, prepared);
+  } finally {
+    // The config home holds a copy of the authenticated Cursor credentials; it must not outlive the trial.
+    await rm(prepared.cursorHomePath, { recursive: true, force: true });
+  }
+}
+
+async function executeTrial({ plan, trial, agentAdapter }, prepared) {
+  const fixture = plan.fixtureEntry.manifest;
   const integrityFailures = [];
   let beforeIntegrity;
   try {

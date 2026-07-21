@@ -1,4 +1,4 @@
-import { lstat, mkdir, realpath, writeFile } from "node:fs/promises";
+import { lstat, mkdir, realpath, rm, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import {
@@ -83,6 +83,7 @@ export async function prepareTrialWorkspace({
   const workspacePath = join(trialRoot, "workspace");
   const cursorHomePath = join(trialRoot, "cursor-home");
   const artifactPath = join(trialRoot, "artifacts");
+  invariant(!cursorHomePath.startsWith(`${workspacePath}/`), "Cursor config home must be outside the agent workspace");
   await mkdir(join(runRoot, "trials"), { recursive: true });
   await mkdir(trialRoot);
   await Promise.all([
@@ -90,19 +91,25 @@ export async function prepareTrialWorkspace({
     mkdir(artifactPath),
   ]);
 
-  await copyTree(fixtureEntry.workspaceSourcePath, workspacePath);
-  if (cursorConfigTemplatePath !== undefined) {
-    const template = await validateCursorConfigTemplate(cursorConfigTemplatePath, { workspacePath });
-    await copyTree(template.realPath, cursorHomePath);
+  let sandboxPolicy;
+  try {
+    await copyTree(fixtureEntry.workspaceSourcePath, workspacePath);
+    if (cursorConfigTemplatePath !== undefined) {
+      const template = await validateCursorConfigTemplate(cursorConfigTemplatePath, { workspacePath });
+      await copyTree(template.realPath, cursorHomePath);
+    }
+    const promptDirectory = join(workspacePath, ".cursor-harness");
+    await mkdir(promptDirectory);
+    [, sandboxPolicy] = await Promise.all([
+      writeFile(join(promptDirectory, "prompt.txt"), `${fixture.prompt}\n`, { flag: "wx", mode: 0o600 }),
+      writeTrialSandboxPolicy(workspacePath),
+    ]);
+  } catch (error) {
+    // A partially prepared trial must not leave copied credentials behind.
+    await rm(cursorHomePath, { recursive: true, force: true });
+    throw error;
   }
-  const promptDirectory = join(workspacePath, ".cursor-harness");
-  await mkdir(promptDirectory);
-  const [, sandboxPolicy] = await Promise.all([
-    writeFile(join(promptDirectory, "prompt.txt"), `${fixture.prompt}\n`, { flag: "wx", mode: 0o600 }),
-    writeTrialSandboxPolicy(workspacePath),
-  ]);
 
-  invariant(!cursorHomePath.startsWith(`${workspacePath}/`), "Cursor config home must be outside the agent workspace");
   return {
     trialRoot,
     workspacePath,
