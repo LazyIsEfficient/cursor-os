@@ -9,8 +9,12 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  EXIT_FAILURE,
+  EXIT_LOADING_NOT_PROVEN,
+  EXIT_OK,
   collectEditorEvidence,
   evaluateTranscript,
+  exitCodeForEvidence,
   inspectComponent,
   parseArguments,
   resolveInstallCandidates,
@@ -328,7 +332,9 @@ test("a successful run leaves the Cursor home byte-for-byte unchanged", async ()
     const result = spawnSync(process.execPath, [script, "--cursor-home", cursorHome], {
       encoding: "utf8",
     });
-    assert.equal(result.status, 0, result.stderr);
+    // No transcript, so the loading claim is unproven and the run exits 3. The
+    // read-only property must hold on that path too, not only on a clean pass.
+    assert.equal(result.status, EXIT_LOADING_NOT_PROVEN, result.stderr);
 
     assert.deepEqual(await snapshotTree(cursorHome), before);
   });
@@ -369,9 +375,79 @@ test("the script writes evidence to an operator-chosen path outside the Cursor h
       { encoding: "utf8" },
     );
 
-    assert.equal(result.status, 0, result.stderr);
+    // Exits 3 without a transcript, and still writes the artifact: the
+    // install observation in it is real even though loading is unproven.
+    assert.equal(result.status, EXIT_LOADING_NOT_PROVEN, result.stderr);
     const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
     assert.equal(evidence.readOnly, true);
     assert.equal(evidence.cursorHomePath, cursorHome);
+  });
+});
+
+// The defect this locks: the script exited 0 while its own artifact reported
+// `not-proven`. Exit status is what CI and reviewers read, so a green check
+// meant "verified" when nothing had been verified.
+test("exit status matches the loading claim rather than always reporting success", () => {
+  assert.equal(
+    exitCodeForEvidence({ claims: { editorComponentLoading: { status: "not-proven" } } }),
+    EXIT_LOADING_NOT_PROVEN,
+  );
+  assert.equal(
+    exitCodeForEvidence({ claims: { editorComponentLoading: { status: "operator-attested" } } }),
+    EXIT_OK,
+  );
+  assert.equal(
+    exitCodeForEvidence({ claims: { editorComponentLoading: { status: "observed" } } }),
+    EXIT_OK,
+  );
+});
+
+// An allowlist, not a `!== "not-proven"` test: a status nobody anticipated is
+// an unproven status, and must not exit 0 by default.
+test("an unrecognised or absent loading status is treated as unproven", () => {
+  assert.equal(
+    exitCodeForEvidence({ claims: { editorComponentLoading: { status: "probably-fine" } } }),
+    EXIT_LOADING_NOT_PROVEN,
+  );
+  assert.equal(exitCodeForEvidence({ claims: {} }), EXIT_LOADING_NOT_PROVEN);
+  assert.equal(exitCodeForEvidence({}), EXIT_LOADING_NOT_PROVEN);
+});
+
+// "not proven" and "the install is broken" are different operator situations.
+// Collapsing them into one code would make the fix useless: an operator could
+// not tell a missing transcript from a corrupted install.
+test("the unproven exit code is distinguishable from the hard-failure exit code", async () => {
+  await withTemporaryRoot(async (temporaryRoot) => {
+    const cursorHome = await installedCursorHome(temporaryRoot);
+    const transcriptPath = join(temporaryRoot, "transcript.txt");
+    await writeFile(transcriptPath, "cursor-harness-agent-discovered\n");
+
+    const unproven = spawnSync(process.execPath, [script, "--cursor-home", cursorHome], {
+      encoding: "utf8",
+    });
+    const attested = spawnSync(
+      process.execPath,
+      [script, "--cursor-home", cursorHome, "--transcript", transcriptPath],
+      { encoding: "utf8" },
+    );
+    const broken = spawnSync(
+      process.execPath,
+      [script, "--cursor-home", join(temporaryRoot, "absent")],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(unproven.status, EXIT_LOADING_NOT_PROVEN);
+    assert.equal(attested.status, EXIT_OK, attested.stderr);
+    assert.equal(broken.status, EXIT_FAILURE);
+    assert.notEqual(EXIT_LOADING_NOT_PROVEN, EXIT_FAILURE);
+
+    // The unproven run still emits its artifact on stdout and explains itself
+    // on stderr; the hard failure emits no artifact at all.
+    assert.equal(
+      JSON.parse(unproven.stdout).claims.editorComponentLoading.status,
+      "not-proven",
+    );
+    assert.match(unproven.stderr, /is not-proven \(exit 3\)/u);
+    assert.equal(broken.stdout, "");
   });
 });

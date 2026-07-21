@@ -44,7 +44,8 @@ establishes `componentsInstalledOnDisk`.
 
 On-disk presence is **not** loading. No file the script can read proves the
 Editor parsed, listed, or invoked anything. So `editorComponentLoading` reports
-`not-proven` unless you supply a transcript.
+`not-proven` unless you supply a transcript, and the script exits `3` rather
+than `0` so that the exit status says the same thing the artifact does.
 
 To go further:
 
@@ -57,6 +58,31 @@ To go further:
 The claim then reports `operator-attested`, with the transcript digest recorded.
 That is an operator attestation — a human vouching for a capture — not an
 automated observation, and the artifact says so.
+
+### Exit codes
+
+The artifact has always been honest about what was proven, but exit status is
+what a CI job or a reviewer skimming a run actually reads. A run that exits 0
+while its own artifact reports `not-proven` reads as "verified" when nothing
+was verified, so the two signals are kept in step:
+
+| Exit | Meaning | `editorComponentLoading.status` |
+| --- | --- | --- |
+| `0` | Install matches the inventory **and** the loading claim is satisfied. | `operator-attested` (or a future genuinely observed state) |
+| `1` | Hard failure. No Cursor home, plugin not installed, a component does not match the inventory, a bad argument, or an `--evidence` path that resolves inside the Cursor home. Nothing was established. | artifact not produced |
+| `3` | Install matches the inventory, but the loading claim is unproven. Re-run with `--transcript` to settle it. | `not-proven` |
+
+`1` and `3` are deliberately distinct: "your install is broken" and "your
+install is fine but loading is unproven" are different operator situations and
+must not collapse into one signal. On `3` the artifact is still written and
+still printed — the `componentsInstalledOnDisk` observation in it is real.
+
+An unrecognised status is treated as unproven rather than as a pass, so a
+future claim state cannot exit 0 by accident.
+
+Exit code `2` is unused here; `scripts/local-install.mjs` already uses it for a
+usage error and overloading the number across the repository would be worse
+than skipping it.
 
 ## 2. Live CLI plugin loading
 

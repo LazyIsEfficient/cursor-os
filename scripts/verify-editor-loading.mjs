@@ -16,6 +16,17 @@ export const ARTIFACT_KIND = "editor-plugin-loading-evidence";
 export const LOADABLE_KINDS = ["agent", "command", "rule", "skill"];
 export const SENTINEL = "cursor-harness-agent-discovered";
 
+// Exit status is what a CI job or a reviewer skimming a run actually reads, so
+// it must not say "verified" when the artifact says `not-proven`. Three states,
+// three codes: an unproven loading claim and a broken install are different
+// operator situations and must not collapse into one signal.
+//
+// 2 is deliberately skipped: scripts/local-install.mjs already uses it for a
+// usage error, and reusing it here would overload the number across the repo.
+export const EXIT_OK = 0;
+export const EXIT_FAILURE = 1;
+export const EXIT_LOADING_NOT_PROVEN = 3;
+
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const inventoryPath = join(repositoryRoot, "plugin/.cursor-plugin/inventory.json");
 const pluginRoot = join(repositoryRoot, "plugin");
@@ -272,6 +283,17 @@ export async function collectEditorEvidence(options = {}) {
   };
 }
 
+// Allowlist rather than a `!== "not-proven"` test: an unrecognised status is
+// an unproven status, so an added or misspelled state fails closed instead of
+// silently exiting 0.
+const SATISFIED_LOADING_STATUSES = new Set(["observed", "operator-attested"]);
+
+export function exitCodeForEvidence(evidence) {
+  return SATISFIED_LOADING_STATUSES.has(evidence?.claims?.editorComponentLoading?.status)
+    ? EXIT_OK
+    : EXIT_LOADING_NOT_PROVEN;
+}
+
 async function main(argv) {
   const options = parseArguments(argv);
   const evidence = await collectEditorEvidence(options);
@@ -281,6 +303,19 @@ async function main(argv) {
     await writeFile(options.evidencePath, serialized, { mode: 0o600 });
   }
   process.stdout.write(serialized);
+
+  const exitCode = exitCodeForEvidence(evidence);
+  if (exitCode !== EXIT_OK) {
+    // The artifact is still worth keeping: the install matched the inventory
+    // byte for byte. Only the loading claim is unsettled.
+    const claim = evidence?.claims?.editorComponentLoading;
+    process.stderr.write(
+      `Editor component loading is ${claim?.status ?? "unreported"} (exit ${exitCode}). ` +
+        `The install matched the inventory, but nothing here proves the Editor loaded a component. ` +
+        `${claim?.reason ?? ""}\n`,
+    );
+  }
+  process.exitCode = exitCode;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -288,6 +323,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     await main(process.argv.slice(2));
   } catch (error) {
     process.stderr.write(`Editor plugin loading verification failed: ${error.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_FAILURE;
   }
 }
