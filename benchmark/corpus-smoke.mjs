@@ -15,21 +15,49 @@ const manifestPath = resolve("benchmark/smoke-24.v1.json");
 // `pluginLifecycle` evidence is produced by `npm run plugin:lifecycle:verify` rather
 // than by this run. Asserting `eligible === true` here is unreachable without teaching
 // the mock the fixture solutions, which would score the mock instead of the pipeline.
-// Instead the whole eligibility block is pinned: every gate status, its evidence
-// string, and the ineligibility reason list. Any drift in the scoring pipeline over the
-// real 24-trial corpus fails CI, in either direction.
+// Instead the derived part of the eligibility block is pinned: the status and evidence
+// string of all five pipeline-computed gates, plus the ineligibility reason list. Any
+// drift in the scoring pipeline over the real 24-trial corpus fails CI, in either
+// direction.
+//
+// COVERAGE BOUNDARY: `pluginLifecycle` is the sixth gate and is deliberately NOT in the
+// per-gate loop below. `benchmark/lib/report.mjs` assigns the caller-supplied value
+// verbatim, so asserting it against the same constant we passed in would compare an
+// object to itself and prove nothing. Its real enforcement is the
+// `npm run plugin:lifecycle:verify` CI step, which runs before this one. What this file
+// still enforces about it is derived and therefore has teeth: its identifier must appear
+// in the gate key set, and its resulting "fail" status must appear in
+// `ineligibilityReasons` (computed by report.mjs from gate statuses, not supplied here).
 const PLUGIN_LIFECYCLE = {
   status: "fail",
   evidence: "plugin lifecycle evidence is produced by npm run plugin:lifecycle:verify, not by the deterministic corpus smoke",
 };
 
+// Every gate identifier report.mjs must emit, including the caller-supplied
+// `pluginLifecycle`. Compared order-independently so that reordering the gate object in
+// report.mjs — a zero-behaviour-change edit — does not break CI, while a rename or a
+// dropped gate still does.
+const EXPECTED_GATE_IDENTIFIERS = [
+  "pluginLifecycle",
+  "criticalSecurity",
+  "harnessOnCorrectnessNonRegression",
+  "noFixtureRegression",
+  "correctnessEligibilityFloor",
+  "telemetryAndEvaluatorIntegrity",
+];
+
 const EXPECTED_ELIGIBILITY = {
   policy: "correctness-first",
   eligible: false,
+  // Five derived gates. `pluginLifecycle` is excluded on purpose — see COVERAGE BOUNDARY.
   gates: {
-    pluginLifecycle: PLUGIN_LIFECYCLE,
     criticalSecurity: {
       status: "fail",
+      // 24 trials x 2 mandatory network controls (network-denial + network-tool-invocation
+      // both `error`: the mock makes no model calls but does not sandbox evaluator
+      // networking) = 48, plus 2 fixture-level critical-security evaluator violations = 50.
+      // A change in the trailing digits means a control regressed; a jump by a multiple of
+      // 2 per added trial means the corpus grew.
       evidence: "50 critical control failures",
     },
     harnessOnCorrectnessNonRegression: {
@@ -53,9 +81,10 @@ const EXPECTED_ELIGIBILITY = {
 };
 
 function assertEligibility(actual, expected) {
+  // Sorted on both sides: we are detecting renamed/added/dropped gates, not key order.
   assert.deepEqual(
-    Object.keys(actual.gates),
-    Object.keys(expected.gates),
+    Object.keys(actual.gates).sort(),
+    [...EXPECTED_GATE_IDENTIFIERS].sort(),
     "eligibility gate identifiers drifted from benchmark/lib/report.mjs; update the pinned expectation deliberately",
   );
   for (const [name, want] of Object.entries(expected.gates)) {
@@ -71,6 +100,10 @@ function assertEligibility(actual, expected) {
       `gate ${name}: status is ${got.status} but its evidence changed\n  expected: ${want.evidence}\n  observed: ${got.evidence}`,
     );
   }
+  // NOT sorted, unlike the key set above: report.mjs derives this list by filtering the
+  // gate object in insertion order, so the order is itself part of the contract. This is
+  // also the only place `pluginLifecycle` is checked, and it is checked against a derived
+  // value rather than the constant we passed in.
   assert.deepEqual(
     actual.ineligibilityReasons,
     expected.ineligibilityReasons,
