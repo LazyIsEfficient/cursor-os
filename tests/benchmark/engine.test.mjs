@@ -994,14 +994,92 @@ test("pre-execution evaluator digest mismatch emits reportable invalid records b
 
   await writeFile(evaluatorPath, originalEvaluator);
   const lifecyclePath = join(root, "plugin-lifecycle.json");
-  await writeFile(lifecyclePath, `${JSON.stringify({
-    schemaVersion: "1.0.0",
-    command: "npm run plugin:lifecycle:verify",
-    temporaryCursorRoot: true,
-    pluginSourceSha256: "d".repeat(64),
-    lifecycleStatuses: ["installed", "unchanged", "repaired", "uninstalled"],
-    removalVerified: true,
-  }, null, 2)}\n`);
+  const runReport = (prefix) => spawnSync(process.execPath, [
+    join(repositoryRoot, "benchmark/report.mjs"),
+    manifestPath,
+    execution.recordPath,
+    "--generated-at",
+    "2026-07-20T15:00:00.000Z",
+    "--output-prefix",
+    join(root, prefix),
+    "--plugin-lifecycle-evidence-file",
+    lifecyclePath,
+  ], { cwd: repositoryRoot, encoding: "utf8" });
+
+  // Hand-written evidence that never came from scripts/verify-plugin-lifecycle.mjs. Every
+  // field here is copyable from DATA_MODEL.md or computable with the shipped hashTree.
+  const forgeLifecycleEvidence = async (overrides) => {
+    await writeFile(lifecyclePath, `${JSON.stringify({
+      schemaVersion: "1.0.0",
+      command: "npm run plugin:lifecycle:verify",
+      temporaryCursorRoot: true,
+      pluginSourceSha256: await hashTree(join(repositoryRoot, "plugin")),
+      lifecycleStatuses: ["installed", "unchanged", "repaired", "uninstalled"],
+      removalVerified: true,
+      unrelatedRegistrationPreserved: true,
+      inputDigest: loaded.inputDigest,
+      ...overrides,
+    }, null, 2)}\n`);
+  };
+
+  // An artifact whose digest was never derived from plugin/ must not satisfy the gate;
+  // this shape previously reported status "pass".
+  await forgeLifecycleEvidence({ pluginSourceSha256: "0".repeat(64) });
+  const forged = runReport("forged-lifecycle-report");
+  assert.equal(forged.status, 1);
+  assert.match(forged.stderr, /does not match the digest of plugin\//u);
+  assert.match(
+    forged.stderr,
+    /Re-run npm run plugin:lifecycle:verify -- --evidence /u,
+    "the mismatch message must name the remedy, not just the problem",
+  );
+  await assert.rejects(readFile(join(root, "forged-lifecycle-report.json")), /ENOENT/u);
+
+  // Evidence carrying a run binding for a different benchmark input is refused too.
+  await forgeLifecycleEvidence({ inputDigest: "1".repeat(64) });
+  const replayed = runReport("replayed-lifecycle-report");
+  assert.equal(replayed.status, 1);
+  assert.match(replayed.stderr, /bound to a different benchmark run/u);
+
+  // inputDigest is required, not optional: a binding the writer can omit is not a binding.
+  await forgeLifecycleEvidence({ inputDigest: undefined });
+  const unbound = runReport("unbound-lifecycle-report");
+  assert.equal(unbound.status, 1);
+  assert.match(unbound.stderr, /is missing inputDigest/u);
+
+  // The reviewer's forgery: correct plugin digest and run binding, a false observation the
+  // consumer used to ignore, and an extra property. This shape reported "pass" before.
+  await forgeLifecycleEvidence({
+    unrelatedRegistrationPreserved: false,
+    attackerNote: "never invoked the verifier",
+  });
+  const handWritten = runReport("hand-written-lifecycle-report");
+  assert.equal(handWritten.status, 1);
+  assert.match(handWritten.stderr, /unknown properties attackerNote/u);
+  await assert.rejects(readFile(join(root, "hand-written-lifecycle-report.json")), /ENOENT/u);
+
+  // Unknown properties alone are fatal, even when every documented field is correct.
+  await forgeLifecycleEvidence({ attackerNote: "never invoked the verifier" });
+  const extraProperty = runReport("extra-property-lifecycle-report");
+  assert.equal(extraProperty.status, 1);
+  assert.match(extraProperty.stderr, /unknown properties attackerNote/u);
+
+  // A false observation the verifier can now emit must fail the gate on its own.
+  await forgeLifecycleEvidence({ unrelatedRegistrationPreserved: false });
+  const lostRegistration = runReport("lost-registration-lifecycle-report");
+  assert.equal(lostRegistration.status, 1);
+  assert.match(lostRegistration.stderr, /evidence artifact is invalid/u);
+
+  // The genuine path: evidence produced by the real verifier, bound to this run's input.
+  const produced = spawnSync(process.execPath, [
+    join(repositoryRoot, "scripts/verify-plugin-lifecycle.mjs"),
+    "--evidence",
+    lifecyclePath,
+    "--input-digest",
+    loaded.inputDigest,
+  ], { cwd: repositoryRoot, encoding: "utf8" });
+  assert.equal(produced.status, 0, produced.stderr);
+
   const reportPrefix = join(root, "preflight-digest-report");
   const accepted = spawnSync(process.execPath, [
     join(repositoryRoot, "benchmark/report.mjs"),
@@ -1020,8 +1098,62 @@ test("pre-execution evaluator digest mismatch emits reportable invalid records b
   assert.equal(report.eligibility.eligible, false);
   assert.deepEqual(report.eligibility.gates.pluginLifecycle, {
     status: "pass",
-    evidence: `command=npm run plugin:lifecycle:verify;artifact=${lifecyclePath}`,
+    evidence:
+      `command=npm run plugin:lifecycle:verify;artifact=${lifecyclePath}` +
+      `;pluginSourceSha256=${await hashTree(join(repositoryRoot, "plugin"))}` +
+      `;inputDigest=${loaded.inputDigest};reverifiedBy=benchmark/report.mjs`,
   });
+
+  // The gate re-runs the verifier rather than trusting the artifact's self-report: with a
+  // broken lifecycle, byte-identical genuine evidence must stop reporting "pass".
+  const brokenRoot = await mkdtemp(join(tmpdir(), "cursor-harness-broken-lifecycle-"));
+  try {
+    for (const directory of ["plugin", "benchmark", "scripts"]) {
+      await cp(join(repositoryRoot, directory), join(brokenRoot, directory), { recursive: true });
+    }
+    // Uninstall reports "absent", so the observed status sequence no longer matches.
+    await writeFile(join(brokenRoot, "scripts/lib/local-install-adapter.mjs"), `
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+let calls = 0;
+
+export async function installLocalPlugin({ cursorRoot }) {
+  calls += 1;
+  await mkdir(join(cursorRoot, "plugins/cursor-harness"), { recursive: true });
+  const configPath = join(cursorRoot, "plugins.json");
+  let config = { plugins: {} };
+  try {
+    config = JSON.parse(await readFile(configPath, "utf8"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  config.plugins["cursor-harness"] = { path: "plugins/cursor-harness", version: "0.1.0" };
+  await writeFile(configPath, \`\${JSON.stringify(config, null, 2)}\\n\`);
+  return { status: calls === 1 ? "installed" : calls === 2 ? "unchanged" : "repaired" };
+}
+
+export async function uninstallLocalPlugin() {
+  return { status: "absent" };
+}
+`);
+
+    const rerun = spawnSync(process.execPath, [
+      join(brokenRoot, "benchmark/report.mjs"),
+      manifestPath,
+      execution.recordPath,
+      "--output-prefix",
+      join(root, "broken-lifecycle-report"),
+      "--plugin-lifecycle-evidence-file",
+      lifecyclePath,
+    ], { cwd: brokenRoot, encoding: "utf8" });
+    assert.equal(rerun.status, 1, rerun.stdout);
+    assert.match(rerun.stderr, /plugin lifecycle verification re-run failed/u);
+    assert.match(rerun.stderr, /lifecycle statuses were/u);
+    await assert.rejects(readFile(join(root, "broken-lifecycle-report.json")), /ENOENT/u);
+  } finally {
+    await rm(brokenRoot, { recursive: true, force: true });
+  }
 
   await writeFile(join(root, "fixtures", "case", "seed", "public.txt"), "different pinned corpus\n");
   const rejected = spawnSync(process.execPath, [
