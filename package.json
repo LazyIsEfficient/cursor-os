@@ -30,6 +30,7 @@
     "benchmark:preflight": "node benchmark/preflight.mjs",
     "benchmark:export": "node benchmark/export-artifacts.mjs",
     "benchmark:report": "node benchmark/report.mjs",
+    "release:bump": "node scripts/bump-version.mjs",
     "release:dry-run": "node scripts/release.mjs",
     "release:test": "node --test tests/release/*.test.mjs",
     "validate": "node scripts/validate.mjs"
