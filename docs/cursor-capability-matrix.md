@@ -1,7 +1,41 @@
 # Cursor capability matrix
 
-Evidence captured on 2026-07-20. Automated probes are network-free, read local
+Evidence was captured on 2026-07-20, except where a section states a later
+capture date for specific claims. Automated probes are network-free, read local
 files and CLI help, and do not write Cursor user configuration.
+
+## How to read this matrix
+
+Grading in this document is **per bullet, not per heading**. Every bullet opens
+with a bold grade label, and that label is authoritative for that bullet alone.
+
+Headings group claims by capability area and by the evidence route available for
+that area. They are not blanket grades. Each capability is kept whole so that
+its confirmed findings and its unproven limits sit together, which means a
+section titled "Verified automatically" will contain `Unverified` bullets — that
+is intended, not an error. Read the bullet's grade, never the heading, to know
+what has actually been established.
+
+Grade labels in use:
+
+- **Verified …** — established by the evidence cited at the end of the section.
+  The rest of the label states the scope of that evidence: `in this repository`,
+  `in the configuration`, `in the fixture`, `in the workflow`,
+  `in the repository policy`, `in the runtime contract`, `on this machine`,
+  `in current documentation`, `by local process tests`, or `by static scan`.
+- **Verified:** (unqualified) — a claim about what Cursor's official
+  documentation states, cited in the section's Evidence line. It is equivalent to
+  `Verified in current documentation` and carries no claim about this
+  repository's behaviour.
+- **Verified absent …** — the *absence* of something was established, not its
+  presence. Used once, for a CLI flag this local build does not expose.
+- **Precondition:** — a machine-checked condition that the section's verified
+  bullets depend on. Its absence is a hard failure, not a degraded pass.
+- **Unverified — …** — not established here, with the reason: `editor-only/manual`,
+  `requires a live agent run`, or `outside this repository`.
+
+The one exception is "Explicitly unavailable or unverified", whose bullets lead
+with a bold topic and state their grade in the first sentence of the bullet.
 
 ## Verified automatically
 
@@ -196,6 +230,12 @@ Evidence: `npm test` —
 invalidates timeout, nonzero, and missing results"; `test/platform-contract.test.mjs`,
 test "CLI help parser detects documented stream-json flags"; `npm run probe`; and
 the official [sandbox.json reference](https://cursor.com/docs/reference/sandbox).
+
+Capture dates differ within this section. The `npm run probe` evidence for the
+`--sandbox` precondition was captured on 2026-07-21, against CLI version
+`2026.03.30-a5d3e17`; the remaining evidence here is from the 2026-07-20
+capture. The precondition is re-checked at run time, so a later probe on a
+different machine or CLI version can invalidate it.
 
 ## Explicitly unavailable or unverified
 
