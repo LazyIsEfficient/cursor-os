@@ -7,6 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { createCursorCliAdapter, createProjectOverlayAdapter } from "../../benchmark/lib/adapters.mjs";
+import { exportSanitizedArtifacts } from "../../benchmark/lib/artifact-export.mjs";
 import { runCursorAuthenticationPreflight } from "../../benchmark/lib/auth-preflight.mjs";
 import { runBenchmark } from "../../benchmark/lib/engine.mjs";
 import { captureIntegrity, runEvaluators } from "../../benchmark/lib/evaluator.mjs";
@@ -1347,4 +1348,61 @@ test("exact forged 36-pair CLI record set is rejected before reporting", async (
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
+});
+
+test("integrity-baseline capture failure records an attributable cause that survives sanitized export", async () => {
+  const { root, manifestPath } = await makeFixtureRoot();
+  const loaded = await readBenchmarkManifest(manifestPath);
+  await rm(join(root, "fixtures", "case", "evaluators"), { recursive: true, force: true });
+  const adapter = {
+    adapterKind: "integrity-baseline-mock",
+    async run({ captureWorkspaceBaseline }) {
+      await captureWorkspaceBaseline();
+      return {
+        status: "completed",
+        exitCode: 0,
+        metrics: {
+          wallDurationMs: metric(5),
+          toolCalls: { status: "observed", value: 0, source: "documented-stream-json" },
+          subagentCalls: { status: "unavailable", reason: "correlation-unavailable" },
+          maxConcurrentSubagents: { status: "unavailable", reason: "correlation-unavailable" },
+          inputTokens: { status: "unavailable", reason: "not-emitted" },
+          outputTokens: { status: "unavailable", reason: "not-emitted" },
+          totalTokens: { status: "unavailable", reason: "not-emitted" },
+        },
+        networkAttempts: [],
+        findings: [],
+      };
+    },
+  };
+  const execution = await runBenchmark({
+    loadedManifest: loaded,
+    agentAdapter: adapter,
+    runId: "integrity-baseline-run",
+    outputRoot: join(root, "integrity-baseline-output"),
+  });
+
+  validateResultRecords(execution.results, {
+    loadedManifest: loaded,
+    runId: "integrity-baseline-run",
+  });
+  const summaries = new Set();
+  for (const armResult of execution.results.flatMap((pair) => [pair.harnessOff, pair.harnessOn])) {
+    assert.equal(armResult.status, "invalid");
+    assert.ok(armResult.tamperOutcomes.some(
+      (outcome) => outcome.target === "fixture-integrity-baseline" && outcome.outcome === "error",
+    ));
+    const finding = armResult.findings.find(({ id }) => id === "fixture-integrity-baseline-error");
+    assert.ok(finding, "integrity-baseline failure must record an attributable finding");
+    assert.equal(finding.tier, 0);
+    assert.equal(finding.disposition, "gate-failed");
+    assert.ok(finding.summary.length > 0);
+    summaries.add(finding.summary);
+  }
+
+  const exportRoot = join(root, "integrity-baseline-export");
+  const exportManifest = await exportSanitizedArtifacts({ runRoot: execution.runRoot, exportRoot });
+  assert.ok(exportManifest.files.some(({ path }) => path === "results.ndjson"));
+  const exported = await readFile(join(exportRoot, "results.ndjson"), "utf8");
+  for (const summary of summaries) assert.ok(exported.includes(summary));
 });
