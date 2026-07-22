@@ -64,6 +64,14 @@ Evidence: `npm run validate` and the official
 - **Unverified — editor-only/manual:** the installed editor has not loaded the
   plugin or shown/invoked `capability-probe`. Use the exact sentinel response in
   that agent file for a later manual editor smoke test.
+- **Unverified — editor-only/manual:** eight of nine plugin agents share common
+  global agent names (`adversarial-claims-reviewer`, `code-reviewer`,
+  `engineer`, `godot-engineer`, `library-investigator`, `phaser-engineer`,
+  `rust-engineer`, `security-reviewer`; only `capability-probe` is unique).
+  Cursor's precedence when a plugin agent and a global agent share a name is
+  not proven in this repository. The same gap applies to
+  `factual-correctness.mdc` among rules. See
+  [plugin loading verification](plugin-loading-verification.md#0-collisions-with-an-existing-cursor).
 
 Evidence: `npm test`, `npm run probe`, the official
 [Plugins reference](https://cursor.com/docs/reference/plugins#component-discovery),
@@ -80,9 +88,16 @@ and [Subagents documentation](https://cursor.com/docs/subagents#custom-subagents
   blocking contracts.
 - **Verified in the fixture:** `failClosed` is `true`, so the configuration
   requests blocking on crashes, timeouts, or invalid output.
+- **Verified in this repository's plugin config:** `beforeShellExecution` uses
+  a 5s timeout with `failClosed: true`, so a crash, timeout, or invalid output
+  from that hook is configured to deny the shell command.
 - **Unverified — editor-only/manual:** Cursor itself has not executed this
   fixture. The tests prove the script output and exit-code contracts, not editor
   enforcement or hook merge priority.
+- **Operator-observed / not CI-proven:** plugin hooks add as additional array
+  entries alongside existing user `~/.cursor` hooks for the same events
+  (stacking), including a fail-closed shell guard and possible duplicate
+  `sessionStart` injection. Exact merge priority remains unverified.
 
 Evidence: `npm test`, `npm run validate`, and the official
 [Hooks documentation](https://cursor.com/docs/hooks#command-based-hooks).
