@@ -63,7 +63,13 @@ The guard is a default-deny allowlist over tokenized command forms:
   substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) wherever
   they expand;
 - peel known wrappers and command launchers (`timeout`, `nice`, `busybox`,
-  `time`, `stdbuf`) and re-apply policy to the resolved command;
+  `time`, `stdbuf`, plus Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` /
+  `gtime`) and re-apply policy to the resolved command;
+- after peel, structurally re-check any remaining argv word whose basename is
+  a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) so
+  unlisted launchers (`ionice`, `xargs`, …) cannot hide destructive shapes;
+- deny `GIT_CONFIG_*` environment assignments (same control family as
+  `git -c` shell-escape injection), including unknown `GIT_CONFIG_*` names;
 - deny high-impact resolved shapes even when literal, including recursive
   force `rm`, destructive Git forms, `git -c` shell-escape config injection,
   selected `gh` and package-registry mutations, and evaluator/canary path
@@ -78,10 +84,10 @@ environment variables, or read credentials.
 
 This hook is a safety interlock, not a sandbox, authorization system, or
 security boundary. Pipe-into-interpreter forms (`printf … | bash`), aliases,
-and non-shell tools are outside the allowlist's claims. Cursor rules and LLM
-instructions are also not security boundaries. Sensitive operations still
-require operating-system permissions, repository protections, least-privilege
-credentials, and human review.
+`find -delete`, and non-shell tools are outside the allowlist's claims.
+Cursor rules and LLM instructions are also not security boundaries. Sensitive
+operations still require operating-system permissions, repository protections,
+least-privilege credentials, and human review.
 
 ## Evaluator integrity
 
