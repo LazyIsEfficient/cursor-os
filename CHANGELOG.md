@@ -22,8 +22,9 @@ here therefore corresponds to a single consistent version across the repository.
   their unprefixed forms; after wrapper/launcher peel, structurally re-check
   any remaining argv word whose basename is a high-impact executable (`rm`,
   `git`, `gh`, `npm`, `pnpm`, `busybox`) so unlisted launchers cannot hide
-  destructive shapes. Residuals remain pipe-into-interpreter and `find
-  -delete`. See PR #39 / issue #35.
+  destructive shapes; deny `git --config-env` / `--config-env=*` (same control
+  family as `-c`, value is opaque in the command string). Residuals remain
+  pipe-into-interpreter and `find -delete`. See PR #39 / issue #35.
 
 - **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
   inverted from a pure destructive-command denylist to positively recognized

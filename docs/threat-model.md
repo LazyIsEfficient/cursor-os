@@ -107,7 +107,7 @@ named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"`, and
 denies malformed JSON, missing or invalid commands, malformed quoting,
 unterminated substitutions, and oversized input. High-impact shapes denied
 even as literals include recursive force `rm`, destructive Git forms,
-`git -c` shell-escape config injection, `GIT_CONFIG_*` env injection,
+`git -c` / `--config-env` shell-escape config injection, `GIT_CONFIG_*` env injection,
 selected `gh` and package-registry mutations, and evaluator/canary path
 mutations. Ordinary single-quoted text remains inert. Missed expansion
 mechanisms therefore fail as false denies rather than silent allows.
@@ -123,7 +123,7 @@ replacement.
 |---|---|---|
 | Expansion-based command rewrite (`eval`, glob command names, `$()`, `$'...'`, process substitution, launchers) | Default-deny allowlist; deny active expansions including ANSI-C quotes; peel known launchers (incl. GNU `g*`) then re-check; structural high-impact basename scan for unlisted launchers; named `eval` exceptions only | Other rewrite mechanisms (aliases, encoding tricks) may still surprise; they fail closed only when they introduce a denied form |
 | Accidental mass deletion or work loss | Deny recursive force `rm` and destructive Git forms even as literal argv, after known launchers, or when a high-impact basename appears later in argv | Other tools (`find -delete`), encodings, and non-shell paths can still discard work |
-| Remote history or object destruction | Deny force pushes, selected `gh` deletion forms, `git -c` shell-escape config injection, and `GIT_CONFIG_*` env injection | Normal pushes and other remote clients remain allowed |
+| Remote history or object destruction | Deny force pushes, selected `gh` deletion forms, `git -c` / `--config-env` shell-escape config injection, and `GIT_CONFIG_*` env injection | Normal pushes and other remote clients remain allowed |
 | Package registry mutation | Deny direct npm/pnpm publish and unpublish forms | Other clients, wrappers, or APIs remain outside scope |
 | Pipe into interpreter (`printf … \| bash`) | Out of scope; not claimed blocked | Interpreter stdin can still run arbitrary scripts |
 | Evaluator or canary tampering | Deny obvious shell path mutation; require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |

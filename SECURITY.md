@@ -69,11 +69,12 @@ The guard is a default-deny allowlist over tokenized command forms:
   a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) so
   unlisted launchers (`ionice`, `xargs`, …) cannot hide destructive shapes;
 - deny `GIT_CONFIG_*` environment assignments (same control family as
-  `git -c` shell-escape injection), including unknown `GIT_CONFIG_*` names;
+  `git -c` / `--config-env` shell-escape injection), including unknown
+  `GIT_CONFIG_*` names;
 - deny high-impact resolved shapes even when literal, including recursive
-  force `rm`, destructive Git forms, `git -c` shell-escape config injection,
-  selected `gh` and package-registry mutations, and evaluator/canary path
-  mutations or redirects;
+  force `rm`, destructive Git forms, `git -c` / `--config-env` shell-escape
+  config injection, selected `gh` and package-registry mutations, and
+  evaluator/canary path mutations or redirects;
 - allow only remaining literal path-like command words with safe args
   shapes;
 - recursively allowlist shell `-c` payloads;

@@ -546,8 +546,10 @@ function isDangerousGitConfigAssignment(assignment) {
   return GIT_SHELL_ESCAPE_KEYS.has(key);
 }
 
-// Fail closed on `git -c` / `--config` forms that can bind a shell-running
-// value (alias.!cmd, core.pager, diff.external, …).
+// Fail closed on `git -c` / `--config-env` forms that can bind a shell-running
+// value (alias.!cmd, core.pager, diff.external, …). `--config-env` reads the
+// value from the process environment, so the command string alone cannot prove
+// it safe — deny the flag family entirely.
 function gitConfigInjectionRule(arguments_) {
   let index = 0;
   while (index < arguments_.length) {
@@ -567,6 +569,12 @@ function gitConfigInjectionRule(arguments_) {
       }
       index += 1;
       continue;
+    }
+    if (
+      argument === "--config-env" ||
+      argument.startsWith("--config-env=")
+    ) {
+      return "git-config-injection";
     }
     if (!argument.startsWith("-") || argument === "--") {
       break;
@@ -755,7 +763,7 @@ function inspectResolvedCommand(segment, words, index, depth) {
 // After wrappers/known launchers are peeled, scan remaining argv for a
 // high-impact basename (or eval / nested shell) and re-apply policy from that
 // word onward. Closes `ionice rm -rf` / `xargs rm -rf` without listing every
-// launcher. Residual: `find -exec`, pipe-into-interpreter.
+// launcher. Residual: pipe-into-interpreter (and tools like `find -delete`).
 function inspectFromHighImpactScan(segment, words, startIndex, depth) {
   for (let scan = startIndex; scan < words.length; scan += 1) {
     const word = words[scan];

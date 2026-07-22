@@ -119,6 +119,8 @@ test("denies ANSI-C quoting, launchers, and git config injection bypasses", () =
     "git -c alias.evil='!rm -rf /tmp/x' evil",
     "git -c core.pager='rm -rf /tmp/x' log",
     "git -c diff.external='rm -rf /tmp/x' status",
+    "FOO='!true' git --config-env=alias.evil=FOO evil",
+    "FOO='!true' git --config-env alias.evil=FOO evil",
     "GIT_CONFIG_PARAMETERS=\"'alias.evil=!true'\" git evil",
     "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.probe GIT_CONFIG_VALUE_0='!true' git probe",
     "env GIT_CONFIG_PARAMETERS=\"'alias.evil=!true'\" git evil",
