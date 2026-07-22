@@ -16,13 +16,24 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Changed
 
+- **Shell guard follow-up bypass closures** (`beforeShellExecution`): deny
+  `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that
+  family); peel Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime` like
+  their unprefixed forms; after wrapper/launcher peel, structurally re-check
+  any remaining argv word whose basename is a high-impact executable (`rm`,
+  `git`, `gh`, `npm`, `pnpm`, `busybox`) so unlisted launchers cannot hide
+  destructive shapes; deny `git --config-env` / `--config-env=*` (same control
+  family as `-c`, value is opaque in the command string). Residuals remain
+  pipe-into-interpreter and `find -delete`. See PR #39 / issue #35.
+
 - **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
   inverted from a pure destructive-command denylist to positively recognized
-  safe forms (literal command words, no active `$()` / backtick / process
-  substitutions, recursive shell `-c` allowlisting), composed with a
-  high-impact deny layer for recursive force `rm`, destructive Git/`gh`/
-  package-registry shapes, and evaluator/canary path mutations. `eval` is
-  denied except the exact named forms `eval "$(direnv hook zsh)"` and
+  safe forms (literal command words, no active `$()` / backtick / process /
+  ANSI-C `$'...'` substitutions, peeled wrappers/launchers, recursive shell
+  `-c` allowlisting), composed with a high-impact deny layer for recursive
+  force `rm`, destructive Git/`gh`/package-registry shapes, `git -c`
+  shell-escape config injection, and evaluator/canary path mutations. `eval`
+  is denied except the exact named forms `eval "$(direnv hook zsh)"` and
   `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
   pipe-into-interpreter remains an explicit residual risk. See issue #35.
 

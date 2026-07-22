@@ -90,21 +90,27 @@ directory. The plugin-root path is shell-quoted, timeout is five seconds, and
 for crashes, timeouts, and invalid hook output; local tests verify the static
 configuration and script contract, not Cursor's enforcement implementation.
 
-The guard is a default-deny allowlist composed as parse → deny active
-expansions → allow named `eval` exceptions → deny high-impact resolved
-shapes → allow only safe literal command forms → else deny. Safe forms
-require a literal path-like command word with no expansion metacharacters in
-command position, optional safe assignments and wrappers, and recursively
-allowlisted shell `-c` payloads. It denies active command substitutions
-(`$()`, backticks) and process substitutions (`<(...)`, `>(...)`) wherever
-they expand, denies `eval` except the exact named forms
-`eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"`, and denies
-malformed JSON, missing or invalid commands, malformed quoting, unterminated
-substitutions, and oversized input. High-impact shapes denied even as
-literals include recursive force `rm`, destructive Git forms, selected `gh`
-and package-registry mutations, and evaluator/canary path mutations. Single-
-quoted substitution text remains inert. Missed expansion mechanisms therefore
-fail as false denies rather than silent allows.
+The guard is a default-deny allowlist composed as allow named `eval`
+exceptions → deny active expansions (including ANSI-C `$'...'` quoting) →
+peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` /
+`gstdbuf` / `gtime`) → deny `GIT_CONFIG_*` env assignments → structurally
+re-check any remaining high-impact basename (`rm`, `git`, `gh`, `npm`,
+`pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe
+literal command forms → else deny. Safe forms require a literal path-like
+command word with no expansion metacharacters in command position, optional
+safe assignments (non-`GIT_CONFIG_*`), wrappers, and command launchers
+(`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms)
+whose operands are re-inspected. It denies active command substitutions
+(`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C
+quotes (`$'...'`) wherever they expand, denies `eval` except the exact
+named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"`, and
+denies malformed JSON, missing or invalid commands, malformed quoting,
+unterminated substitutions, and oversized input. High-impact shapes denied
+even as literals include recursive force `rm`, destructive Git forms,
+`git -c` / `--config-env` shell-escape config injection, `GIT_CONFIG_*` env injection,
+selected `gh` and package-registry mutations, and evaluator/canary path
+mutations. Ordinary single-quoted text remains inert. Missed expansion
+mechanisms therefore fail as false denies rather than silent allows.
 
 The runtime is Node.js standard library only and network-free. It has no
 dynamic evaluation, subprocess execution, filesystem access, environment
@@ -115,9 +121,9 @@ replacement.
 
 | Threat | Control | Residual risk |
 |---|---|---|
-| Expansion-based command rewrite (`eval`, glob command names, `$()`, process substitution) | Default-deny allowlist; deny active expansions; named `eval` exceptions only | Other rewrite mechanisms (aliases, `$'...'`, unprobed interpreters) may still surprise; they fail closed only when they introduce a denied form |
-| Accidental mass deletion or work loss | Deny recursive force `rm` and destructive Git forms even as literal argv | Other tools, encodings, and non-shell paths can still discard work |
-| Remote history or object destruction | Deny force pushes and selected `gh` deletion forms | Normal pushes and other remote clients remain allowed |
+| Expansion-based command rewrite (`eval`, glob command names, `$()`, `$'...'`, process substitution, launchers) | Default-deny allowlist; deny active expansions including ANSI-C quotes; peel known launchers (incl. GNU `g*`) then re-check; structural high-impact basename scan for unlisted launchers; named `eval` exceptions only | Other rewrite mechanisms (aliases, encoding tricks) may still surprise; they fail closed only when they introduce a denied form |
+| Accidental mass deletion or work loss | Deny recursive force `rm` and destructive Git forms even as literal argv, after known launchers, or when a high-impact basename appears later in argv | Other tools (`find -delete`), encodings, and non-shell paths can still discard work |
+| Remote history or object destruction | Deny force pushes, selected `gh` deletion forms, `git -c` / `--config-env` shell-escape config injection, and `GIT_CONFIG_*` env injection | Normal pushes and other remote clients remain allowed |
 | Package registry mutation | Deny direct npm/pnpm publish and unpublish forms | Other clients, wrappers, or APIs remain outside scope |
 | Pipe into interpreter (`printf … \| bash`) | Out of scope; not claimed blocked | Interpreter stdin can still run arbitrary scripts |
 | Evaluator or canary tampering | Deny obvious shell path mutation; require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |

@@ -47,11 +47,16 @@ test("allows benign everyday commands", () => {
     "printf '%s' '$(git reset --hard)'",
     "printf '%s' '`git reset --hard`'",
     "FOO=bar git status",
+    "GIT_AUTHOR_NAME=x git status",
     "env MODE=test npm test",
     "command ls",
     "sudo ls",
+    "timeout 5 ls",
+    "nice ls",
+    "time ls",
     "sh -c 'ls -la'",
     "bash -c 'git status'",
+    "git -c user.name=test status",
   ]) {
     assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
   }
@@ -94,6 +99,37 @@ test("denies high-impact literal command shapes", () => {
     assert.equal(response.permission, "deny", command);
     assert.match(response.user_message, /^Command blocked by the local shell guard/u);
     assert.equal(typeof response.agent_message, "string");
+  }
+});
+
+test("denies ANSI-C quoting, launchers, and git config injection bypasses", () => {
+  const commands = [
+    "rm $'-rf' /tmp/x",
+    "git reset $'--hard'",
+    "timeout 5 rm -rf /tmp/x",
+    "gtimeout 5 rm -rf /tmp/x",
+    "nice rm -rf /tmp/x",
+    "gnice rm -rf /tmp/x",
+    "busybox rm -rf /tmp/x",
+    "time rm -rf /tmp/x",
+    "stdbuf -oL rm -rf /tmp/x",
+    "gstdbuf -oL rm -rf /tmp/x",
+    "ionice rm -rf /tmp/x",
+    "xargs rm -rf /tmp/x",
+    "git -c alias.evil='!rm -rf /tmp/x' evil",
+    "git -c core.pager='rm -rf /tmp/x' log",
+    "git -c diff.external='rm -rf /tmp/x' status",
+    "FOO='!true' git --config-env=alias.evil=FOO evil",
+    "FOO='!true' git --config-env alias.evil=FOO evil",
+    "GIT_CONFIG_PARAMETERS=\"'alias.evil=!true'\" git evil",
+    "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.probe GIT_CONFIG_VALUE_0='!true' git probe",
+    "env GIT_CONFIG_PARAMETERS=\"'alias.evil=!true'\" git evil",
+  ];
+
+  for (const command of commands) {
+    const response = commandDecision(command);
+    assert.equal(response.permission, "deny", command);
+    assert.match(response.user_message, /^Command blocked by the local shell guard/u);
   }
 });
 
@@ -146,8 +182,17 @@ test("denies nested unsafe forms inside shell -c", () => {
 });
 
 test("pipe into interpreter remains out of scope", () => {
-  // Deliberate residual risk from #35 — not claimed blocked.
+  // Deliberate residual risk — not claimed blocked. `find -exec rm` is closed
+  // by the high-impact argv scan when `rm` appears as a shell word; pipe-into
+  // interpreter still is not.
   assert.deepEqual(commandDecision("printf rm | bash"), { permission: "allow" });
+});
+
+test("structural high-impact scan catches find -exec rm", () => {
+  assert.equal(
+    commandDecision("find /tmp -name x -exec rm -rf {} +").permission,
+    "deny",
+  );
 });
 
 test("fails closed with deterministic JSON for malformed input", () => {
@@ -238,4 +283,9 @@ test("guard source has no execution, network, credential, or filesystem APIs", a
   assert.match(source, /isSafeCommandWord/u);
   assert.match(source, /highImpactRule/u);
   assert.match(source, /PROTECTED_PATH_PATTERN/u);
+  assert.match(source, /COMMAND_LAUNCHERS/u);
+  assert.match(source, /GNU_COREUTILS_LAUNCHERS/u);
+  assert.match(source, /HIGH_IMPACT_EXECUTABLES/u);
+  assert.match(source, /gitConfigInjectionRule/u);
+  assert.match(source, /isGitConfigEnvAssignment/u);
 });

@@ -45,6 +45,51 @@ const WRAPPER_COMMANDS = new Set([
   "sudo",
 ]);
 
+// Launchers whose first non-option operand is another command. Peel them and
+// re-apply policy to the resolved command. Homebrew GNU coreutils (`gtimeout`,
+// `gnice`, `gstdbuf`, `gtime`) map to the same peel logic as the unprefixed
+// names. Unknown launchers are not enumerated forever — after peel, any
+// remaining high-impact basename is re-checked structurally.
+const COMMAND_LAUNCHERS = new Set([
+  "busybox",
+  "nice",
+  "stdbuf",
+  "time",
+  "timeout",
+]);
+
+// Homebrew / MacPorts GNU coreutils prefixes → canonical launcher kind.
+const GNU_COREUTILS_LAUNCHERS = new Map([
+  ["gnice", "nice"],
+  ["gstdbuf", "stdbuf"],
+  ["gtime", "time"],
+  ["gtimeout", "timeout"],
+]);
+
+// Basenames whose argument shapes are high-impact. After wrappers/known
+// launchers are peeled, any remaining argv word with one of these basenames is
+// reconstructed and re-checked so unlisted launchers (`ionice`, `xargs`, …)
+// cannot hide `rm -rf` / destructive git. Not an exhaustive launcher list.
+const HIGH_IMPACT_EXECUTABLES = new Set([
+  "busybox",
+  "gh",
+  "git",
+  "npm",
+  "pnpm",
+  "rm",
+]);
+
+// Git config keys that can run a shell command when set via `git -c`.
+const GIT_SHELL_ESCAPE_KEYS = new Set([
+  "core.editor",
+  "core.pager",
+  "core.sshcommand",
+  "diff.external",
+  "diff.tool",
+  "interactive.difffilter",
+  "merge.tool",
+]);
+
 function decision(permission, rule) {
   if (permission === "allow") {
     return { permission: "allow" };
@@ -195,6 +240,23 @@ function isSafeAssignment(word) {
   return /^[A-Za-z_][A-Za-z0-9_]*$/u.test(name);
 }
 
+// Fail closed on any GIT_CONFIG_* assignment — same control family as `git -c`
+// (GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT / KEY_n / VALUE_n, and unknown names).
+function isGitConfigEnvAssignment(word) {
+  if (!isAssignment(word)) {
+    return false;
+  }
+  const name = word.slice(0, word.indexOf("="));
+  return /^GIT_CONFIG_/u.test(name);
+}
+
+function launcherKind(executable) {
+  if (COMMAND_LAUNCHERS.has(executable)) {
+    return executable;
+  }
+  return GNU_COREUTILS_LAUNCHERS.get(executable) ?? null;
+}
+
 function substitutionEnd(command, start, kind) {
   let quote = null;
   let escaped = false;
@@ -246,10 +308,11 @@ function substitutionEnd(command, start, kind) {
   throw new Error("unterminated shell substitution");
 }
 
-// Active expansions the shell runs as commands (or as process substitutions).
-// Single-quoted text is inert. Presence of a runnable expansion is denied so a
-// missed mechanism fails closed; unterminated forms throw and fail closed as
-// invalid input.
+// Active expansions the shell runs as commands (or as process substitutions),
+// including ANSI-C `$'...'` quoting which rewrites argument bytes after the
+// guard would otherwise read them as ordinary text. Single-quoted text is
+// inert. Presence of a runnable expansion is denied so a missed mechanism
+// fails closed; unterminated forms throw and fail closed as invalid input.
 function containsActiveCommandExpansion(command) {
   let quote = null;
   let escaped = false;
@@ -287,6 +350,9 @@ function containsActiveCommandExpansion(command) {
         index = substitutionEnd(command, index + 2, "dollar");
         return true;
       }
+      if (character === "$" && command[index + 1] === "'") {
+        return true;
+      }
       continue;
     }
 
@@ -307,6 +373,11 @@ function containsActiveCommandExpansion(command) {
 
     if (character === "$" && command[index + 1] === "(") {
       index = substitutionEnd(command, index + 2, "dollar");
+      return true;
+    }
+
+    // ANSI-C quoting: $'...' rewrites the word (e.g. $'-rf' → -rf).
+    if (character === "$" && command[index + 1] === "'") {
       return true;
     }
 
@@ -365,6 +436,160 @@ function skipWrapperFlags(executable, words, startIndex) {
   return index;
 }
 
+// Skip launcher options (and operands such as timeout's DURATION) so the next
+// word is the command the launcher will exec. `executable` is the canonical
+// launcher kind (see `launcherKind`).
+function skipLauncherOperands(executable, words, startIndex) {
+  let index = startIndex + 1;
+
+  if (executable === "timeout") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-k", "--kill-after", "-s", "--signal"].includes(option) ||
+        option.startsWith("--kill-after=") ||
+        option.startsWith("--signal=")
+      ) {
+        if (!option.includes("=")) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    // DURATION is required before COMMAND.
+    if (index < words.length) {
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "nice") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (option === "-n" || option === "--adjustment") {
+        index += 1;
+      } else if (option.startsWith("-n") && option.length > 2) {
+        // -nN form; no separate operand.
+      } else if (option.startsWith("--adjustment=")) {
+        // inline value
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "busybox") {
+    while (index < words.length && words[index].startsWith("-")) {
+      index += 1;
+    }
+    // Leave index on the applet name so the next loop iteration inspects it.
+    return index;
+  }
+
+  if (executable === "time") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-f", "-o", "--format", "--output"].includes(option) ||
+        option.startsWith("--format=") ||
+        option.startsWith("--output=")
+      ) {
+        if (!option.includes("=")) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "stdbuf") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-i", "-o", "-e", "--input", "--output", "--error"].includes(option) ||
+        option.startsWith("--input=") ||
+        option.startsWith("--output=") ||
+        option.startsWith("--error=")
+      ) {
+        if (!option.includes("=") && option.length <= 2) {
+          index += 1;
+        } else if (
+          ["--input", "--output", "--error"].includes(option)
+        ) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  return index;
+}
+
+function isDangerousGitConfigAssignment(assignment) {
+  const separator = assignment.indexOf("=");
+  const key =
+    separator === -1
+      ? assignment.toLowerCase()
+      : assignment.slice(0, separator).toLowerCase();
+  const value = separator === -1 ? "" : assignment.slice(separator + 1);
+
+  // Shell-running aliases: `alias.foo=!cmd` and any `-c` override of alias.*.
+  if (key.startsWith("alias.")) {
+    return true;
+  }
+  if (value.includes("!")) {
+    return true;
+  }
+  return GIT_SHELL_ESCAPE_KEYS.has(key);
+}
+
+// Fail closed on `git -c` / `--config-env` forms that can bind a shell-running
+// value (alias.!cmd, core.pager, diff.external, …). `--config-env` reads the
+// value from the process environment, so the command string alone cannot prove
+// it safe — deny the flag family entirely.
+function gitConfigInjectionRule(arguments_) {
+  let index = 0;
+  while (index < arguments_.length) {
+    const argument = arguments_[index];
+    if (argument === "-c") {
+      const assignment = arguments_[index + 1];
+      if (assignment === undefined || isDangerousGitConfigAssignment(assignment)) {
+        return "git-config-injection";
+      }
+      index += 2;
+      continue;
+    }
+    if (argument.startsWith("-c") && argument.length > 2) {
+      // Rare glued form: -ckey=value
+      if (isDangerousGitConfigAssignment(argument.slice(2))) {
+        return "git-config-injection";
+      }
+      index += 1;
+      continue;
+    }
+    if (
+      argument === "--config-env" ||
+      argument.startsWith("--config-env=")
+    ) {
+      return "git-config-injection";
+    }
+    if (!argument.startsWith("-") || argument === "--") {
+      break;
+    }
+    if (
+      ["-C", "--git-dir", "--work-tree", "--namespace"].includes(argument)
+    ) {
+      index += 2;
+      continue;
+    }
+    index += 1;
+  }
+  return null;
+}
+
 function gitCommand(arguments_) {
   let index = 0;
 
@@ -396,7 +621,7 @@ function isRecursiveForceDelete(arguments_) {
 }
 
 // High-impact shapes that remain denied even when the command word is a literal
-// allowlisted form. Compose after expansion denial and named exceptions.
+// allowlisted form. Compose after named exceptions and expansion denial.
 function highImpactRule(segment, executable, arguments_) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
@@ -421,6 +646,11 @@ function highImpactRule(segment, executable, arguments_) {
   }
 
   if (executable === "git") {
+    const configRule = gitConfigInjectionRule(arguments_);
+    if (configRule) {
+      return configRule;
+    }
+
     const parsed = gitCommand(arguments_);
     const forcePush =
       parsed.arguments.includes("--force") ||
@@ -473,10 +703,111 @@ function highImpactRule(segment, executable, arguments_) {
   return null;
 }
 
+function inspectResolvedCommand(segment, words, index, depth) {
+  const word = words[index];
+  if (!isSafeCommandWord(word)) {
+    return "unsafe-command-word";
+  }
+
+  const executable = executableName(word);
+  const arguments_ = words.slice(index + 1);
+
+  if (executable === "eval") {
+    return "eval-not-allowlisted";
+  }
+
+  const impact = highImpactRule(segment, executable, arguments_);
+  if (impact) {
+    return impact;
+  }
+
+  if (executable === "." || executable === "source") {
+    const script = arguments_[0];
+    if (script === undefined || !isSafeCommandWord(script)) {
+      return "unsafe-source";
+    }
+    return null;
+  }
+
+  if (SHELL_INTERPRETERS.has(executable)) {
+    const commandIndex = arguments_.findIndex(
+      (argument) =>
+        argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
+    );
+    if (commandIndex >= 0) {
+      if (commandIndex + 1 >= arguments_.length) {
+        return "unsafe-shell-c";
+      }
+      if (depth <= 0) {
+        return "nested-shell-depth-exceeded";
+      }
+      return inspectCommand(arguments_[commandIndex + 1], depth - 1);
+    }
+
+    for (const argument of arguments_) {
+      if (argument.startsWith("-")) {
+        continue;
+      }
+      // First non-flag operand is the script path when present.
+      if (!isSafeCommandWord(argument)) {
+        return "unsafe-shell-script";
+      }
+      break;
+    }
+    return null;
+  }
+
+  return null;
+}
+
+// After wrappers/known launchers are peeled, scan remaining argv for a
+// high-impact basename (or eval / nested shell) and re-apply policy from that
+// word onward. Closes `ionice rm -rf` / `xargs rm -rf` without listing every
+// launcher. Residual: pipe-into-interpreter (and tools like `find -delete`).
+function inspectFromHighImpactScan(segment, words, startIndex, depth) {
+  for (let scan = startIndex; scan < words.length; scan += 1) {
+    const word = words[scan];
+    // Flags and non-path-like mid-argv words are not command basenames — skip.
+    if (!isSafeCommandWord(word)) {
+      continue;
+    }
+
+    const executable = executableName(word);
+
+    if (executable === "eval") {
+      return "eval-not-allowlisted";
+    }
+
+    if (
+      HIGH_IMPACT_EXECUTABLES.has(executable) ||
+      SHELL_INTERPRETERS.has(executable) ||
+      executable === "." ||
+      executable === "source"
+    ) {
+      const rule = inspectResolvedCommand(segment, words, scan, depth);
+      if (rule) {
+        return rule;
+      }
+      // Benign high-impact form (e.g. `git status` under `ionice`) — keep
+      // scanning in case a later word is destructive.
+    }
+  }
+
+  return null;
+}
+
 function inspectSegment(segment, depth) {
   const words = segment
     .filter((token) => token.kind === "word")
     .map((token) => token.value);
+
+  // Fail closed: any GIT_CONFIG_* assignment in the segment (leading or via
+  // `env`) is the same control family as `git -c` shell-escape injection.
+  for (const word of words) {
+    if (isGitConfigEnvAssignment(word)) {
+      return "git-config-env-injection";
+    }
+  }
 
   let index = 0;
   while (index < words.length && isAssignment(words[index])) {
@@ -510,50 +841,23 @@ function inspectSegment(segment, depth) {
       continue;
     }
 
-    const arguments_ = words.slice(index + 1);
-    const impact = highImpactRule(segment, executable, arguments_);
-    if (impact) {
-      return impact;
+    const kind = launcherKind(executable);
+    if (kind !== null) {
+      index = skipLauncherOperands(kind, words, index);
+      if (index >= words.length) {
+        return null;
+      }
+      continue;
     }
 
-    if (executable === "." || executable === "source") {
-      const script = arguments_[0];
-      if (script === undefined || !isSafeCommandWord(script)) {
-        return "unsafe-source";
-      }
-      return null;
+    // First non-wrapper/non-launcher word: apply direct policy, then structural
+    // high-impact scan so unknown launchers cannot hide destructive argv.
+    const direct = inspectResolvedCommand(segment, words, index, depth);
+    if (direct) {
+      return direct;
     }
 
-    if (SHELL_INTERPRETERS.has(executable)) {
-      const commandIndex = arguments_.findIndex(
-        (argument) =>
-          argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
-      );
-      if (commandIndex >= 0) {
-        if (commandIndex + 1 >= arguments_.length) {
-          return "unsafe-shell-c";
-        }
-        if (depth <= 0) {
-          return "nested-shell-depth-exceeded";
-        }
-        return inspectCommand(arguments_[commandIndex + 1], depth - 1);
-      }
-
-      for (const argument of arguments_) {
-        if (argument.startsWith("-")) {
-          continue;
-        }
-        // First non-flag operand is the script path when present.
-        if (!isSafeCommandWord(argument)) {
-          return "unsafe-shell-script";
-        }
-        break;
-      }
-      return null;
-    }
-
-    // Literal command word with a non-high-impact args shape: allow.
-    return null;
+    return inspectFromHighImpactScan(segment, words, index + 1, depth);
   }
 
   return "unsafe-command-word";
