@@ -12,6 +12,7 @@
 |---|---|---|
 | 2026-07-22 | `fix/35-shell-guard-bypass-followup` | Closed follow-up shell-guard bypasses: deny `GIT_CONFIG_*` env injection, peel Homebrew GNU `gtimeout`/`gnice`/`gstdbuf`/`gtime`, structurally re-check high-impact basenames after unknown launchers, and deny `git --config-env`. |
 | 2026-07-22 | `fix/35-shell-guard-allowlist` | Inverted `BeforeShellExecutionHook` to default-deny allowlist with named `eval` exceptions first, expansion/ANSI-C denial, launcher peeling, high-impact deny shapes, and git `-c` shell-escape denial. |
+| 2026-07-22 | `fix/36-plugin-install-collision-docs` | Noted that the user-facing `plugins/local` symlink does not write `plugins.json`, unlike the temporary lifecycle adapter's `CursorPluginRegistry` path; pointed install-collision / hook-stacking docs at `docs/plugin-loading-verification.md`. |
 | 2026-07-20 | `main` | Updated local-install state to schema 2 and documented structural managed-registry restoration without whole-config digest ownership. |
 | 2026-07-20 | `main` | Bound pair records to benchmark inputs, made network enforcement/attempt evidence cross-validated, preserved invalid preflight records, and cataloged lifecycle evidence plus concurrent registry restoration. |
 | 2026-07-20 | `main` | Cataloged manifest-bound result evidence, pre-execution evaluator integrity, strict benchmark child environments, authenticated config preflight, exact install registration repair, process-substitution detection, and sanitized artifact exports. |
@@ -657,6 +658,17 @@ The manifest rejects unsupported fields. Configured component paths must be non-
 | **Kind** | `persistence` |
 | **Ingestion route** | `installLocalPlugin` reads and updates `<explicit-cursor-root>/plugins.json`; `uninstallLocalPlugin` structurally compares current and original registries without the managed entry, then either restores the original bytes/removal or merges only the managed entry back to its original state/removal |
 | **Source** | `scripts/lib/local-install-adapter.mjs` (`CONFIG_FILE`, `writeManagedConfig`, `installLocalPlugin`, `uninstallLocalPlugin`); `tests/validator/install-lifecycle.test.mjs` (registry lifecycle assertions) |
+
+This registry object is owned by the **temporary lifecycle adapter**, which
+mutates an explicit non-user Cursor root and refuses the real `~/.cursor`. The
+documented operator symlink under `~/.cursor/plugins/local/<pluginId>` does
+**not** write `plugins.json`; `npm run plugin:editor:verify` therefore reports
+`registeredInPluginsJson: false` for that layout until a registry entry exists
+by some other means. Do not treat lifecycle-adapter registry evidence as proof
+of Editor discovery for the symlink install path. Hook stacking and agent-name
+precedence against an existing user `~/.cursor` are documented in
+[plugin loading verification](docs/plugin-loading-verification.md#0-collisions-with-an-existing-cursor),
+not as separate catalog entities.
 
 #### Shape
 

@@ -11,6 +11,95 @@ maintainer reviews the resulting artifacts, both claims stay in the unverified
 list in `README.md` and unverified in
 [the capability matrix](cursor-capability-matrix.md).
 
+## 0. Collisions with an existing `~/.cursor`
+
+Most install friction appears only when the operator already has global
+agents, rules, and hooks — the common case for an experienced Cursor user. The
+documented `plugins/local` symlink and Marketplace install both **add** plugin
+surfaces; neither rewrites the operator's existing global tree.
+
+### Agent and rule name collisions — precedence UNVERIFIED
+
+Eight of the nine shipped agents share names that commonly appear under a
+user's global `~/.cursor/agents/`:
+
+| Colliding agent id |
+| --- |
+| `adversarial-claims-reviewer` |
+| `code-reviewer` |
+| `engineer` |
+| `godot-engineer` |
+| `library-investigator` |
+| `phaser-engineer` |
+| `rust-engineer` |
+| `security-reviewer` |
+
+`capability-probe` is the only plugin-unique agent id. Among rules,
+`factual-correctness.mdc` is the same class of collision (lower stakes).
+
+**This repository does not claim a Cursor precedence rule** (plugin shadows
+global, global shadows plugin, or both appear). A repo-wide search finds no
+proven merge semantics, and inventing one would be worse than saying so.
+**UNVERIFIED — operator must confirm** which definition runs when names
+collide. Practical check: invoke `capability-probe` and expect exactly
+`cursor-harness-agent-discovered`. Prefer that over assuming a colliding name
+such as `engineer` or `security-reviewer` resolved to the plugin copy.
+
+Agent renames are deliberately out of scope for documentation-only fixes: the
+blast radius across dispatch, inventory, tests, and operator muscle memory is
+high until a Tier 0 validator or product requirement forces them.
+
+### Hooks stack (they do not replace yours)
+
+`plugin/hooks/hooks.json` registers hooks under events an experienced user
+often already uses. Cursor hook configuration is an array of definitions per
+event; plugin hooks **add alongside** existing user hooks rather than
+replacing them. Operator reproduction on a pre-existing `~/.cursor` observed
+additive stacking (an additional `beforeShellExecution` entry and a duplicate
+`sessionStart` injector). Exact editor merge priority beyond "additive arrays"
+remains editor-only / not proven by this repository's automated checks — see
+[the capability matrix](cursor-capability-matrix.md).
+
+Concrete plugin consequences:
+
+- **`beforeShellExecution`** — one command hook,
+  `node "${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs"`, with
+  `timeout: 5` and `failClosed: true`. If that hook errors, times out, or
+  returns invalid output, Cursor is configured to **deny** the shell command.
+  Stacked on top of any user `beforeShellExecution` hooks, it therefore gates
+  every shell command after install when it fails closed.
+- **`sessionStart`** — two injectors (session-state and memory-index). If the
+  user already injects session state at `sessionStart`, context can be injected
+  twice.
+- **`preCompact` / `stop`** — advisory and fail-open; still additive.
+
+This document does not redesign the guard or make hooks opt-in. It warns so
+operators can predict the post-install shell and session behavior.
+
+### Local symlink discovery is on-disk only until attested
+
+The README's `~/.cursor/plugins/local/cursor-harness` symlink:
+
+- does **not** write `~/.cursor/plugins.json`;
+- is visible to `npm run plugin:editor:verify` as
+  `installation.source: "local-symlink"` with
+  `registeredInPluginsJson: false` when no registry entry exists;
+- establishes `componentsInstalledOnDisk` only when every loadable inventory
+  component matches by SHA-256;
+- leaves `editorComponentLoading` as `not-proven` (script exit `3`) until an
+  operator supplies a transcript containing the `capability-probe` sentinel.
+
+Whether Cursor discovers local plugins by directory scan, by `plugins.json`,
+or by both is **not proven** in this repository. Do not treat a successful
+symlink `ls` — or even a matching on-disk inventory — as evidence the Editor
+loaded the plugin. Put the transcript / `capability-probe` step in the install
+flow (see both README Installation sections), then re-run with `--transcript`.
+
+The temporary lifecycle adapter (`scripts/lib/local-install-adapter.mjs`) is a
+different path: it mutates an **explicit non-user** Cursor root and does write
+`plugins.json`. It refuses the real `~/.cursor`. Do not confuse lifecycle
+evidence with Editor symlink install.
+
 ## 1. Editor component loading
 
 ```sh
@@ -47,17 +136,20 @@ Editor parsed, listed, or invoked anything. So `editorComponentLoading` reports
 `not-proven` unless you supply a transcript, and the script exits `3` rather
 than `0` so that the exit status says the same thing the artifact does.
 
-To go further:
+To go further (this confirmation belongs in the install flow, not only here):
 
 1. Install the plugin in Cursor (Settings → Customize → Plugins), or create the
    local-development symlink yourself.
 2. Invoke the `capability-probe` agent in the Editor. It is defined to respond
-   with exactly `cursor-harness-agent-discovered`.
+   with exactly `cursor-harness-agent-discovered`. Prefer this over a colliding
+   global agent name when confirming load.
 3. Save that transcript and re-run with `--transcript`.
 
-The claim then reports `operator-attested`, with the transcript digest recorded.
-That is an operator attestation — a human vouching for a capture — not an
-automated observation, and the artifact says so.
+Without that transcript, a matching symlink install still exits `3` with
+`registeredInPluginsJson: false` and `editorComponentLoading: not-proven`. The
+claim then reports `operator-attested` only after the transcript digest is
+recorded. That is an operator attestation — a human vouching for a capture —
+not an automated observation, and the artifact says so.
 
 ### Exit codes
 

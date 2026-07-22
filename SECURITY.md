@@ -53,7 +53,12 @@ Node-standard-library-only script through the exact safely quoted command
 five-second timeout and `failClosed: true`. Cursor expands
 `CURSOR_PLUGIN_ROOT` to the installed plugin directory; this avoids resolving
 the script against the active workspace used as the hook's working directory.
-The Node script itself does not inspect environment variables.
+The Node script itself does not inspect environment variables. Plugin hooks
+**stack** with any existing user hooks for the same events rather than
+replacing them; after install, this fail-closed guard therefore participates
+in every shell command decision alongside the operator's other
+`beforeShellExecution` hooks. See
+[plugin loading verification](docs/plugin-loading-verification.md#0-collisions-with-an-existing-cursor).
 
 The guard is a default-deny allowlist over tokenized command forms:
 

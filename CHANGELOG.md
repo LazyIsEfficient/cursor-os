@@ -39,6 +39,18 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **Install collision warnings** for operators with an existing `~/.cursor`:
+  agent/rule name-collision list (8 of 9 agents; `capability-probe` unique;
+  `factual-correctness.mdc` among rules) with explicit **UNVERIFIED**
+  precedence, hook stacking including the fail-closed 5s
+  `beforeShellExecution` gate and possible duplicate `sessionStart`
+  injection, and the symlink → `registeredInPluginsJson: false` /
+  `editorComponentLoading: not-proven` discovery gap with the
+  `capability-probe` transcript confirmation step in both README install
+  sections. Depth lives in
+  [plugin loading verification](docs/plugin-loading-verification.md);
+  capability matrix, `SECURITY.md`, and `DATA_MODEL.md` cross-link the same
+  facts without inventing Cursor merge semantics.
 - **Operator-run plugin loading verification tooling**
   (`npm run plugin:editor:verify`, `npm run plugin:cli:verify`) for the two
   plugin-loading claims that previously had no tooling at all. The editor
