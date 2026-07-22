@@ -57,15 +57,19 @@ The Node script itself does not inspect environment variables.
 
 The guard is a default-deny allowlist over tokenized command forms:
 
-- allow only literal path-like command words (no expansion metacharacters in
-  command position), with optional safe assignments and common wrappers;
-- deny active command substitutions (`$()`, backticks) and process
-  substitutions (`<(...)`, `>(...)`) wherever they expand;
-- deny `eval` except the exact named forms `eval "$(direnv hook zsh)"` and
-  `eval "$(ssh-agent -s)"`;
+- allow named `eval` exceptions first (`eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"` only);
+- deny active command substitutions (`$()`, backticks), process
+  substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) wherever
+  they expand;
+- peel known wrappers and command launchers (`timeout`, `nice`, `busybox`,
+  `time`, `stdbuf`) and re-apply policy to the resolved command;
 - deny high-impact resolved shapes even when literal, including recursive
-  force `rm`, destructive Git forms, selected `gh` and package-registry
-  mutations, and evaluator/canary path mutations or redirects;
+  force `rm`, destructive Git forms, `git -c` shell-escape config injection,
+  selected `gh` and package-registry mutations, and evaluator/canary path
+  mutations or redirects;
+- allow only remaining literal path-like command words with safe args
+  shapes;
 - recursively allowlist shell `-c` payloads;
 - deny malformed input with deterministic JSON.
 

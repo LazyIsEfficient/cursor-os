@@ -18,11 +18,12 @@ here therefore corresponds to a single consistent version across the repository.
 
 - **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
   inverted from a pure destructive-command denylist to positively recognized
-  safe forms (literal command words, no active `$()` / backtick / process
-  substitutions, recursive shell `-c` allowlisting), composed with a
-  high-impact deny layer for recursive force `rm`, destructive Git/`gh`/
-  package-registry shapes, and evaluator/canary path mutations. `eval` is
-  denied except the exact named forms `eval "$(direnv hook zsh)"` and
+  safe forms (literal command words, no active `$()` / backtick / process /
+  ANSI-C `$'...'` substitutions, peeled wrappers/launchers, recursive shell
+  `-c` allowlisting), composed with a high-impact deny layer for recursive
+  force `rm`, destructive Git/`gh`/package-registry shapes, `git -c`
+  shell-escape config injection, and evaluator/canary path mutations. `eval`
+  is denied except the exact named forms `eval "$(direnv hook zsh)"` and
   `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
   pipe-into-interpreter remains an explicit residual risk. See issue #35.
 
