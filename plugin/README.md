@@ -39,8 +39,8 @@ Attribution: Cursor Harness contributors
   `/state`.<!-- components:command:end -->
 - **Rules:** factual correctness, orchestrator-first dispatch, deterministic
   diff verification, and evidence review tiers.
-- **Hooks:** four events. A fail-closed `beforeShellExecution` command guard
-  for a narrow set of destructive local shell operations, plus three advisory
+- **Hooks:** four events. A fail-closed `beforeShellExecution` default-deny
+  allowlist for safe local shell command forms, plus three advisory
   fail-open hooks: `sessionStart` (injects `SESSION-STATE.md` and the
   `.cursor/memory/` index), `preCompact` (notifies the user that state must be
   re-read after compaction), and `stop` (nudges memory extraction once per

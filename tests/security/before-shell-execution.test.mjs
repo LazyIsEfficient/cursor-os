@@ -30,22 +30,53 @@ function commandDecision(command) {
   return runHook(`${JSON.stringify({ command, cwd: repositoryRoot, sandbox: true })}\n`);
 }
 
-test("allows benign commands without adding messages", () => {
+test("allows benign everyday commands", () => {
   for (const command of [
-    "node --test tests/security/*.test.mjs",
+    "ls",
+    "ls -la",
+    "ls /",
+    "git status",
     "git status --short",
     "git push origin feature/safe-update",
-    "rm -rf ./dist",
-    'printf "%s\\n" "git reset --hard"',
+    "npm test",
+    "npm run validate",
+    "node --test tests/security/*.test.mjs",
+    "rm file.txt",
+    "rm -f file.txt",
+    'printf "%s\\n" hello',
+    "printf '%s' '$(git reset --hard)'",
+    "printf '%s' '`git reset --hard`'",
+    "FOO=bar git status",
+    "env MODE=test npm test",
+    "command ls",
+    "sudo ls",
+    "sh -c 'ls -la'",
+    "bash -c 'git status'",
   ]) {
     assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
   }
 });
 
-test("blocks destructive commands across whitespace and quoting variants", () => {
+test("allows named eval exceptions only", () => {
+  for (const command of [
+    'eval "$(direnv hook zsh)"',
+    'eval "$(ssh-agent -s)"',
+    '  eval "$(direnv hook zsh)"  ',
+  ]) {
+    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+test("denies high-impact literal command shapes", () => {
   const commands = [
-    "rm   -r   -f   /",
-    `"/bin/rm" "-rf" '.git'`,
+    "rm -rf /",
+    "rm -rf ./foo",
+    "rm -rf ./tmp",
+    "rm -fr ./tmp",
+    "rm -r -f ./tmp",
+    "rm --recursive --force ./tmp",
+    `"/bin/rm" "-rf" './tmp'`,
+    "git reset --hard",
     `git reset "--hard"`,
     "git -C ./fixture clean -fd",
     `env MODE=test git "push" --force-with-lease origin main`,
@@ -53,6 +84,9 @@ test("blocks destructive commands across whitespace and quoting variants", () =>
     "git branch -D abandoned-work",
     "gh repo delete owner/repository",
     "npm publish",
+    "rm tests/evaluators/hidden-check.mjs",
+    "mv fixtures/canaries/marker.txt /tmp/marker.txt",
+    "printf changed > tests/security/evaluator-canary.txt",
   ];
 
   for (const command of commands) {
@@ -63,38 +97,57 @@ test("blocks destructive commands across whitespace and quoting variants", () =>
   }
 });
 
-test("blocks destructive commands hidden in shell substitutions", () => {
+test("denies known expansion and eval bypass classes", () => {
   const commands = [
-    'echo "$(git reset --hard)"',
-    "echo `git reset --hard`",
-    'printf "%s" "$(echo "$(git clean -fd)")"',
-    'echo "$(command git push --force origin main)"',
+    "eval rm -rf /",
+    "/bin/r? -rf /",
+    "$(echo rm -rf /)",
+    `eval "$(printf 'rm -rf /')"`,
+    ". <(printf 'rm -rf /')",
+    "source <(printf 'rm -rf /')",
+    "eval eval rm -rf /",
+    `eval "$(direnv hook zsh)" && eval rm -rf /`,
+    "echo `rm -rf /`",
+    'echo "$(rm -rf /)"',
   ];
 
   for (const command of commands) {
+    const response = commandDecision(command);
+    assert.equal(response.permission, "deny", command);
+    assert.match(response.user_message, /^Command blocked by the local shell guard/u);
+    assert.equal(typeof response.agent_message, "string");
+  }
+});
+
+test("denies unsafe command words and non-allowlisted eval", () => {
+  for (const command of [
+    "r? -rf /",
+    "/bin/rm[s] -rf /",
+    "{rm,echo} -rf /",
+    "~/.local/bin/rm -rf /",
+    "eval echo hi",
+    'eval "$(direnv hook bash)"',
+    'eval "$(ssh-agent -c)"',
+  ]) {
     assert.equal(commandDecision(command).permission, "deny", command);
   }
 });
 
-test("allows benign and inert quoted shell substitution text", () => {
+test("denies nested unsafe forms inside shell -c", () => {
   for (const command of [
-    'echo "$(printf safe)"',
-    "echo `printf safe`",
-    "printf '%s' '$(git reset --hard)'",
-    "printf '%s' '`git reset --hard`'",
-  ]) {
-    assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
-  }
-});
-
-test("blocks direct mutation of evaluator and canary artifacts", () => {
-  for (const command of [
-    "rm tests/evaluators/hidden-check.mjs",
-    "mv fixtures/canaries/marker.txt /tmp/marker.txt",
-    "printf changed > tests/security/evaluator-canary.txt",
+    "sh -c 'eval rm -rf /'",
+    "bash -c '$(echo rm -rf /)'",
+    "zsh -c '/bin/r? -rf /'",
+    "sh -c 'rm -rf ./tmp'",
+    "bash -c 'git reset --hard'",
   ]) {
     assert.equal(commandDecision(command).permission, "deny", command);
   }
+});
+
+test("pipe into interpreter remains out of scope", () => {
+  // Deliberate residual risk from #35 — not claimed blocked.
+  assert.deepEqual(commandDecision("printf rm | bash"), { permission: "allow" });
 });
 
 test("fails closed with deterministic JSON for malformed input", () => {
@@ -180,6 +233,9 @@ test("guard source has no execution, network, credential, or filesystem APIs", a
   assert.doesNotMatch(source, /\b(?:eval|Function)\s*\(/u);
   assert.doesNotMatch(source, /\bprocess\.env\b/u);
   assert.doesNotMatch(source, /\b(?:homedir|readFile|readFileSync|fetch)\s*\(/u);
-  assert.match(source, /PROTECTED_PATH_PATTERN/u);
+  assert.match(source, /NAMED_EXCEPTIONS/u);
   assert.match(source, /MAX_INPUT_BYTES/u);
+  assert.match(source, /isSafeCommandWord/u);
+  assert.match(source, /highImpactRule/u);
+  assert.match(source, /PROTECTED_PATH_PATTERN/u);
 });

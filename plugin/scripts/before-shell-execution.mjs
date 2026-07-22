@@ -1,6 +1,17 @@
 const MAX_INPUT_BYTES = 1024 * 1024;
 const MAX_NESTED_SHELL_DEPTH = 3;
 
+// Exact command forms only — not a general `eval` carve-out.
+const NAMED_EXCEPTIONS = new Set([
+  'eval "$(direnv hook zsh)"',
+  'eval "$(ssh-agent -s)"',
+]);
+
+const SEGMENT_OPERATORS = new Set([";", ";;", "&&", "||", "|", "&", "\n"]);
+const REDIRECT_OPERATORS = new Set([">", ">>"]);
+
+// Paths the benchmark harness must keep intact; mutations fail closed even as
+// otherwise-literal allowlisted forms.
 const PROTECTED_PATH_PATTERN =
   /(?:^|[/\\._-])(?:evaluators?|canaries?)(?:$|[/\\._-])/i;
 const MUTATING_COMMANDS = new Set([
@@ -12,8 +23,27 @@ const MUTATING_COMMANDS = new Set([
   "truncate",
   "unlink",
 ]);
-const SEGMENT_OPERATORS = new Set([";", ";;", "&&", "||", "|", "&", "\n"]);
-const REDIRECT_OPERATORS = new Set([">", ">>"]);
+
+const SHELL_INTERPRETERS = new Set([
+  "ash",
+  "bash",
+  "dash",
+  "ksh",
+  "ksh88",
+  "ksh93",
+  "mksh",
+  "pdksh",
+  "sh",
+  "zsh",
+]);
+
+const WRAPPER_COMMANDS = new Set([
+  "builtin",
+  "command",
+  "env",
+  "nohup",
+  "sudo",
+]);
 
 function decision(permission, rule) {
   if (permission === "allow") {
@@ -142,6 +172,156 @@ function executableName(value) {
   return normalized.slice(normalized.lastIndexOf("/") + 1).toLowerCase();
 }
 
+function isAssignment(value) {
+  return /^[A-Za-z_][A-Za-z0-9_]*=/u.test(value);
+}
+
+// Literal path-like command word: no glob, brace, tilde, dollar, quotes, or
+// grouping metacharacters that the shell would expand before execution.
+function isSafeCommandWord(word) {
+  return (
+    word.length > 0 &&
+    !word.startsWith("-") &&
+    /^[A-Za-z0-9_./][A-Za-z0-9_./+-]*$/u.test(word)
+  );
+}
+
+function isSafeAssignment(word) {
+  const separator = word.indexOf("=");
+  if (separator <= 0) {
+    return false;
+  }
+  const name = word.slice(0, separator);
+  return /^[A-Za-z_][A-Za-z0-9_]*$/u.test(name);
+}
+
+function substitutionEnd(command, start, kind) {
+  let quote = null;
+  let escaped = false;
+  let depth = kind === "dollar" || kind === "process" ? 1 : 0;
+
+  for (let index = start; index < command.length; index += 1) {
+    const character = command[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (quote === "'") {
+      if (character === "'") {
+        quote = null;
+      }
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (character === "'") {
+      quote = "'";
+      continue;
+    }
+    if (character === '"') {
+      quote = quote === '"' ? null : '"';
+      continue;
+    }
+    if (kind === "backtick" && character === "`") {
+      return index;
+    }
+    if (
+      (kind === "dollar" || kind === "process") &&
+      quote === null
+    ) {
+      if (character === "(") {
+        depth += 1;
+      }
+      if (character === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          return index;
+        }
+      }
+    }
+  }
+
+  throw new Error("unterminated shell substitution");
+}
+
+// Active expansions the shell runs as commands (or as process substitutions).
+// Single-quoted text is inert. Presence of a runnable expansion is denied so a
+// missed mechanism fails closed; unterminated forms throw and fail closed as
+// invalid input.
+function containsActiveCommandExpansion(command) {
+  let quote = null;
+  let escaped = false;
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (quote === "'") {
+      if (character === "'") {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (quote === '"') {
+      if (character === '"') {
+        quote = null;
+        continue;
+      }
+      if (character === "`") {
+        index = substitutionEnd(command, index + 1, "backtick");
+        return true;
+      }
+      if (character === "$" && command[index + 1] === "(") {
+        index = substitutionEnd(command, index + 2, "dollar");
+        return true;
+      }
+      continue;
+    }
+
+    if (character === "'") {
+      quote = "'";
+      continue;
+    }
+
+    if (character === '"') {
+      quote = '"';
+      continue;
+    }
+
+    if (character === "`") {
+      index = substitutionEnd(command, index + 1, "backtick");
+      return true;
+    }
+
+    if (character === "$" && command[index + 1] === "(") {
+      index = substitutionEnd(command, index + 2, "dollar");
+      return true;
+    }
+
+    if (
+      (character === "<" || character === ">") &&
+      command[index + 1] === "("
+    ) {
+      index = substitutionEnd(command, index + 2, "process");
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function hasShortFlag(arguments_, flag) {
   return arguments_.some(
     (argument) =>
@@ -153,60 +333,36 @@ function hasShortFlag(arguments_, flag) {
   );
 }
 
-function isAssignment(value) {
-  return /^[A-Za-z_][A-Za-z0-9_]*=/u.test(value);
-}
+function skipWrapperFlags(executable, words, startIndex) {
+  let index = startIndex + 1;
 
-function unwrapCommand(words) {
-  let index = 0;
+  if (executable === "env") {
+    while (
+      index < words.length &&
+      (words[index].startsWith("-") || isAssignment(words[index]))
+    ) {
+      if (["-u", "--unset", "-C", "--chdir"].includes(words[index])) {
+        index += 1;
+      }
+      index += 1;
+    }
+    return index;
+  }
 
-  while (index < words.length && isAssignment(words[index])) {
+  if (executable === "sudo") {
+    while (index < words.length && words[index].startsWith("-")) {
+      if (["-u", "-g", "-h", "-p", "-C"].includes(words[index])) {
+        index += 1;
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  while (index < words.length && words[index].startsWith("-")) {
     index += 1;
   }
-
-  while (index < words.length) {
-    const executable = executableName(words[index]);
-
-    if (executable === "env") {
-      index += 1;
-      while (
-        index < words.length &&
-        (words[index].startsWith("-") || isAssignment(words[index]))
-      ) {
-        if (["-u", "--unset", "-C", "--chdir"].includes(words[index])) {
-          index += 1;
-        }
-        index += 1;
-      }
-      continue;
-    }
-
-    if (executable === "sudo") {
-      index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        if (["-u", "-g", "-h", "-p", "-C"].includes(words[index])) {
-          index += 1;
-        }
-        index += 1;
-      }
-      continue;
-    }
-
-    if (["command", "builtin", "nohup"].includes(executable)) {
-      index += 1;
-      while (index < words.length && words[index].startsWith("-")) {
-        index += 1;
-      }
-      continue;
-    }
-
-    break;
-  }
-
-  return {
-    executable: index < words.length ? executableName(words[index]) : "",
-    arguments: words.slice(index + 1),
-  };
+  return index;
 }
 
 function gitCommand(arguments_) {
@@ -229,7 +385,19 @@ function gitCommand(arguments_) {
   };
 }
 
-function protectedPathRule(segment, executable, arguments_) {
+function isRecursiveForceDelete(arguments_) {
+  const recursive =
+    arguments_.includes("--recursive") ||
+    hasShortFlag(arguments_, "r") ||
+    hasShortFlag(arguments_, "R");
+  const forced =
+    arguments_.includes("--force") || hasShortFlag(arguments_, "f");
+  return recursive && forced;
+}
+
+// High-impact shapes that remain denied even when the command word is a literal
+// allowlisted form. Compose after expansion denial and named exceptions.
+function highImpactRule(segment, executable, arguments_) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
       segment[index].kind === "operator" &&
@@ -248,55 +416,8 @@ function protectedPathRule(segment, executable, arguments_) {
     return "protected-artifact-mutation";
   }
 
-  return null;
-}
-
-function inspectSegment(segment, depth) {
-  const words = segment
-    .filter((token) => token.kind === "word")
-    .map((token) => token.value);
-  const { executable, arguments: arguments_ } = unwrapCommand(words);
-
-  const protectedRule = protectedPathRule(segment, executable, arguments_);
-  if (protectedRule) {
-    return protectedRule;
-  }
-
-  if (["sh", "bash", "zsh", "dash"].includes(executable) && depth > 0) {
-    const commandIndex = arguments_.findIndex(
-      (argument) => argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
-    );
-    if (commandIndex >= 0 && commandIndex + 1 < arguments_.length) {
-      return inspectCommand(arguments_[commandIndex + 1], depth - 1);
-    }
-  }
-
-  if (executable === "rm") {
-    const recursive =
-      arguments_.includes("--recursive") || hasShortFlag(arguments_, "r");
-    const forced = arguments_.includes("--force") || hasShortFlag(arguments_, "f");
-    const highImpactTarget = arguments_.some((argument) =>
-      [
-        "/",
-        "/*",
-        ".",
-        "./",
-        "..",
-        "../",
-        "*",
-        "./*",
-        "~",
-        "~/",
-        "~/*",
-        "$HOME",
-        "${HOME}",
-        ".git",
-        "./.git",
-      ].includes(argument),
-    );
-    if (recursive && forced && highImpactTarget) {
-      return "destructive-filesystem-delete";
-    }
+  if (executable === "rm" && isRecursiveForceDelete(arguments_)) {
+    return "destructive-filesystem-delete";
   }
 
   if (executable === "git") {
@@ -336,8 +457,7 @@ function inspectSegment(segment, depth) {
 
   if (
     executable === "gh" &&
-    ((arguments_[0] === "repo" &&
-      arguments_[1] === "delete") ||
+    ((arguments_[0] === "repo" && arguments_[1] === "delete") ||
       (arguments_[0] === "release" && arguments_[1] === "delete"))
   ) {
     return "remote-object-delete";
@@ -353,93 +473,114 @@ function inspectSegment(segment, depth) {
   return null;
 }
 
-function substitutionEnd(command, start, kind) {
-  let quote = null;
-  let escaped = false;
-  let depth = kind === "dollar" ? 1 : 0;
-  for (let index = start; index < command.length; index += 1) {
-    const character = command[index];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (quote === "'") {
-      if (character === "'") quote = null;
-      continue;
-    }
-    if (character === "\\") {
-      escaped = true;
-      continue;
-    }
-    if (character === "'") {
-      quote = "'";
-      continue;
-    }
-    if (character === '"') {
-      quote = quote === '"' ? null : '"';
-      continue;
-    }
-    if (kind === "backtick" && character === "`") {
-      return index;
-    }
-    if (kind === "dollar" && quote === null) {
-      if (character === "(") depth += 1;
-      if (character === ")") {
-        depth -= 1;
-        if (depth === 0) return index;
-      }
-    }
-  }
-  throw new Error("unterminated shell substitution");
-}
+function inspectSegment(segment, depth) {
+  const words = segment
+    .filter((token) => token.kind === "word")
+    .map((token) => token.value);
 
-function inspectSubstitutions(command, depth) {
-  let quote = null;
-  let escaped = false;
-  for (let index = 0; index < command.length; index += 1) {
-    const character = command[index];
-    if (escaped) {
-      escaped = false;
-      continue;
+  let index = 0;
+  while (index < words.length && isAssignment(words[index])) {
+    if (!isSafeAssignment(words[index])) {
+      return "unsafe-assignment";
     }
-    if (quote === "'") {
-      if (character === "'") quote = null;
-      continue;
-    }
-    if (character === "\\") {
-      escaped = true;
-      continue;
-    }
-    if (character === "'") {
-      quote = "'";
-      continue;
-    }
-    if (character === '"') {
-      quote = quote === '"' ? null : '"';
-      continue;
-    }
-    const dollar = character === "$" && command[index + 1] === "(";
-    const backtick = character === "`";
-    if (!dollar && !backtick) continue;
-    if (depth <= 0) throw new Error("shell substitution nesting exceeds limit");
-    const contentStart = index + (dollar ? 2 : 1);
-    const end = substitutionEnd(command, contentStart, dollar ? "dollar" : "backtick");
-    const rule = inspectCommand(command.slice(contentStart, end), depth - 1);
-    if (rule) return rule;
-    index = end;
+    index += 1;
   }
-  return null;
+
+  if (index >= words.length) {
+    return null;
+  }
+
+  while (index < words.length) {
+    const word = words[index];
+    if (!isSafeCommandWord(word)) {
+      return "unsafe-command-word";
+    }
+
+    const executable = executableName(word);
+
+    if (executable === "eval") {
+      return "eval-not-allowlisted";
+    }
+
+    if (WRAPPER_COMMANDS.has(executable)) {
+      index = skipWrapperFlags(executable, words, index);
+      if (index >= words.length) {
+        return null;
+      }
+      continue;
+    }
+
+    const arguments_ = words.slice(index + 1);
+    const impact = highImpactRule(segment, executable, arguments_);
+    if (impact) {
+      return impact;
+    }
+
+    if (executable === "." || executable === "source") {
+      const script = arguments_[0];
+      if (script === undefined || !isSafeCommandWord(script)) {
+        return "unsafe-source";
+      }
+      return null;
+    }
+
+    if (SHELL_INTERPRETERS.has(executable)) {
+      const commandIndex = arguments_.findIndex(
+        (argument) =>
+          argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
+      );
+      if (commandIndex >= 0) {
+        if (commandIndex + 1 >= arguments_.length) {
+          return "unsafe-shell-c";
+        }
+        if (depth <= 0) {
+          return "nested-shell-depth-exceeded";
+        }
+        return inspectCommand(arguments_[commandIndex + 1], depth - 1);
+      }
+
+      for (const argument of arguments_) {
+        if (argument.startsWith("-")) {
+          continue;
+        }
+        // First non-flag operand is the script path when present.
+        if (!isSafeCommandWord(argument)) {
+          return "unsafe-shell-script";
+        }
+        break;
+      }
+      return null;
+    }
+
+    // Literal command word with a non-high-impact args shape: allow.
+    return null;
+  }
+
+  return "unsafe-command-word";
 }
 
 function inspectCommand(command, depth = MAX_NESTED_SHELL_DEPTH) {
-  const substitutionRule = inspectSubstitutions(command, depth);
-  if (substitutionRule) return substitutionRule;
-  for (const segment of splitSegments(tokenize(command))) {
+  const trimmed = command.trim();
+  if (NAMED_EXCEPTIONS.has(trimmed)) {
+    return null;
+  }
+
+  if (containsActiveCommandExpansion(command)) {
+    return "command-expansion";
+  }
+
+  const segments = splitSegments(tokenize(command));
+  if (segments.length === 0) {
+    return "empty-command";
+  }
+
+  for (const segment of segments) {
     const rule = inspectSegment(segment, depth);
     if (rule) {
       return rule;
     }
   }
+
   return null;
 }
 
@@ -477,9 +618,13 @@ async function main() {
     }
 
     const rule = inspectCommand(payload.command);
-    process.stdout.write(`${JSON.stringify(decision(rule ? "deny" : "allow", rule))}\n`);
+    process.stdout.write(
+      `${JSON.stringify(decision(rule ? "deny" : "allow", rule))}\n`,
+    );
   } catch {
-    process.stdout.write(`${JSON.stringify(decision("deny", "invalid-hook-input"))}\n`);
+    process.stdout.write(
+      `${JSON.stringify(decision("deny", "invalid-hook-input"))}\n`,
+    );
   }
 }
 

@@ -4,12 +4,13 @@
 > `data-model-documenter` agent after each implementation pass. Do not hand-edit unless
 > correcting agent error — prefer re-running the agent on the diff.
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-22
 
 ## Change log (recent)
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-22 | `fix/35-shell-guard-allowlist` | Inverted `BeforeShellExecutionHook` from denylist to default-deny allowlist composed with high-impact deny shapes, named `eval` exceptions, and expansion fail-closed rules. |
 | 2026-07-20 | `main` | Updated local-install state to schema 2 and documented structural managed-registry restoration without whole-config digest ownership. |
 | 2026-07-20 | `main` | Bound pair records to benchmark inputs, made network enforcement/attempt evidence cross-validated, preserved invalid preflight records, and cataloged lifecycle evidence plus concurrent registry restoration. |
 | 2026-07-20 | `main` | Cataloged manifest-bound result evidence, pre-execution evaluator integrity, strict benchmark child environments, authenticated config preflight, exact install registration repair, process-substitution detection, and sanitized artifact exports. |
@@ -34,7 +35,7 @@
 |---|---|
 | **Kind** | `api` |
 | **Ingestion route** | Cursor schema-v1 `beforeShellExecution`, running from the active workspace, invokes `node "${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs"` using Cursor's supplied plugin-root environment value, writes one JSON event to standard input, and reads one JSON permission decision from standard output |
-| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `readInput`, `main`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
+| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `readInput`, `main`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
 
 #### Shape
 
@@ -72,7 +73,7 @@ Output:
 | `user_message` | string | deny only | Deterministic user-facing denial naming the matched rule |
 | `agent_message` | string | deny only | Deterministic instruction stating that the guard denied the command |
 
-Input must be a JSON object no larger than 1 MiB. The guard normalizes absolute executable paths to their basename, unwraps leading assignments plus `env`, `sudo`, `command`, `builtin`, and `nohup`, and recursively inspects shell `-c` payloads. It also inspects nested `$()` and backtick substitutions to a maximum depth of three while treating single-quoted substitution text as inert. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, unterminated substitutions, and excessive substitution nesting return the deterministic `deny` shape using rule `invalid-hook-input`. Allowed commands return only `{ "permission": "allow" }`.
+Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: parse → deny active expansions → allow named `eval` exceptions → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments, and optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`). Absolute paths are reduced to basenames for wrapper and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks) and process substitutions (`<(...)`, `>(...)`) are denied anywhere they expand; single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), selected `gh` and `npm`/`pnpm` mutation forms, and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`.
 
 ### BenchmarkArtifactExportCliResult
 
