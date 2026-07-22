@@ -55,32 +55,34 @@ five-second timeout and `failClosed: true`. Cursor expands
 the script against the active workspace used as the hook's working directory.
 The Node script itself does not inspect environment variables.
 
-The guard denies a deliberately small set of recognizable high-impact
-operations:
+The guard is a default-deny allowlist over tokenized command forms:
 
-- recursive forced deletion of high-impact filesystem targets;
-- Git worktree/index discard, forced cleaning, branch force-deletion, and
-  force-push forms;
-- selected remote object and package registry deletion/publication commands;
-- direct shell mutation or redirection targeting evaluator or canary paths.
+- allow only literal path-like command words (no expansion metacharacters in
+  command position), with optional safe assignments and common wrappers;
+- deny active command substitutions (`$()`, backticks) and process
+  substitutions (`<(...)`, `>(...)`) wherever they expand;
+- deny `eval` except the exact named forms `eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"`;
+- recursively allowlist shell `-c` payloads;
+- deny malformed input with deterministic JSON.
 
-Malformed input is denied with deterministic JSON. The script does not use the
-network, execute parsed text, read files, inspect environment variables, or
-read credentials.
+The script does not use the network, execute parsed text, read files, inspect
+environment variables, or read credentials.
 
-This hook is a safety interlock, not a shell parser, sandbox, authorization
-system, or security boundary. Shell expansion, aliases, generated commands,
-alternate binaries, editor tools, and non-shell paths can bypass textual
-matching. Cursor rules and LLM instructions are also not security boundaries.
-Sensitive operations still require operating-system permissions, repository
-protections, least-privilege credentials, and human review.
+This hook is a safety interlock, not a sandbox, authorization system, or
+security boundary. Literal high-impact commands (for example `rm -rf /` or
+`git reset --hard`), pipe-into-interpreter forms (`printf … | bash`), aliases,
+and non-shell tools are outside the allowlist's claims. Cursor rules and LLM
+instructions are also not security boundaries. Sensitive operations still
+require operating-system permissions, repository protections, least-privilege
+credentials, and human review.
 
 ## Evaluator integrity
 
 Hidden evaluators and canaries must remain outside agent-writable inputs where
-possible. The hook rejects obvious shell mutations to paths named for those
-assets, but the benchmark harness must independently verify expected digests
-and canary values after each run. A hook allow decision is never evidence that
-an evaluator remained intact.
+possible. The shell guard does not claim path-based protection for those
+assets; the benchmark harness must independently verify expected digests and
+canary values after each run. A hook allow decision is never evidence that an
+evaluator remained intact.
 
 See `docs/threat-model.md` for the detailed trust model and residual risks.

@@ -9,13 +9,13 @@ Cloud.
 
 The goals are to:
 
-1. stop a small set of unambiguously destructive shell commands before local
-   execution;
+1. allow only positively recognized safe shell command forms and deny
+   everything else, including expansion-based rewrites of what program runs;
 2. fail closed when Cursor observes a hook crash, timeout, or invalid output;
 3. avoid introducing network, credential, dynamic-code, or configuration
    access into the hook runtime; and
-4. make attempted evaluator or canary mutation visible and independently
-   detectable.
+4. keep evaluator or canary integrity independently verifiable by the
+   benchmark harness (the shell guard does not claim path-based protection).
 
 ## Assets
 
@@ -89,12 +89,17 @@ directory. The plugin-root path is shell-quoted, timeout is five seconds, and
 for crashes, timeouts, and invalid hook output; local tests verify the static
 configuration and script contract, not Cursor's enforcement implementation.
 
-The guard itself denies malformed JSON, missing or invalid commands, malformed
-shell quoting or command substitutions, oversized input, and recognized
-destructive forms, including destructive commands nested in `$()` or
-backticks. Single-quoted substitution text remains inert. It allows
-commands outside its narrow denylist so ordinary development is not converted
-into a broad policy gate.
+The guard is a default-deny allowlist. It allows only positively recognized
+safe command forms: a literal path-like command word with no expansion
+metacharacters in command position, optional safe assignments and wrappers,
+and recursively allowlisted shell `-c` payloads. It denies active command
+substitutions (`$()`, backticks) and process substitutions (`<(...)`,
+`>(...)`) wherever they expand, denies `eval` except the exact named forms
+`eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"`, and denies
+malformed JSON, missing or invalid commands, malformed quoting, unterminated
+substitutions, and oversized input. Single-quoted substitution text remains
+inert. Missed mechanisms therefore fail as false denies rather than silent
+allows.
 
 The runtime is Node.js standard library only and network-free. It has no
 dynamic evaluation, subprocess execution, filesystem access, environment
@@ -105,11 +110,10 @@ replacement.
 
 | Threat | Control | Residual risk |
 |---|---|---|
-| Accidental mass deletion | Deny recursive forced deletion of high-impact targets | Alternate tools, expansions, scripts, and encoded commands may bypass matching |
-| Loss of local Git work | Deny hard reset, forced clean, and force branch deletion, including nested command substitutions | Other Git or filesystem operations can still discard work |
-| Remote history or object destruction | Deny force pushes and selected `gh` deletion forms | Normal pushes and other remote clients remain allowed |
-| Package registry mutation | Deny direct npm/pnpm publish and unpublish forms | Other clients, wrappers, or APIs remain outside scope |
-| Evaluator or canary tampering | Deny obvious shell path mutation; require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |
+| Expansion-based command rewrite (`eval`, glob command names, `$()`, process substitution) | Default-deny allowlist; deny active expansions; named `eval` exceptions only | Other rewrite mechanisms (aliases, `$'...'`, unprobed interpreters) may still surprise; they fail closed only when they introduce a denied form |
+| Accidental mass deletion or work loss | Not blocked when written as a literal allowlisted command form | Literal `rm`, `git reset --hard`, registry publishes, and similar remain allowable; OS permissions and human review remain required |
+| Pipe into interpreter (`printf … \| bash`) | Out of scope; not claimed blocked | Interpreter stdin can still run arbitrary scripts |
+| Evaluator or canary tampering | Post-run integrity checks in the benchmark harness | The shell guard does not claim path-based protection for evaluator or canary assets |
 | Prompt, seed, or overlay tampering | Before/after workspace snapshots enforce expected writes and recorded overlay hashes | Filesystem metadata and empty-directory changes are outside the file-content snapshot |
 | Agent network access | Exact hash-stable per-trial policy plus `--sandbox enabled`; normalized direct network tool attempts, absolute client paths, and common command wrappers are critical violations | A runner whose CLI lacks documented sandbox support cannot execute an eligible trial; model API traffic required by Cursor itself remains outside evaluated tool traffic |
 | Malformed or failed hook | Deterministic denial plus Cursor `failClosed` and timeout configuration | Cursor enforcement must still be verified in the actual local client |
@@ -121,10 +125,11 @@ replacement.
 
 The guard is not a complete shell grammar, endpoint protection product,
 sandbox, data-loss-prevention system, or user-consent mechanism. It does not
-claim to secure Cloud Agents, intercept non-shell tools, authorize routine
-shared-state changes, or make LLM rules enforceable. Operating-system
-permissions, least-privilege credentials, branch protections, isolated
-benchmark workspaces, and deterministic integrity checks remain required.
+claim to block pipe-into-interpreter forms, secure Cloud Agents, intercept
+non-shell tools, authorize routine shared-state changes, or make LLM rules
+enforceable. Operating-system permissions, least-privilege credentials,
+branch protections, isolated benchmark workspaces, and deterministic
+integrity checks remain required.
 
 ## CI and authenticated benchmark operation
 

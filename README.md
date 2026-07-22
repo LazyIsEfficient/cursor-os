@@ -140,7 +140,7 @@ validates and copies that template into a fresh per-trial config home.
 Plugins and workspace hooks execute local code with the Cursor process's user
 permissions. Install only from a reviewed revision, inspect the manifest and
 hook script, and do not treat Marketplace review as a security boundary. The
-guard is a narrow destructive-command control, not a shell parser, sandbox,
+guard is a default-deny allowlist over safe command forms, not a sandbox,
 endpoint-protection product, or substitute for backups and least privilege.
 Report vulnerabilities privately through GitHub's advisory form, not a public
 issue — see [Reporting a vulnerability](SECURITY.md#reporting-a-vulnerability).

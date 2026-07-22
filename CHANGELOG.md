@@ -14,6 +14,16 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Changed
+
+- **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
+  inverted from a destructive-command denylist to positively recognized safe
+  forms (literal command words, no active `$()` / backtick / process
+  substitutions, recursive shell `-c` allowlisting). `eval` is denied except
+  the exact named forms `eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
+  pipe-into-interpreter remains an explicit residual risk. See issue #35.
+
 ### Added
 
 - **Operator-run plugin loading verification tooling**
