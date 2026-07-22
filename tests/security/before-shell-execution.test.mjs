@@ -34,13 +34,15 @@ test("allows benign everyday commands", () => {
   for (const command of [
     "ls",
     "ls -la",
+    "ls /",
     "git status",
     "git status --short",
     "git push origin feature/safe-update",
     "npm test",
     "npm run validate",
     "node --test tests/security/*.test.mjs",
-    "rm -rf ./dist",
+    "rm file.txt",
+    "rm -f file.txt",
     'printf "%s\\n" hello',
     "printf '%s' '$(git reset --hard)'",
     "printf '%s' '`git reset --hard`'",
@@ -62,6 +64,36 @@ test("allows named eval exceptions only", () => {
     '  eval "$(direnv hook zsh)"  ',
   ]) {
     assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
+  }
+});
+
+test("denies high-impact literal command shapes", () => {
+  const commands = [
+    "rm -rf /",
+    "rm -rf ./foo",
+    "rm -rf ./tmp",
+    "rm -fr ./tmp",
+    "rm -r -f ./tmp",
+    "rm --recursive --force ./tmp",
+    `"/bin/rm" "-rf" './tmp'`,
+    "git reset --hard",
+    `git reset "--hard"`,
+    "git -C ./fixture clean -fd",
+    `env MODE=test git "push" --force-with-lease origin main`,
+    `sh -c 'git push origin +main'`,
+    "git branch -D abandoned-work",
+    "gh repo delete owner/repository",
+    "npm publish",
+    "rm tests/evaluators/hidden-check.mjs",
+    "mv fixtures/canaries/marker.txt /tmp/marker.txt",
+    "printf changed > tests/security/evaluator-canary.txt",
+  ];
+
+  for (const command of commands) {
+    const response = commandDecision(command);
+    assert.equal(response.permission, "deny", command);
+    assert.match(response.user_message, /^Command blocked by the local shell guard/u);
+    assert.equal(typeof response.agent_message, "string");
   }
 });
 
@@ -106,9 +138,16 @@ test("denies nested unsafe forms inside shell -c", () => {
     "sh -c 'eval rm -rf /'",
     "bash -c '$(echo rm -rf /)'",
     "zsh -c '/bin/r? -rf /'",
+    "sh -c 'rm -rf ./tmp'",
+    "bash -c 'git reset --hard'",
   ]) {
     assert.equal(commandDecision(command).permission, "deny", command);
   }
+});
+
+test("pipe into interpreter remains out of scope", () => {
+  // Deliberate residual risk from #35 — not claimed blocked.
+  assert.deepEqual(commandDecision("printf rm | bash"), { permission: "allow" });
 });
 
 test("fails closed with deterministic JSON for malformed input", () => {
@@ -197,4 +236,6 @@ test("guard source has no execution, network, credential, or filesystem APIs", a
   assert.match(source, /NAMED_EXCEPTIONS/u);
   assert.match(source, /MAX_INPUT_BYTES/u);
   assert.match(source, /isSafeCommandWord/u);
+  assert.match(source, /highImpactRule/u);
+  assert.match(source, /PROTECTED_PATH_PATTERN/u);
 });

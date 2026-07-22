@@ -8,6 +8,21 @@ const NAMED_EXCEPTIONS = new Set([
 ]);
 
 const SEGMENT_OPERATORS = new Set([";", ";;", "&&", "||", "|", "&", "\n"]);
+const REDIRECT_OPERATORS = new Set([">", ">>"]);
+
+// Paths the benchmark harness must keep intact; mutations fail closed even as
+// otherwise-literal allowlisted forms.
+const PROTECTED_PATH_PATTERN =
+  /(?:^|[/\\._-])(?:evaluators?|canaries?)(?:$|[/\\._-])/i;
+const MUTATING_COMMANDS = new Set([
+  "chmod",
+  "chown",
+  "mv",
+  "rm",
+  "shred",
+  "truncate",
+  "unlink",
+]);
 
 const SHELL_INTERPRETERS = new Set([
   "ash",
@@ -307,6 +322,17 @@ function containsActiveCommandExpansion(command) {
   return false;
 }
 
+function hasShortFlag(arguments_, flag) {
+  return arguments_.some(
+    (argument) =>
+      /^-[^-]/u.test(argument) &&
+      argument
+        .slice(1)
+        .split("")
+        .includes(flag),
+  );
+}
+
 function skipWrapperFlags(executable, words, startIndex) {
   let index = startIndex + 1;
 
@@ -337,6 +363,114 @@ function skipWrapperFlags(executable, words, startIndex) {
     index += 1;
   }
   return index;
+}
+
+function gitCommand(arguments_) {
+  let index = 0;
+
+  while (index < arguments_.length && arguments_[index].startsWith("-")) {
+    if (
+      ["-C", "-c", "--git-dir", "--work-tree", "--namespace"].includes(
+        arguments_[index],
+      )
+    ) {
+      index += 1;
+    }
+    index += 1;
+  }
+
+  return {
+    subcommand: (arguments_[index] ?? "").toLowerCase(),
+    arguments: arguments_.slice(index + 1),
+  };
+}
+
+function isRecursiveForceDelete(arguments_) {
+  const recursive =
+    arguments_.includes("--recursive") ||
+    hasShortFlag(arguments_, "r") ||
+    hasShortFlag(arguments_, "R");
+  const forced =
+    arguments_.includes("--force") || hasShortFlag(arguments_, "f");
+  return recursive && forced;
+}
+
+// High-impact shapes that remain denied even when the command word is a literal
+// allowlisted form. Compose after expansion denial and named exceptions.
+function highImpactRule(segment, executable, arguments_) {
+  for (let index = 0; index < segment.length - 1; index += 1) {
+    if (
+      segment[index].kind === "operator" &&
+      REDIRECT_OPERATORS.has(segment[index].value) &&
+      segment[index + 1].kind === "word" &&
+      PROTECTED_PATH_PATTERN.test(segment[index + 1].value)
+    ) {
+      return "protected-artifact-write";
+    }
+  }
+
+  if (
+    MUTATING_COMMANDS.has(executable) &&
+    arguments_.some((argument) => PROTECTED_PATH_PATTERN.test(argument))
+  ) {
+    return "protected-artifact-mutation";
+  }
+
+  if (executable === "rm" && isRecursiveForceDelete(arguments_)) {
+    return "destructive-filesystem-delete";
+  }
+
+  if (executable === "git") {
+    const parsed = gitCommand(arguments_);
+    const forcePush =
+      parsed.arguments.includes("--force") ||
+      parsed.arguments.includes("--force-with-lease") ||
+      parsed.arguments.includes("--force-if-includes") ||
+      parsed.arguments.some((argument) =>
+        argument.startsWith("--force-with-lease="),
+      ) ||
+      hasShortFlag(parsed.arguments, "f") ||
+      parsed.arguments.some((argument) => argument.startsWith("+"));
+
+    if (parsed.subcommand === "reset" && parsed.arguments.includes("--hard")) {
+      return "git-discard-reset";
+    }
+    if (
+      parsed.subcommand === "clean" &&
+      (parsed.arguments.includes("--force") || hasShortFlag(parsed.arguments, "f"))
+    ) {
+      return "git-destructive-clean";
+    }
+    if (parsed.subcommand === "push" && forcePush) {
+      return "git-history-rewrite";
+    }
+    if (
+      parsed.subcommand === "branch" &&
+      (parsed.arguments.includes("-D") ||
+        parsed.arguments.includes("--delete-force") ||
+        (parsed.arguments.includes("--delete") &&
+          parsed.arguments.includes("--force")))
+    ) {
+      return "git-force-branch-delete";
+    }
+  }
+
+  if (
+    executable === "gh" &&
+    ((arguments_[0] === "repo" && arguments_[1] === "delete") ||
+      (arguments_[0] === "release" && arguments_[1] === "delete"))
+  ) {
+    return "remote-object-delete";
+  }
+
+  if (
+    ["npm", "pnpm"].includes(executable) &&
+    ["publish", "unpublish"].includes(arguments_[0])
+  ) {
+    return "package-registry-mutation";
+  }
+
+  return null;
 }
 
 function inspectSegment(segment, depth) {
@@ -376,8 +510,14 @@ function inspectSegment(segment, depth) {
       continue;
     }
 
+    const arguments_ = words.slice(index + 1);
+    const impact = highImpactRule(segment, executable, arguments_);
+    if (impact) {
+      return impact;
+    }
+
     if (executable === "." || executable === "source") {
-      const script = words[index + 1];
+      const script = arguments_[0];
       if (script === undefined || !isSafeCommandWord(script)) {
         return "unsafe-source";
       }
@@ -385,7 +525,6 @@ function inspectSegment(segment, depth) {
     }
 
     if (SHELL_INTERPRETERS.has(executable)) {
-      const arguments_ = words.slice(index + 1);
       const commandIndex = arguments_.findIndex(
         (argument) =>
           argument === "-c" || /^-[A-Za-z]*c[A-Za-z]*$/u.test(argument),
@@ -413,6 +552,7 @@ function inspectSegment(segment, depth) {
       return null;
     }
 
+    // Literal command word with a non-high-impact args shape: allow.
     return null;
   }
 

@@ -63,6 +63,9 @@ The guard is a default-deny allowlist over tokenized command forms:
   substitutions (`<(...)`, `>(...)`) wherever they expand;
 - deny `eval` except the exact named forms `eval "$(direnv hook zsh)"` and
   `eval "$(ssh-agent -s)"`;
+- deny high-impact resolved shapes even when literal, including recursive
+  force `rm`, destructive Git forms, selected `gh` and package-registry
+  mutations, and evaluator/canary path mutations or redirects;
 - recursively allowlist shell `-c` payloads;
 - deny malformed input with deterministic JSON.
 
@@ -70,8 +73,7 @@ The script does not use the network, execute parsed text, read files, inspect
 environment variables, or read credentials.
 
 This hook is a safety interlock, not a sandbox, authorization system, or
-security boundary. Literal high-impact commands (for example `rm -rf /` or
-`git reset --hard`), pipe-into-interpreter forms (`printf … | bash`), aliases,
+security boundary. Pipe-into-interpreter forms (`printf … | bash`), aliases,
 and non-shell tools are outside the allowlist's claims. Cursor rules and LLM
 instructions are also not security boundaries. Sensitive operations still
 require operating-system permissions, repository protections, least-privilege
@@ -80,9 +82,9 @@ credentials, and human review.
 ## Evaluator integrity
 
 Hidden evaluators and canaries must remain outside agent-writable inputs where
-possible. The shell guard does not claim path-based protection for those
-assets; the benchmark harness must independently verify expected digests and
-canary values after each run. A hook allow decision is never evidence that an
-evaluator remained intact.
+possible. The hook rejects obvious shell mutations to paths named for those
+assets, but the benchmark harness must independently verify expected digests
+and canary values after each run. A hook allow decision is never evidence that
+an evaluator remained intact.
 
 See `docs/threat-model.md` for the detailed trust model and residual risks.
