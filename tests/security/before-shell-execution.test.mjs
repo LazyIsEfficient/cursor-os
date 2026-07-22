@@ -50,8 +50,12 @@ test("allows benign everyday commands", () => {
     "env MODE=test npm test",
     "command ls",
     "sudo ls",
+    "timeout 5 ls",
+    "nice ls",
+    "time ls",
     "sh -c 'ls -la'",
     "bash -c 'git status'",
+    "git -c user.name=test status",
   ]) {
     assert.deepEqual(commandDecision(command), { permission: "allow" }, command);
   }
@@ -94,6 +98,27 @@ test("denies high-impact literal command shapes", () => {
     assert.equal(response.permission, "deny", command);
     assert.match(response.user_message, /^Command blocked by the local shell guard/u);
     assert.equal(typeof response.agent_message, "string");
+  }
+});
+
+test("denies ANSI-C quoting, launchers, and git config injection bypasses", () => {
+  const commands = [
+    "rm $'-rf' /tmp/x",
+    "git reset $'--hard'",
+    "timeout 5 rm -rf /tmp/x",
+    "nice rm -rf /tmp/x",
+    "busybox rm -rf /tmp/x",
+    "time rm -rf /tmp/x",
+    "stdbuf -oL rm -rf /tmp/x",
+    "git -c alias.evil='!rm -rf /tmp/x' evil",
+    "git -c core.pager='rm -rf /tmp/x' log",
+    "git -c diff.external='rm -rf /tmp/x' status",
+  ];
+
+  for (const command of commands) {
+    const response = commandDecision(command);
+    assert.equal(response.permission, "deny", command);
+    assert.match(response.user_message, /^Command blocked by the local shell guard/u);
   }
 });
 
@@ -238,4 +263,6 @@ test("guard source has no execution, network, credential, or filesystem APIs", a
   assert.match(source, /isSafeCommandWord/u);
   assert.match(source, /highImpactRule/u);
   assert.match(source, /PROTECTED_PATH_PATTERN/u);
+  assert.match(source, /COMMAND_LAUNCHERS/u);
+  assert.match(source, /gitConfigInjectionRule/u);
 });

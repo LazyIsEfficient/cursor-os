@@ -90,21 +90,24 @@ directory. The plugin-root path is shell-quoted, timeout is five seconds, and
 for crashes, timeouts, and invalid hook output; local tests verify the static
 configuration and script contract, not Cursor's enforcement implementation.
 
-The guard is a default-deny allowlist composed as parse → deny active
-expansions → allow named `eval` exceptions → deny high-impact resolved
-shapes → allow only safe literal command forms → else deny. Safe forms
-require a literal path-like command word with no expansion metacharacters in
-command position, optional safe assignments and wrappers, and recursively
-allowlisted shell `-c` payloads. It denies active command substitutions
-(`$()`, backticks) and process substitutions (`<(...)`, `>(...)`) wherever
+The guard is a default-deny allowlist composed as allow named `eval`
+exceptions → deny active expansions (including ANSI-C `$'...'` quoting) →
+peel known wrappers/launchers → deny high-impact resolved shapes → allow
+only safe literal command forms → else deny. Safe forms require a literal
+path-like command word with no expansion metacharacters in command position,
+optional safe assignments, wrappers, and command launchers (`timeout`,
+`nice`, `busybox`, `time`, `stdbuf`), and recursively allowlisted shell `-c`
+payloads. It denies active command substitutions (`$()`, backticks), process
+substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) wherever
 they expand, denies `eval` except the exact named forms
 `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"`, and denies
 malformed JSON, missing or invalid commands, malformed quoting, unterminated
 substitutions, and oversized input. High-impact shapes denied even as
-literals include recursive force `rm`, destructive Git forms, selected `gh`
-and package-registry mutations, and evaluator/canary path mutations. Single-
-quoted substitution text remains inert. Missed expansion mechanisms therefore
-fail as false denies rather than silent allows.
+literals include recursive force `rm`, destructive Git forms, `git -c`
+shell-escape config injection, selected `gh` and package-registry mutations,
+and evaluator/canary path mutations. Ordinary single-quoted text remains
+inert. Missed expansion mechanisms therefore fail as false denies rather
+than silent allows.
 
 The runtime is Node.js standard library only and network-free. It has no
 dynamic evaluation, subprocess execution, filesystem access, environment
@@ -115,9 +118,9 @@ replacement.
 
 | Threat | Control | Residual risk |
 |---|---|---|
-| Expansion-based command rewrite (`eval`, glob command names, `$()`, process substitution) | Default-deny allowlist; deny active expansions; named `eval` exceptions only | Other rewrite mechanisms (aliases, `$'...'`, unprobed interpreters) may still surprise; they fail closed only when they introduce a denied form |
-| Accidental mass deletion or work loss | Deny recursive force `rm` and destructive Git forms even as literal argv | Other tools, encodings, and non-shell paths can still discard work |
-| Remote history or object destruction | Deny force pushes and selected `gh` deletion forms | Normal pushes and other remote clients remain allowed |
+| Expansion-based command rewrite (`eval`, glob command names, `$()`, `$'...'`, process substitution, launchers) | Default-deny allowlist; deny active expansions including ANSI-C quotes; peel known launchers then re-check; named `eval` exceptions only | Other rewrite mechanisms (aliases, unprobed launchers/interpreters) may still surprise; they fail closed only when they introduce a denied form |
+| Accidental mass deletion or work loss | Deny recursive force `rm` and destructive Git forms even as literal argv or after known launchers | Other tools, encodings, and non-shell paths can still discard work |
+| Remote history or object destruction | Deny force pushes, selected `gh` deletion forms, and `git -c` shell-escape config injection | Normal pushes and other remote clients remain allowed |
 | Package registry mutation | Deny direct npm/pnpm publish and unpublish forms | Other clients, wrappers, or APIs remain outside scope |
 | Pipe into interpreter (`printf … \| bash`) | Out of scope; not claimed blocked | Interpreter stdin can still run arbitrary scripts |
 | Evaluator or canary tampering | Deny obvious shell path mutation; require post-run integrity checks | Non-shell edits and disguised paths are not intercepted |

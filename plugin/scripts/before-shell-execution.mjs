@@ -45,6 +45,28 @@ const WRAPPER_COMMANDS = new Set([
   "sudo",
 ]);
 
+// Launchers whose first non-option operand is another command. Peel them and
+// re-apply policy to the resolved command; unknown launchers stay denied only
+// when they are not on this list and look like ordinary executables.
+const COMMAND_LAUNCHERS = new Set([
+  "busybox",
+  "nice",
+  "stdbuf",
+  "time",
+  "timeout",
+]);
+
+// Git config keys that can run a shell command when set via `git -c`.
+const GIT_SHELL_ESCAPE_KEYS = new Set([
+  "core.editor",
+  "core.pager",
+  "core.sshcommand",
+  "diff.external",
+  "diff.tool",
+  "interactive.difffilter",
+  "merge.tool",
+]);
+
 function decision(permission, rule) {
   if (permission === "allow") {
     return { permission: "allow" };
@@ -246,10 +268,11 @@ function substitutionEnd(command, start, kind) {
   throw new Error("unterminated shell substitution");
 }
 
-// Active expansions the shell runs as commands (or as process substitutions).
-// Single-quoted text is inert. Presence of a runnable expansion is denied so a
-// missed mechanism fails closed; unterminated forms throw and fail closed as
-// invalid input.
+// Active expansions the shell runs as commands (or as process substitutions),
+// including ANSI-C `$'...'` quoting which rewrites argument bytes after the
+// guard would otherwise read them as ordinary text. Single-quoted text is
+// inert. Presence of a runnable expansion is denied so a missed mechanism
+// fails closed; unterminated forms throw and fail closed as invalid input.
 function containsActiveCommandExpansion(command) {
   let quote = null;
   let escaped = false;
@@ -287,6 +310,9 @@ function containsActiveCommandExpansion(command) {
         index = substitutionEnd(command, index + 2, "dollar");
         return true;
       }
+      if (character === "$" && command[index + 1] === "'") {
+        return true;
+      }
       continue;
     }
 
@@ -307,6 +333,11 @@ function containsActiveCommandExpansion(command) {
 
     if (character === "$" && command[index + 1] === "(") {
       index = substitutionEnd(command, index + 2, "dollar");
+      return true;
+    }
+
+    // ANSI-C quoting: $'...' rewrites the word (e.g. $'-rf' → -rf).
+    if (character === "$" && command[index + 1] === "'") {
       return true;
     }
 
@@ -365,6 +396,151 @@ function skipWrapperFlags(executable, words, startIndex) {
   return index;
 }
 
+// Skip launcher options (and operands such as timeout's DURATION) so the next
+// word is the command the launcher will exec.
+function skipLauncherOperands(executable, words, startIndex) {
+  let index = startIndex + 1;
+
+  if (executable === "timeout") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-k", "--kill-after", "-s", "--signal"].includes(option) ||
+        option.startsWith("--kill-after=") ||
+        option.startsWith("--signal=")
+      ) {
+        if (!option.includes("=")) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    // DURATION is required before COMMAND.
+    if (index < words.length) {
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "nice") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (option === "-n" || option === "--adjustment") {
+        index += 1;
+      } else if (option.startsWith("-n") && option.length > 2) {
+        // -nN form; no separate operand.
+      } else if (option.startsWith("--adjustment=")) {
+        // inline value
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "busybox") {
+    while (index < words.length && words[index].startsWith("-")) {
+      index += 1;
+    }
+    // Leave index on the applet name so the next loop iteration inspects it.
+    return index;
+  }
+
+  if (executable === "time") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-f", "-o", "--format", "--output"].includes(option) ||
+        option.startsWith("--format=") ||
+        option.startsWith("--output=")
+      ) {
+        if (!option.includes("=")) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  if (executable === "stdbuf") {
+    while (index < words.length && words[index].startsWith("-")) {
+      const option = words[index];
+      if (
+        ["-i", "-o", "-e", "--input", "--output", "--error"].includes(option) ||
+        option.startsWith("--input=") ||
+        option.startsWith("--output=") ||
+        option.startsWith("--error=")
+      ) {
+        if (!option.includes("=") && option.length <= 2) {
+          index += 1;
+        } else if (
+          ["--input", "--output", "--error"].includes(option)
+        ) {
+          index += 1;
+        }
+      }
+      index += 1;
+    }
+    return index;
+  }
+
+  return index;
+}
+
+function isDangerousGitConfigAssignment(assignment) {
+  const separator = assignment.indexOf("=");
+  const key =
+    separator === -1
+      ? assignment.toLowerCase()
+      : assignment.slice(0, separator).toLowerCase();
+  const value = separator === -1 ? "" : assignment.slice(separator + 1);
+
+  // Shell-running aliases: `alias.foo=!cmd` and any `-c` override of alias.*.
+  if (key.startsWith("alias.")) {
+    return true;
+  }
+  if (value.includes("!")) {
+    return true;
+  }
+  return GIT_SHELL_ESCAPE_KEYS.has(key);
+}
+
+// Fail closed on `git -c` / `--config` forms that can bind a shell-running
+// value (alias.!cmd, core.pager, diff.external, …).
+function gitConfigInjectionRule(arguments_) {
+  let index = 0;
+  while (index < arguments_.length) {
+    const argument = arguments_[index];
+    if (argument === "-c") {
+      const assignment = arguments_[index + 1];
+      if (assignment === undefined || isDangerousGitConfigAssignment(assignment)) {
+        return "git-config-injection";
+      }
+      index += 2;
+      continue;
+    }
+    if (argument.startsWith("-c") && argument.length > 2) {
+      // Rare glued form: -ckey=value
+      if (isDangerousGitConfigAssignment(argument.slice(2))) {
+        return "git-config-injection";
+      }
+      index += 1;
+      continue;
+    }
+    if (!argument.startsWith("-") || argument === "--") {
+      break;
+    }
+    if (
+      ["-C", "--git-dir", "--work-tree", "--namespace"].includes(argument)
+    ) {
+      index += 2;
+      continue;
+    }
+    index += 1;
+  }
+  return null;
+}
+
 function gitCommand(arguments_) {
   let index = 0;
 
@@ -396,7 +572,7 @@ function isRecursiveForceDelete(arguments_) {
 }
 
 // High-impact shapes that remain denied even when the command word is a literal
-// allowlisted form. Compose after expansion denial and named exceptions.
+// allowlisted form. Compose after named exceptions and expansion denial.
 function highImpactRule(segment, executable, arguments_) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
@@ -421,6 +597,11 @@ function highImpactRule(segment, executable, arguments_) {
   }
 
   if (executable === "git") {
+    const configRule = gitConfigInjectionRule(arguments_);
+    if (configRule) {
+      return configRule;
+    }
+
     const parsed = gitCommand(arguments_);
     const forcePush =
       parsed.arguments.includes("--force") ||
@@ -504,6 +685,14 @@ function inspectSegment(segment, depth) {
 
     if (WRAPPER_COMMANDS.has(executable)) {
       index = skipWrapperFlags(executable, words, index);
+      if (index >= words.length) {
+        return null;
+      }
+      continue;
+    }
+
+    if (COMMAND_LAUNCHERS.has(executable)) {
+      index = skipLauncherOperands(executable, words, index);
       if (index >= words.length) {
         return null;
       }
