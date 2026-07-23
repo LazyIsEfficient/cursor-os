@@ -27,16 +27,28 @@
       "sha256": "e02bf447ea41a5836fc44788dab4f804dfd1a5918af7f17eb8df2dc1668bc068"
     },
     {
+      "id": "data-model-documenter",
+      "kind": "agent",
+      "path": "plugin/agents/data-model-documenter.md",
+      "sha256": "66a9991d91eb63868c696802f99259a1557fe552fb2e81da63e828643c367d2f"
+    },
+    {
+      "id": "data-model-verifier",
+      "kind": "agent",
+      "path": "plugin/agents/data-model-verifier.md",
+      "sha256": "54e0f16c2f6a0a38975024c8112623d8ecf93169c222039045b0ea1da7e76b6a"
+    },
+    {
       "id": "engineer",
       "kind": "agent",
       "path": "plugin/agents/engineer.md",
-      "sha256": "e9f58ab7977c874f6cb48e043d99938b24777588cea27a8515c779d6f6f28104"
+      "sha256": "3d924d35f2b41980aa500092e2485a5ca591d8f9eb14b37c0ce996fcae5bf1fd"
     },
     {
       "id": "godot-engineer",
       "kind": "agent",
       "path": "plugin/agents/godot-engineer.md",
-      "sha256": "ee39917acf751f063b32c63df2f12a8dc3890fac8b1dd5345fbbbb1d5322170a"
+      "sha256": "825caa80194fdab168c883dad208ec475453e72d066ed3a9bce2cc85c27c453e"
     },
     {
       "id": "library-investigator",
@@ -45,16 +57,22 @@
       "sha256": "32303857b2d435abf94aab2c87bd4c084bf5ec2161261b277e37a165b0186f16"
     },
     {
+      "id": "library-reviewer",
+      "kind": "agent",
+      "path": "plugin/agents/library-reviewer.md",
+      "sha256": "de7dd9d341e293ae7710f0ce5f993ed37d1e764d88a48dc822f6b5fe1e947655"
+    },
+    {
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
-      "sha256": "a3bb2b5c83f2279ecd7ce5d033dad88497b3405f39293624a7c714d73661524a"
+      "sha256": "4f8e782702d5cb1849121276e650e50574419262485320de6bf20025266aa614"
     },
     {
       "id": "rust-engineer",
       "kind": "agent",
       "path": "plugin/agents/rust-engineer.md",
-      "sha256": "fc007dcaec5b89c5561adccf70c0148e896b52017a0582b11770e0cbf1a9c326"
+      "sha256": "250f9955fefac0adef5a04c6846a11c9109ec68597e132866c502e58880b5820"
     },
     {
       "id": "security-reviewer",
@@ -66,7 +84,7 @@
       "id": "review-gate",
       "kind": "command",
       "path": "plugin/commands/review-gate.md",
-      "sha256": "0199e92aab63cea6f7b9c3118453236c9d6637298cc546c22d8fc3fbe408264c"
+      "sha256": "3c09ac5e0a9770a1c19927017c44e37d04d18733282bc43012ad9c0472a5e264"
     },
     {
       "id": "state",
@@ -90,13 +108,13 @@
       "id": "actual-diff-verification",
       "kind": "rule",
       "path": "plugin/rules/actual-diff-verification.mdc",
-      "sha256": "37e9d27153a1ecd4be3b301953049564ab59afa121221be63ff0837fc8c8e4d7"
+      "sha256": "5d31abc8e3a494f9293634dc03164b8b4db0947e51d3edc0d4952b5a8045c1d4"
     },
     {
       "id": "evidence-review-tiers",
       "kind": "rule",
       "path": "plugin/rules/evidence-review-tiers.mdc",
-      "sha256": "d6303eae64f064ea47bd8c82caca2722a1453ab17feb135112cf239e5e7c0c67"
+      "sha256": "fd36bb8c4ca029f2ef2d1558334cba92eb0a934232d0c4ed678ce54bc53bd82f"
     },
     {
       "id": "factual-correctness",
@@ -108,7 +126,7 @@
       "id": "orchestrator-first",
       "kind": "rule",
       "path": "plugin/rules/orchestrator-first.mdc",
-      "sha256": "cb8fb25ddecc564fc708c30b320dfb71562adeab6ae555e8472c4e004ca6a13f"
+      "sha256": "b3862fc0df398da3d446fec4b98f4a055c86fd1cc4ee058d08ec9ea20d287777"
     },
     {
       "id": "before-shell-execution",
@@ -213,6 +231,42 @@
       "sha256": "316daf7f73d9a780ed189101fd42421baa3931405bee52cab5ee7eb13c41d8b9"
     },
     {
+      "id": "data-model-documentation",
+      "kind": "skill",
+      "path": "plugin/skills/data-model-documentation/SKILL.md",
+      "sha256": "7cb46c123fa0cc1d0e2f83f5b34458a8deca6b9f496ba0076f816ae8c4532f37"
+    },
+    {
+      "id": "skills-data-model-documentation-assets-data-model-template",
+      "kind": "reference",
+      "path": "plugin/skills/data-model-documentation/assets/data-model-template.md",
+      "sha256": "47efcf23e1ca1e0cc7d8b7449695573557ee71eb622fd4b21cb6412714a681d5"
+    },
+    {
+      "id": "skills-data-model-documentation-references-implementation-close",
+      "kind": "reference",
+      "path": "plugin/skills/data-model-documentation/references/implementation-close.md",
+      "sha256": "d36f152c70df7f693f2d3d8dc2665165e405943b5d6fd3c74d019df6442a234e"
+    },
+    {
+      "id": "skills-data-model-documentation-references-ingestion-kinds",
+      "kind": "reference",
+      "path": "plugin/skills/data-model-documentation/references/ingestion-kinds.md",
+      "sha256": "438abef6027a1b48c2f69e771c9cb49e4de4cd4bebdab321285ecd92d27f0d70"
+    },
+    {
+      "id": "data-model-verification",
+      "kind": "skill",
+      "path": "plugin/skills/data-model-verification/SKILL.md",
+      "sha256": "0210a274f970926fd5f72d8c0dff55e708782bee13430a4f4783e2f0894acf12"
+    },
+    {
+      "id": "skills-data-model-verification-assets-report-template",
+      "kind": "reference",
+      "path": "plugin/skills/data-model-verification/assets/report-template.md",
+      "sha256": "2910e5554f655e544150fa5ba3ca34920b2d9c391015625b1bdc314f220ac982"
+    },
+    {
       "id": "deployment-pipelines",
       "kind": "skill",
       "path": "plugin/skills/deployment-pipelines/SKILL.md",
@@ -270,7 +324,7 @@
       "id": "godot-engineer",
       "kind": "skill",
       "path": "plugin/skills/godot-engineer/SKILL.md",
-      "sha256": "1964a544830b62ee05fe6ddb83fab34755d9cd90c7a07744e4be715217707f88"
+      "sha256": "307d24dfcbb1dca7f9fcf911d62d158fc0db908ddc9e162be81abb6d41280bc0"
     },
     {
       "id": "skills-godot-engineer-assets-feature-checklist",
@@ -378,7 +432,7 @@
       "id": "incremental-implementation",
       "kind": "skill",
       "path": "plugin/skills/incremental-implementation/SKILL.md",
-      "sha256": "01a6e40f6dd0f6050549cbd0fd210622f834c527557dac2e6a288261311a2fbf"
+      "sha256": "9cb4c5b673493d1e8eed0dde1429dbcbbb6e66380ae9deb39df0bf710b01345d"
     },
     {
       "id": "library-investigator",
@@ -414,7 +468,7 @@
       "id": "phaser-engineer",
       "kind": "skill",
       "path": "plugin/skills/phaser-engineer/SKILL.md",
-      "sha256": "5deff6081f1c6dcdf55179751c84dbabd584b21f9ecd94499eb3cc963f468938"
+      "sha256": "608f163ae14242925f816f7f53c25ddc97c96dc15ec2635eb977020127fce716"
     },
     {
       "id": "skills-phaser-engineer-assets-feature-checklist",
@@ -462,7 +516,7 @@
       "id": "planning-and-task-breakdown",
       "kind": "skill",
       "path": "plugin/skills/planning-and-task-breakdown/SKILL.md",
-      "sha256": "fc5c6df54c7b5fcc4e6e2352394315a069f0f6f13f8519dc16cbe942868494d4"
+      "sha256": "5b7aa9a54c99210e24b82d531b669687c8570f5a5f56fe6acd0b56b0ae5e0b46"
     },
     {
       "id": "prompt-shaping",
@@ -619,6 +673,54 @@
       "kind": "skill",
       "path": "plugin/skills/session-state/SKILL.md",
       "sha256": "99443fb4485b987af34dc6f2a163b0163d0d41b2a5ea7483850e9dc1f8f70ba0"
+    },
+    {
+      "id": "skill-library-review",
+      "kind": "skill",
+      "path": "plugin/skills/skill-library-review/SKILL.md",
+      "sha256": "b9f5bd182e3b3f4bbfd11bef787470694fb3a5447f85507d2c7643427a913fcf"
+    },
+    {
+      "id": "skills-skill-library-review-assets-review-template",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/assets/review-template.md",
+      "sha256": "ea7535d48a66789c775d5cd193c0f2cf02b2861bcc8f4494f2a453075a79c99c"
+    },
+    {
+      "id": "skills-skill-library-review-references-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/anti-patterns.md",
+      "sha256": "04942d658fce6e4eb28c1cc8ccddc89839d90b99ffc6a7716b5fb04037a7cd8e"
+    },
+    {
+      "id": "skills-skill-library-review-references-commands-and-workflows",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/commands-and-workflows.md",
+      "sha256": "d2792120f44fce7361461ed6eae3473ff21e44f561161ff90a8151737caeea20"
+    },
+    {
+      "id": "skills-skill-library-review-references-description-and-routing",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/description-and-routing.md",
+      "sha256": "061e22ca3030de65a8bdf60dde63246a3bec882aadaf6a5fa58acea05fca2e1b"
+    },
+    {
+      "id": "skills-skill-library-review-references-frontmatter-rules",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/frontmatter-rules.md",
+      "sha256": "0de9438815e68203b3f9ded2ed5105ec7f535022270a80fba543302b8250d64f"
+    },
+    {
+      "id": "skills-skill-library-review-references-library-shape",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/library-shape.md",
+      "sha256": "2ebaf41a82f0db71b1b580feb94c8acfa8d7e6e1f5a346e3edb508f01b40345a"
+    },
+    {
+      "id": "skills-skill-library-review-references-tool-allowlists",
+      "kind": "reference",
+      "path": "plugin/skills/skill-library-review/references/tool-allowlists.md",
+      "sha256": "9a0b35b7cac8431e1ae0acf5c685fcdc9dea03c695ddc4ff919cc3d907e935e8"
     },
     {
       "id": "typescript-data-engineering",

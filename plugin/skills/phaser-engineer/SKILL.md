@@ -68,5 +68,5 @@ This skill explicitly does **not** cover multiplayer/networking or web3/wallet i
 ## Adjacent concerns
 
 - [../godot-engineer/SKILL.md](../godot-engineer/SKILL.md) — sibling skill for the same engineering concern in Godot 4 + C#. Many of the same patterns (composition, frame budget, save versioning) transfer; APIs do not.
-- **Security review.** Single-player browser games still have security concerns: save tampering (localStorage is plaintext), client-side score submission, anti-cheat for leaderboards. Dispatch the [security-reviewer](../../agents/security-reviewer.md) agent via `Task` for any game with server-side state.
+- **Security review.** Single-player browser games still have security concerns: save tampering (localStorage is plaintext), client-side score submission, anti-cheat for leaderboards. Tell the caller a security review is required for any game with server-side state — `security-reviewer` is orchestrator-owned (do not dispatch it from the implementation agent).
 - **Deployment.** Static-bundle deploy to Vercel/Netlify/itch.io, asset CDN, cache headers are CI/CD concerns this skill does not own.

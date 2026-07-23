@@ -1,6 +1,6 @@
 ---
 name: incremental-implementation
-description: Implements an approved task in small testable increments with risk-proportional verification. Use for multi-file changes or changes with meaningful correctness risk.
+description: Implements an approved task in small testable increments that reach checkpoint:impl-verified. Use for multi-file changes or changes with meaningful correctness risk.
 ---
 
 # Incremental implementation
@@ -17,10 +17,14 @@ complete or if an undeclared dependency or write conflict appears.
    documentation-only or mechanically verified changes, state why a new test is
    not useful and run the relevant deterministic check.
 3. Make the minimum change that satisfies that behavior.
-4. Run the narrow test, then verification proportional to risk:
-   - low: focused test or deterministic validator;
-   - medium: focused plus affected suite and static checks;
-   - high: affected suite, integration checks, and failure-path evidence.
+4. Run the narrow test, then reach **`checkpoint:impl-verified`** for the
+   increment ([gate-dag.md](../../references/gate-dag.md)):
+   - Floor (always): every brief verification command to exit 0; in this
+     harness, `npm run validate` on non-docs-only diffs; stack floors (Rust CI
+     shape, `tsc`/build, etc.) when those stacks are in scope.
+   - Additional depth may scale with risk (integration and failure paths for
+     high risk) — never as a way to skip the floor.
+   - A skipped or unavailable check is not a pass.
 5. Repeat only after the increment is green. Do not commit unless requested.
 
 ## Evidence handoff
@@ -37,9 +41,13 @@ verification:
     result: <exact relevant output or deterministic summary>
 acceptance: [<criterion and observed result>]
 residual_risk: [<unverified item or empty>]
+G-data-document: <updated | no-op | skipped-docs-only>
 ```
 
-After local verification passes, the caller must run `code-reviewer` and
-`security-reviewer` concurrently as read-only Cursor Tasks. Ship-ready requires
-both results and resolution of all Tier 0 and evidence-backed Tier 1 findings;
-Tier 2 is advisory.
+After `checkpoint:impl-verified` and session close (`G-data-document` per
+[implementation-close.md](../data-model-documentation/references/implementation-close.md)),
+the caller must run Pattern 3 from [gate-dag.md](../../references/gate-dag.md):
+Wave 1 triggered reviewers as parallel read-only Cursor Tasks; Wave 2
+`data-model-verifier` when `DATA_MODEL.md` changed. `checkpoint:ship-ready`
+requires required nodes returned and resolution of all Tier 0 and
+evidence-backed Tier 1 findings (or explicit waiver); Tier 2 is advisory.

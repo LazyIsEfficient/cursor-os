@@ -39,6 +39,16 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **Pattern 3 ship gates (agentic-os mirror):** canonical
+  [`plugin/references/gate-dag.md`](plugin/references/gate-dag.md) with
+  `checkpoint:impl-verified` → Wave 1/2 → `checkpoint:ship-ready`; upgraded
+  `/review-gate` command; always-on rules encode the DAG. New agents
+  `data-model-documenter`, `data-model-verifier`, `library-reviewer` and skills
+  `data-model-documentation`, `data-model-verification`, `skill-library-review`.
+  Tier-0 scripts `scripts/gate-plan.sh` / `scripts/check-pr-ship-gates.sh`
+  (library paths under `plugin/`) plus CI `ship-gates` job that enforces PR
+  reviewer checkboxes. Implementation agents require session close
+  (`G-data-document`) and Rust’s agent floor matches the skill CI shape.
 - **Install collision warnings** for operators with an existing `~/.cursor`:
   agent/rule name-collision list (8 of 9 agents; `capability-probe` unique;
   `factual-correctness.mdc` among rules) with explicit **UNVERIFIED**

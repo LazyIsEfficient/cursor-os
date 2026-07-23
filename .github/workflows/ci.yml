@@ -36,3 +36,27 @@ jobs:
         run: npm run plugin:lifecycle:verify
       - name: Run deterministic 24-trial corpus smoke
         run: npm run benchmark:corpus-smoke
+      - name: Run ship-gate planner and checkbox fixture tests
+        run: |
+          bash scripts/gate-plan-test.sh
+          bash scripts/check-pr-ship-gates-test.sh
+          bash scripts/implementation-close-test.sh
+
+  ship-gates:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Enforce PR reviewer checkboxes
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-pr-ship-gates.sh

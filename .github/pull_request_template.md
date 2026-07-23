@@ -4,12 +4,28 @@
 
 Closes #
 
+## Ship gates (required — CI enforces checkboxes)
+
+Run locally: `bash scripts/gate-plan.sh` (or set `SHIP_GATES_CHANGED_FILES` to your changed paths) — check every agent listed under `checkboxes=`.
+
+**Wave 1** (parallel, triggered nodes only):
+
+- [ ] **code-reviewer** — when non-docs code or library paths changed (`readonly: true`)
+- [ ] **security-reviewer** — on any non-docs-only PR (`readonly: true`)
+- [ ] **data-model-documenter** — on any non-docs-only PR (writes `DATA_MODEL.md` at project root)
+- [ ] **library-reviewer** — when diff touches `plugin/skills/` or `plugin/agents/` (`readonly: true`)
+
+**Wave 2** (after Wave 1, when `DATA_MODEL.md` changed):
+
+- [ ] **data-model-verifier** — adversarial property check against Source files (`readonly: true`)
+
+Canonical DAG: [`plugin/references/gate-dag.md`](../plugin/references/gate-dag.md)
+
+**No direct merge or tag** until this PR is open and `check-pr-ship-gates` is green. Release flow: merge PR → tag on `main` → `gh release create`.
+
 ## Gates CI does not run
 
-CI runs `npm run validate`, `npm test`, the install-lifecycle test, and the
-corpus smoke. The gates below are local-only — please run them and paste or
-summarize the output. An unchecked box with an explanation is more useful than
-a checked one that was not run.
+CI runs `npm run validate`, `npm test`, install-lifecycle, plugin lifecycle, corpus smoke, and ship-gate checkbox enforcement. The gates below are local-only — please run them and paste or summarize the output. An unchecked box with an explanation is more useful than a checked one that was not run.
 
 - [ ] `npm run plugin:lifecycle:verify` — clean install, idempotence/repair,
       and removal against a temporary Cursor root.

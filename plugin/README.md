@@ -10,11 +10,12 @@ Attribution: Cursor Harness contributors
 
 ## Included components
 
-- **Agents:** <!-- components:agent:start -->nine agents — `engineer`,
-  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `code-reviewer`,
-  `security-reviewer`, `library-investigator`, `adversarial-claims-reviewer`,
+- **Agents:** <!-- components:agent:start -->twelve agents — `engineer`,
+  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `data-model-documenter`,
+  `code-reviewer`, `security-reviewer`, `data-model-verifier`,
+  `library-investigator`, `library-reviewer`, `adversarial-claims-reviewer`,
   and `capability-probe`.<!-- components:agent:end -->
-- **Skills:** <!-- components:skill:start -->nineteen skills.
+- **Skills:** <!-- components:skill:start -->twenty-two skills.
   Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
   brief), `planning-and-task-breakdown` (brief to a dependency-aware task
   graph), `incremental-implementation` (small tested increments with
@@ -23,9 +24,11 @@ Attribution: Cursor Harness contributors
   `findings-ledger` (recurrence-based triage of advisory findings).
   Review and audit: `code-review-and-quality` (multi-axis review method),
   `security-engineering` (cross-stack security audit method),
-  `library-investigator` (forensic, evidence-only audit of this plugin's own
-  component files), and `adversarial-claims-reviewer` (verifies equations and
-  quantitative claims in a document). Stack-specific:
+  `data-model-documentation` and `data-model-verification` (catalog and verify
+  boundary data shapes), `skill-library-review` (judgment audit of skill/agent
+  definitions), `library-investigator` (forensic, evidence-only audit of this
+  plugin's own component files), and `adversarial-claims-reviewer` (verifies
+  equations and quantitative claims in a document). Stack-specific:
   `typescript-testing-backend` (Jest and Supertest),
   `typescript-testing-frontend` (Jest and React Testing Library),
   `typescript-data-engineering` (pipelines, brokers, warehouses),
