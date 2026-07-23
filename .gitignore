@@ -22,6 +22,9 @@ node_modules/
 .npmrc
 *.pem
 *.key
+**/.gsc-token.json
+**/gsc-oauth-token.json
+*oauth*token*.json
 id_rsa*
 id_ecdsa*
 id_ed25519*

@@ -1,0 +1,26 @@
+---
+description: Read and write .cursor/memory/ at session start; persist durable facts only
+alwaysApply: true
+---
+
+# Persistent Memory
+
+**Plugin memory lives at `.cursor/memory/` (gitignored).** Read from and write to
+`.cursor/memory/` when this plugin is installed — matching
+`session-state` / `memory-extraction` and the `sessionStart` memory-index hook.
+The index is `.cursor/memory/MEMORY.md`.
+
+### Read at session start
+- Open `.cursor/memory/MEMORY.md` first; read entries that touch the request.
+- If memory cites a path or flag about to be acted on, verify it still exists before recommending.
+- If memory contradicts the code, trust the code and update or remove the stale memory.
+
+### Write durable facts only
+Save non-obvious facts a future session would otherwise relearn: feedback corrections/confirmations, project decisions (absolute dates), user preferences, external system pointers.
+
+### Do not write
+Code patterns and architecture (derivable), git history, debugging recipes, in-progress task state (use plans/todos).
+
+### File mechanics
+- One memory per file under `.cursor/memory/` with frontmatter: `name`, `description`, and `type` **nested under `metadata`** (a top-level `type:` is wrong — see memory-extraction).
+- One line per entry in `MEMORY.md` (≤150 chars). Update before duplicating. Keep the index ≤200 lines.

@@ -20,22 +20,12 @@ surfaces; neither rewrites the operator's existing global tree.
 
 ### Agent and rule name collisions — precedence UNVERIFIED
 
-Eight of the nine shipped agents share names that commonly appear under a
-user's global `~/.cursor/agents/`:
-
-| Colliding agent id |
-| --- |
-| `adversarial-claims-reviewer` |
-| `code-reviewer` |
-| `engineer` |
-| `godot-engineer` |
-| `library-investigator` |
-| `phaser-engineer` |
-| `rust-engineer` |
-| `security-reviewer` |
-
-`capability-probe` is the only plugin-unique agent id. Among rules,
-`factual-correctness.mdc` is the same class of collision (lower stakes).
+Seventeen plugin agents total; **all except `capability-probe`** may collide with
+names under a user's global `~/.cursor/agents/`. Among rules,
+`factual-correctness.mdc`, `communication.mdc`, `grounding.mdc`, and
+`memory-discipline.mdc` collide with common global doctrine filenames; plugin
+Pattern 3 rules use different names (`orchestrator-first`,
+`evidence-review-tiers`, `actual-diff-verification`).
 
 **This repository does not claim a Cursor precedence rule** (plugin shadows
 global, global shadows plugin, or both appear). A repo-wide search finds no
@@ -44,6 +34,24 @@ proven merge semantics, and inventing one would be worse than saying so.
 collide. Practical check: invoke `capability-probe` and expect exactly
 `cursor-harness-agent-discovered`. Prefer that over assuming a colliding name
 such as `engineer` or `security-reviewer` resolved to the plugin copy.
+
+### Retiring stale `~/.cursor/agents` and `~/.cursor/rules`
+
+The plugin symlink (`~/.cursor/plugins/local/cursor-harness` → this repo's
+`plugin/`) already exposes current agents, skills, and rules on disk. A
+reinstall is not required after pulling `main`.
+
+To retire older global copies (once the plugin has full domain parity):
+
+1. Confirm the symlink points at this checkout's `plugin/`.
+2. Restart Cursor so Task rediscovers plugin agents.
+3. Probe: dispatch `capability-probe` and confirm `cursor-harness-agent-discovered`.
+4. Spot-check a formerly global-only agent (e.g. `devops-engineer` or
+   `marketer`) via `Task` with that `subagent_type`.
+5. Archive then remove `~/.cursor/agents` and `~/.cursor/rules` only after those
+   checks pass. Precedence remains UNVERIFIED — do not delete before probing.
+6. Avoid re-running agentic-os `install-cursor.sh` afterward, or it will
+   recreate `~/.cursor/agents` and reintroduce collisions.
 
 Agent renames are deliberately out of scope for documentation-only fixes: the
 blast radius across dispatch, inventory, tests, and operator muscle memory is

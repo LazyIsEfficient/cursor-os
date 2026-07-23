@@ -291,10 +291,10 @@ test("a matching install yields evidence bound to the plugin digest and no loadi
     assert.match(evidence.inventorySha256, /^[a-f0-9]{64}$/u);
     assert.equal(evidence.claims.componentsInstalledOnDisk.status, "observed");
     assert.equal(evidence.claims.editorComponentLoading.status, "not-proven");
-    assert.deepEqual(evidence.summary.byKind.agent, { expected: 12, presentMatching: 12 });
-    assert.deepEqual(evidence.summary.byKind.rule, { expected: 4, presentMatching: 4 });
+    assert.deepEqual(evidence.summary.byKind.agent, { expected: 17, presentMatching: 17 });
+    assert.deepEqual(evidence.summary.byKind.rule, { expected: 7, presentMatching: 7 });
     assert.deepEqual(evidence.summary.byKind.command, { expected: 3, presentMatching: 3 });
-    assert.deepEqual(evidence.summary.byKind.skill, { expected: 22, presentMatching: 22 });
+    assert.deepEqual(evidence.summary.byKind.skill, { expected: 37, presentMatching: 37 });
   });
 });
 

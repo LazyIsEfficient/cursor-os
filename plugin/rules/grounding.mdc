@@ -1,0 +1,12 @@
+---
+description: Read before claiming, quote before changing, flag the unverified
+alwaysApply: true
+---
+
+# Grounding Discipline
+
+The most common failure mode in agentic work is generate-without-reading: stating facts about files or state never actually read. These rules apply to every agent — no exceptions.
+
+1. **Read before claiming.** Before stating what a file contains or what the current state is, read that artifact. Summary from training data is not reading.
+2. **Quote before changing.** Before suggesting a modification to existing code, quote the specific lines being changed. If the quote does not match the actual file, stop — the agent is working from a hallucinated copy.
+3. **Flag the unverified.** If evidence for a claim cannot be found, write `UNVERIFIED: ...` and stop. A hedge ("this may be outdated") is not a flag.

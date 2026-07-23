@@ -10,12 +10,14 @@ Attribution: Cursor Harness contributors
 
 ## Included components
 
-- **Agents:** <!-- components:agent:start -->twelve agents — `engineer`,
-  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `data-model-documenter`,
-  `code-reviewer`, `security-reviewer`, `data-model-verifier`,
-  `library-investigator`, `library-reviewer`, `adversarial-claims-reviewer`,
-  and `capability-probe`.<!-- components:agent:end -->
-- **Skills:** <!-- components:skill:start -->twenty-two skills.
+- **Agents:** <!-- components:agent:start -->seventeen agents — `engineer`,
+  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `devops-engineer`,
+  `web3-engineer`, `data-model-documenter`, `code-reviewer`,
+  `security-reviewer`, `data-model-verifier`, `library-investigator`,
+  `library-reviewer`, `adversarial-claims-reviewer`, `technical-pm`,
+  `marketer`, `game-design-shaper`, and
+  `capability-probe`.<!-- components:agent:end -->
+- **Skills:** <!-- components:skill:start -->thirty-seven skills.
   Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
   brief), `planning-and-task-breakdown` (brief to a dependency-aware task
   graph), `incremental-implementation` (small tested increments with
@@ -33,15 +35,21 @@ Attribution: Cursor Harness contributors
   `typescript-testing-frontend` (Jest and React Testing Library),
   `typescript-data-engineering` (pipelines, brokers, warehouses),
   `browser-testing-with-devtools` (real-browser verification via Chrome
-  DevTools MCP), `rust-engineer`, `godot-engineer` (Godot 4 with C#), and
-  `phaser-engineer` (Phaser 3 with TypeScript). Delivery:
-  `deployment-pipelines` (CI/CD workflow authoring) and `release-manager`
-  (CHANGELOG, version tags, release comms).<!-- components:skill:end -->
+  DevTools MCP), `rust-engineer`, `godot-engineer` (Godot 4 with C#),
+  `phaser-engineer` (Phaser 3 with TypeScript), `devops-engineer`
+  (Kubernetes, Helm, Pulumi), and `web3-smart-contract-engineering`
+  (Solidity/EVM). Delivery: `deployment-pipelines` (CI/CD workflow authoring)
+  and `release-manager` (CHANGELOG, version tags, release comms). Game and
+  marketing: `game-design-shaper`, `game-systems-designer`, `game-balancer`,
+  `iap-manager`, `marketing-shaper`, `content-ops`, `conversion-ops`,
+  `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
+  `autoresearch`, and `telemetry`.<!-- components:skill:end -->
 - **Commands:** <!-- components:command:start -->three commands —
   `/review-gate`, `/triage-findings`, and
   `/state`.<!-- components:command:end -->
-- **Rules:** factual correctness, orchestrator-first dispatch, deterministic
-  diff verification, and evidence review tiers.
+- **Rules:** factual correctness, grounding, communication, memory discipline,
+  orchestrator-first dispatch, deterministic diff verification, and evidence
+  review tiers.
 - **Hooks:** four events. A fail-closed `beforeShellExecution` default-deny
   allowlist for safe local shell command forms, plus three advisory
   fail-open hooks: `sessionStart` (injects `SESSION-STATE.md` and the

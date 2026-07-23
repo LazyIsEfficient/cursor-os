@@ -1,8 +1,8 @@
 # Implementation close — `G-data-document`
 
 Mandatory session-close contract for **implementation agents**: `engineer`,
-`rust-engineer`, `godot-engineer`, `phaser-engineer` (and other writing agents
-that ship contract-touching code).
+`rust-engineer`, `godot-engineer`, `phaser-engineer`, `web3-engineer`,
+`devops-engineer` (and other writing agents that ship contract-touching code).
 
 Run this **before** reporting back to the orchestrator. The orchestrator then
 runs reviewers (`code-reviewer`, `security-reviewer`, and `library-reviewer`

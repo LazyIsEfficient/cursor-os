@@ -10,6 +10,8 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-23 | `plugin-parity` | No data-contract changes in this run. |
+| 2026-07-23 | `port-marketing-agents-skills` | No data-contract changes in this run. |
 | 2026-07-23 | `pattern3-ship-gates` | Cataloged `GatePlanResult` JSON from `gate-plan.sh --json`; corrected `RepositoryValidationResult.checks` to include `documented-components`. |
 | 2026-07-23 | `port-pattern3-data-model-agents` | No data-contract changes in this run. |
 | 2026-07-22 | `fix/35-shell-guard-bypass-followup` | Closed follow-up shell-guard bypasses: deny `GIT_CONFIG_*` env injection, peel Homebrew GNU `gtimeout`/`gnice`/`gstdbuf`/`gtime`, structurally re-check high-impact basenames after unknown launchers, and deny `git --config-env`. |
