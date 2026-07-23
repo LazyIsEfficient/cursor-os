@@ -43,13 +43,17 @@ verification:
 
 ## Required review contract
 
-Every implementation branch ends with these fixed checkpoints:
+Every implementation branch ends with the Pattern 3 gate DAG
+([gate-dag.md](../../references/gate-dag.md)). The planner shorthand is:
 
 ```text
-local-verify -> (code-review || security-review) -> ship-ready
+checkpoint:impl-verified -> (Wave 1: code-review || security-review || library-review? || data-document?) -> (Wave 2: data-verify?) -> checkpoint:ship-ready
 ```
 
-`code-review` and `security-review` start together only after local verification
-passes. `ship-ready` requires both read-only reviews to return and every Tier 0
-or evidence-backed Tier 1 finding to be addressed. Tier 2 findings remain
-advisory and go to the findings ledger.
+Legacy alias (same barrier intent): `local-verify -> (code-review || security-review) -> ship-ready` — expand to the full gate DAG when dispatching; do not treat the alias as permission to skip data-model or library nodes when triggered.
+
+`checkpoint:impl-verified` is `npm run validate` (in this harness) plus brief
+tests/build. Wave 1 reviewers start together only after that passes.
+`checkpoint:ship-ready` requires every required node to return and every Tier 0
+or evidence-backed Tier 1 finding to be fixed or explicitly waived. Tier 2
+findings remain advisory and go to the findings ledger.

@@ -39,16 +39,20 @@ resource savings cannot offset a failed gate. See the
 
 The consumer plugin in [`plugin/`](plugin/README.md) contains:
 
-- <!-- components:agent:start -->nine agents: `engineer`,
+- <!-- components:agent:start -->twelve agents: `engineer`,
   `rust-engineer`, `godot-engineer`, and `phaser-engineer` for dispatched
-  implementation; `code-reviewer` and `security-reviewer` for read-only review;
-  `library-investigator` and `adversarial-claims-reviewer` for evidence-only
-  audit; and `capability-probe` for capability
+  implementation; `data-model-documenter` for cataloging data contracts;
+  `code-reviewer` and `security-reviewer` for read-only review;
+  `data-model-verifier`, `library-investigator`, `library-reviewer`, and
+  `adversarial-claims-reviewer` for evidence-only audit; and
+  `capability-probe` for capability
   detection;<!-- components:agent:end -->
-- <!-- components:skill:start -->nineteen skills: `prompt-shaping`,
+- <!-- components:skill:start -->twenty-two skills: `prompt-shaping`,
   `planning-and-task-breakdown`, `incremental-implementation`,
   `code-review-and-quality`, and `security-engineering` for the core
-  shape/plan/implement/review path; `findings-ledger`, `session-state`, and
+  shape/plan/implement/review path; `data-model-documentation`,
+  `data-model-verification`, and `skill-library-review` for catalog and
+  library audit method; `findings-ledger`, `session-state`, and
   `memory-extraction` for finding recurrence and durable state;
   `typescript-testing-backend`, `typescript-testing-frontend`,
   `typescript-data-engineering`, and `browser-testing-with-devtools` for

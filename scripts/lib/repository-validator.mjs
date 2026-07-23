@@ -82,10 +82,13 @@ export const READONLY_AGENTS = new Set([
   "adversarial-claims-reviewer",
   "capability-probe",
   "code-reviewer",
+  "data-model-verifier",
   "library-investigator",
+  "library-reviewer",
   "security-reviewer",
 ]);
 export const WRITING_AGENTS = new Set([
+  "data-model-documenter",
   "engineer",
   "godot-engineer",
   "phaser-engineer",
@@ -112,7 +115,9 @@ export const BRIEF_SCOPE_FIELDS = ["files_read", "files_write", "dependencies", 
 // classified readonly can never by itself drop write-scope enforcement.
 export const AUDIT_ONLY_AGENTS = new Set([
   "adversarial-claims-reviewer",
+  "data-model-verifier",
   "library-investigator",
+  "library-reviewer",
 ]);
 
 const PLATFORM_CAPABILITIES = [
@@ -663,22 +668,46 @@ function requirePattern(source, pattern, label) {
 
 async function validateOrchestration(repositoryRoot) {
   const plannerPath = join(repositoryRoot, "plugin/skills/planning-and-task-breakdown/SKILL.md");
+  const gateDagPath = join(repositoryRoot, "plugin/references/gate-dag.md");
   const engineerPath = join(repositoryRoot, "plugin/agents/engineer.md");
+  const rustEngineerPath = join(repositoryRoot, "plugin/agents/rust-engineer.md");
   const reviewerPaths = [
     join(repositoryRoot, "plugin/agents/code-reviewer.md"),
     join(repositoryRoot, "plugin/agents/security-reviewer.md"),
   ];
-  const [planner, engineer, ...reviewers] = await Promise.all(
-    [plannerPath, engineerPath, ...reviewerPaths].map((path) => readFile(path, "utf8")),
+  const [planner, gateDag, engineer, rustEngineer, ...reviewers] = await Promise.all(
+    [plannerPath, gateDagPath, engineerPath, rustEngineerPath, ...reviewerPaths].map((path) =>
+      readFile(path, "utf8"),
+    ),
   );
   requirePattern(
     planner,
     /local-verify -> \(code-review \|\| security-review\) -> ship-ready/u,
     relative(repositoryRoot, plannerPath),
   );
+  requirePattern(planner, /checkpoint:impl-verified/u, relative(repositoryRoot, plannerPath));
+  requirePattern(planner, /checkpoint:ship-ready/u, relative(repositoryRoot, plannerPath));
   requirePattern(planner, /Tier 0[\s\S]*Tier 1[\s\S]*Tier 2/u, relative(repositoryRoot, plannerPath));
+  requirePattern(gateDag, /checkpoint:impl-verified/u, relative(repositoryRoot, gateDagPath));
+  requirePattern(gateDag, /npm run validate/u, relative(repositoryRoot, gateDagPath));
+  requirePattern(gateDag, /G-data-verify/u, relative(repositoryRoot, gateDagPath));
+  requirePattern(gateDag, /plugin\/skills\/|plugin\/agents\//u, relative(repositoryRoot, gateDagPath));
   requirePattern(engineer, /failing test before a behavior change/u, relative(repositoryRoot, engineerPath));
   requirePattern(engineer, /code-reviewer` and `security-reviewer` in parallel/u, relative(repositoryRoot, engineerPath));
+  requirePattern(engineer, /checkpoint:impl-verified/u, relative(repositoryRoot, engineerPath));
+  requirePattern(engineer, /G-data-document/u, relative(repositoryRoot, engineerPath));
+  requirePattern(
+    engineer,
+    /data-model-documentation\/references\/implementation-close\.md/u,
+    relative(repositoryRoot, engineerPath),
+  );
+  requirePattern(rustEngineer, /cargo fmt --check/u, relative(repositoryRoot, rustEngineerPath));
+  requirePattern(
+    rustEngineer,
+    /cargo clippy --all-targets --all-features -- -D warnings/u,
+    relative(repositoryRoot, rustEngineerPath),
+  );
+  requirePattern(rustEngineer, /G-data-document/u, relative(repositoryRoot, rustEngineerPath));
   for (const [index, reviewer] of reviewers.entries()) {
     const label = relative(repositoryRoot, reviewerPaths[index]);
     requirePattern(reviewer, /^readonly: true$/mu, label);

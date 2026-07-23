@@ -64,7 +64,7 @@ test("grounding rule makes correctness and explicit stopping non-negotiable", as
   ]);
 });
 
-test("dispatch rule bounds Cursor-native parallel work", async () => {
+test("dispatch rule bounds Cursor-native parallel work and Pattern 3", async () => {
   const { body } = (await loadRules())["orchestrator-first.mdc"];
   requirePatterns(body, "orchestrator-first.mdc", [
     /cold-context brief/i,
@@ -75,25 +75,32 @@ test("dispatch rule bounds Cursor-native parallel work", async () => {
     /serialize the work/i,
     /file ownership, independence, or available isolation is unknown/i,
     /Do not assume undocumented fields or Cloud parity/i,
+    /checkpoint:impl-verified/u,
+    /checkpoint:ship-ready/u,
+    /gate-dag\.md/u,
+    /data-model-documenter/u,
+    /data-model-verifier/u,
   ]);
 
   const taskFieldClaims = [...body.matchAll(/`([a-z_]+):[^`]*`/gu)].map((match) => match[1]);
   assert.deepEqual(taskFieldClaims, ["readonly"], "rule must not claim additional Task fields");
 });
 
-test("verification rule requires actual repository and local evidence", async () => {
+test("verification rule requires checkpoint:impl-verified evidence", async () => {
   const { body } = (await loadRules())["actual-diff-verification.mdc"];
   requirePatterns(body, "actual-diff-verification.mdc", [
     /`git status`/u,
     /actual `git diff`/u,
     /spot-check the files/i,
-    /deterministic local tests, build, lint, or validation/i,
+    /checkpoint:impl-verified/u,
+    /npm run validate/u,
     /do not claim completion/i,
-    /skipped or unavailable checks into passes/i,
+    /skipped or unavailable checks/i,
+    /checkpoint:ship-ready/u,
   ]);
 });
 
-test("review rule fixes tier semantics, priorities, and post-implementation DAG", async () => {
+test("review rule fixes tier semantics, priorities, and Pattern 3 DAG", async () => {
   const { body } = (await loadRules())["evidence-review-tiers.mdc"];
   requirePatterns(body, "evidence-review-tiers.mdc", [
     /correctness first/i,
@@ -107,9 +114,11 @@ test("review rule fixes tier semantics, priorities, and post-implementation DAG"
     /Without that evidence it is Tier 2/u,
     /Tier 2 — subjective judgment/u,
     /advisory only/i,
-    /local deterministic verification/i,
-    /readonly code and security reviews in parallel/i,
-    /Address every Tier 0 and Tier 1 finding; log Tier 2/i,
-    /Declare ship-ready only/i,
+    /checkpoint:impl-verified/u,
+    /Wave 1/u,
+    /Wave 2/u,
+    /data-model-verifier/u,
+    /explicitly waive/i,
+    /checkpoint:ship-ready/u,
   ]);
 });

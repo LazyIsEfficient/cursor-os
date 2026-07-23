@@ -18,7 +18,13 @@ test("CI runs deterministic Node 22 validation without credentials or model call
     "npm test",
     "tests/validator/install-lifecycle.test.mjs",
     "npm run benchmark:corpus-smoke",
-  ]) assert.ok(workflow.includes(command));
+    "scripts/gate-plan-test.sh",
+    "scripts/check-pr-ship-gates-test.sh",
+    "scripts/implementation-close-test.sh",
+    "scripts/check-pr-ship-gates.sh",
+  ]) assert.ok(workflow.includes(command), `ci.yml missing ${command}`);
+  assert.match(workflow, /ship-gates:/u);
+  assert.match(workflow, /PR_BODY:/u);
   assert.doesNotMatch(workflow, /secrets\.|CURSOR_API_KEY|benchmark:smoke:authenticated|benchmark:release:authenticated/u);
 });
 

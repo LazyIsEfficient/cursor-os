@@ -1,15 +1,19 @@
 ---
-description: Verify repository changes from the actual diff and local checks
+description: Verify repository changes from the actual diff and checkpoint:impl-verified
 alwaysApply: true
 ---
 
-# Actual-Diff and Local Verification
+# Actual-Diff and Local Verification (`checkpoint:impl-verified`)
 
 Treat reports of intent as unverified until the repository proves the result.
+This rule is the evidence half of [gate-dag.md](../references/gate-dag.md)
+`checkpoint:impl-verified`.
 
-- Inspect `git status` and the actual `git diff` before reporting implementation complete.
-- Read and spot-check the files claimed to have changed.
-- Run the smallest relevant deterministic local tests, build, lint, or validation commands.
+- Inspect `git status` and the actual `git diff` before reporting implementation complete. Include untracked files (`git add -N` when needed so they appear in the diff).
+- Read and spot-check the files claimed to have changed. If the diff is absent or differs from the report, state the discrepancy and do not claim completion.
+- Run `checkpoint:impl-verified` before any gate agent:
+  - In this harness repository, on any non-docs-only diff: `npm run validate`.
+  - Plus task-specific verification from the brief (tests, build, lint, stack floors).
 - Confirm the checks exercise the requested golden path and material edge cases.
-- If the diff is absent or differs from the report, state the discrepancy and do not claim completion.
-- Report commands and outcomes accurately; do not turn skipped or unavailable checks into passes.
+- Report commands and outcomes accurately; do not turn skipped or unavailable checks into passes. Skipped checks block `checkpoint:ship-ready` unless the human explicitly waives.
+- Do not declare work complete, open or ready a PR, merge, tag, or release until [gate-dag.md](../references/gate-dag.md) `checkpoint:ship-ready` clears.

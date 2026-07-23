@@ -4,12 +4,14 @@
 > `data-model-documenter` agent after each implementation pass. Do not hand-edit unless
 > correcting agent error — prefer re-running the agent on the diff.
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-23
 
 ## Change log (recent)
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-23 | `pattern3-ship-gates` | Cataloged `GatePlanResult` JSON from `gate-plan.sh --json`; corrected `RepositoryValidationResult.checks` to include `documented-components`. |
+| 2026-07-23 | `port-pattern3-data-model-agents` | No data-contract changes in this run. |
 | 2026-07-20 | `main` | Updated local-install state to schema 2 and documented structural managed-registry restoration without whole-config digest ownership. |
 | 2026-07-20 | `main` | Bound pair records to benchmark inputs, made network enforcement/attempt evidence cross-validated, preserved invalid preflight records, and cataloged lifecycle evidence plus concurrent registry restoration. |
 | 2026-07-20 | `main` | Cataloged manifest-bound result evidence, pre-execution evaluator integrity, strict benchmark child environments, authenticated config preflight, exact install registration repair, process-substitution detection, and sanitized artifact exports. |
@@ -691,6 +693,52 @@ An install is `unchanged` only when the recorded source digest and a fresh diges
 
 On uninstall, the adapter parses the current and original registries and compares them structurally after excluding the managed plugin entry. It restores the original registry bytes, or removes an originally absent registry, only when the unrelated structures are equal and the current managed entry exactly matches the installed path and recorded `installedVersion`. Otherwise, when a current registry exists, it restores or removes only the managed entry and serializes the current registry with unrelated top-level fields and plugin registrations preserved. If the current registry is absent, an originally present registry is restored from its saved bytes; an originally absent registry remains absent.
 
+### GatePlanResult
+
+| Field | Value |
+|---|---|
+| **Kind** | `api` |
+| **Ingestion route** | `bash scripts/gate-plan.sh --json` (optional `--base` / `--head`, or `SHIP_GATES_CHANGED_FILES` newline- or space-separated paths) prints one JSON object to standard output; `bash scripts/check-pr-ship-gates.sh` consumes the same classification to require matching `- [x] <agent>` lines in `PR_BODY` / `--body-file` |
+| **Source** | `scripts/lib/gate-plan-lib.sh` (`gate_plan_classify_paths`, `gate_plan_build_waves`, `gate_plan_run`); `scripts/gate-plan.sh` (`--json` emitter); `scripts/check-pr-ship-gates.sh` (`body_check`); `plugin/references/gate-dag.md`; `.github/pull_request_template.md`; `scripts/gate-plan-test.sh`; `scripts/check-pr-ship-gates-test.sh` |
+
+#### Shape
+
+```json
+{
+  "skip_docs_only": "boolean",
+  "is_code_change": "boolean",
+  "is_sensitive": "boolean",
+  "is_library": "boolean",
+  "has_data_model": "boolean",
+  "wave_1": ["code-reviewer | security-reviewer | data-model-documenter | library-reviewer", "..."],
+  "wave_2": ["data-model-verifier"],
+  "checkboxes": ["ordered union of wave_1 then wave_2 agent labels"]
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `skip_docs_only` | boolean | yes | `true` when the diff is docs-only (no code/library/sensitive triggers); planner emits empty waves and checkboxes |
+| `is_code_change` | boolean | yes | `true` for any non-allowlisted path, including `DATA_MODEL.md` |
+| `is_sensitive` | boolean | yes | `true` when paths match the sensitive allowlist (hooks, validate/install/release scripts, gate scripts, `plugin/rules/*`, `plugin/commands/*`, `plugin/references/*`, `SECURITY.md`, `.github/workflows/*`) |
+| `is_library` | boolean | yes | `true` when any path is under `plugin/skills/` or `plugin/agents/` |
+| `has_data_model` | boolean | yes | `true` when `DATA_MODEL.md` is in the changed-path set |
+| `wave_1` | array<string> | yes | Ordered Wave 1 agent labels; empty when `skip_docs_only` |
+| `wave_2` | array<string> | yes | Wave 2 labels; contains `data-model-verifier` only when `has_data_model` |
+| `checkboxes` | array<string> | yes | `wave_1` followed by `wave_2`; labels CI requires as checked boxes in the PR body |
+
+Wave 1 membership (when not docs-only):
+
+| Condition | Agents appended |
+|---|---|
+| `is_code_change \|\| is_library` | `code-reviewer` |
+| `is_code_change \|\| is_library \|\| is_sensitive` | `security-reviewer`, `data-model-documenter` |
+| `is_library` | `library-reviewer` |
+
+Docs-only path allowlist (skipped unless also library/sensitive): `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`. `DATA_MODEL.md` is never docs-only. Alternate formats: text `key=value` lines, `--checkboxes` (one label per line), `--skip-docs-only` (`true`\|`false` only). Checkbox matching is case-insensitive on the agent label with optional surrounding `**` after `- [x]` / `- [X]`.
+
 ### LocalInstallState
 
 | Field | Value |
@@ -924,6 +972,7 @@ All objects reject undeclared properties. Plugin/component IDs are lowercase alp
     "frontmatter",
     "markdown-links",
     "plugin-inventory",
+    "documented-components",
     "orchestration",
     "workflows",
     "schemas",
@@ -938,7 +987,7 @@ All objects reject undeclared properties. Plugin/component IDs are lowercase alp
 |---|---|---|---|
 | `plugin` | string | yes | Validated plugin manifest name |
 | `components` | array<object> | yes | Non-empty, path-sorted discovered component list without internal absolute paths |
-| `checks` | fixed array<string> | yes | Nine completed deterministic check identifiers in the order shown |
+| `checks` | fixed array<string> | yes | Ten completed deterministic check identifiers in the order shown |
 
 Component:
 

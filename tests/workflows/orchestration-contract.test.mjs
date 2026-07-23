@@ -56,6 +56,17 @@ const readonlyAgentContracts = {
     /\bdependencies\b/u,
     /\bconflicts\b/u,
   ],
+  "data-model-verifier": [
+    /Tier 0/u,
+    /Tier 1/u,
+    /Tier 2/u,
+    /VERIFIED/u,
+    /REFUTED/u,
+    /UNVERIFIABLE/u,
+    /verdict: <pass\|hold>/u,
+    /guessing from conversation history/u,
+    /untrusted data/iu,
+  ],
   "library-investigator": [
     /Tier-tag/u,
     /tier-tagged/u,
@@ -65,6 +76,17 @@ const readonlyAgentContracts = {
     /Emit no pass, fail, hold, or overall verdict/u,
     /guessing from conversation history/u,
     /not what a component was trying to\s+do/u,
+  ],
+  "library-reviewer": [
+    /Tier 0/u,
+    /Tier 1/u,
+    /Tier 2/u,
+    /pass/u,
+    /fix-before-merge/u,
+    /hold/u,
+    /file:line/u,
+    /guessing from conversation history/u,
+    /findings-ledger/u,
   ],
   "security-reviewer": [
     /Tier 0/u,
@@ -123,9 +145,12 @@ test("Cursor discovers valid workflow agents and retains the capability probe", 
     "adversarial-claims-reviewer.md",
     "capability-probe.md",
     "code-reviewer.md",
+    "data-model-documenter.md",
+    "data-model-verifier.md",
     "engineer.md",
     "godot-engineer.md",
     "library-investigator.md",
+    "library-reviewer.md",
     "phaser-engineer.md",
     "rust-engineer.md",
     "security-reviewer.md",
@@ -209,6 +234,8 @@ test("skills use concise Cursor discovery frontmatter", async () => {
     "adversarial-claims-reviewer",
     "browser-testing-with-devtools",
     "code-review-and-quality",
+    "data-model-documentation",
+    "data-model-verification",
     "deployment-pipelines",
     "findings-ledger",
     "godot-engineer",
@@ -222,6 +249,7 @@ test("skills use concise Cursor discovery frontmatter", async () => {
     "rust-engineer",
     "security-engineering",
     "session-state",
+    "skill-library-review",
     "typescript-data-engineering",
     "typescript-testing-backend",
     "typescript-testing-frontend",
@@ -287,6 +315,14 @@ test("local verification gates parallel read-only reviews and ship-ready", async
     planner.body,
     /local-verify -> \(code-review \|\| security-review\) -> ship-ready/u,
   );
+  assert.match(planner.body, /checkpoint:impl-verified/u);
+  assert.match(planner.body, /checkpoint:ship-ready/u);
+
+  const gateDag = await readFile(join(root, "plugin/references/gate-dag.md"), "utf8");
+  assert.match(gateDag, /checkpoint:impl-verified/u);
+  assert.match(gateDag, /npm run validate/u);
+  assert.match(gateDag, /G-data-verify/u);
+  assert.match(gateDag, /Wave 2/u);
 
   const reviewAgents = [...readonlyAgents].filter((name) => !sentinelAgents.has(name)).sort();
   assert.deepEqual(
@@ -307,15 +343,26 @@ test("local verification gates parallel read-only reviews and ship-ready", async
   }
 });
 
-test("engineer requires risk-proportional, test-first, exact evidence", async () => {
+test("engineer requires impl-verified, test-first, exact evidence, and session close", async () => {
   const engineer = await load("plugin/agents/engineer.md");
   assert.notEqual(engineer.fields.readonly, "true");
   assert.match(engineer.body, /failing test before a behavior change/u);
-  assert.match(engineer.body, /proportionally to risk/u);
+  assert.match(engineer.body, /checkpoint:impl-verified/u);
+  assert.match(engineer.body, /G-data-document/u);
+  assert.match(engineer.body, /implementation-close\.md/u);
   assert.match(engineer.body, /command: <exact command>/u);
   assert.match(engineer.body, /exit_code: <integer>/u);
   assert.match(engineer.body, /result: <exact relevant output>/u);
   assert.match(engineer.body, /in parallel, read-only Cursor Tasks/u);
+});
+
+test("rust-engineer requires skill CI floor and session close", async () => {
+  const rust = await load("plugin/agents/rust-engineer.md");
+  assert.notEqual(rust.fields.readonly, "true");
+  assert.match(rust.body, /cargo fmt --check/u);
+  assert.match(rust.body, /cargo clippy --all-targets --all-features -- -D warnings/u);
+  assert.match(rust.body, /G-data-document/u);
+  assert.match(rust.body, /implementation-close\.md/u);
 });
 
 test("findings ledger cannot promote unevidenced judgment into a gate", async () => {

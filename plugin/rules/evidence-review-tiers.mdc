@@ -1,5 +1,5 @@
 ---
-description: Apply reproducible evidence tiers and a fixed review gate
+description: Apply reproducible evidence tiers and Pattern 3 gate DAG
 alwaysApply: true
 ---
 
@@ -7,15 +7,16 @@ alwaysApply: true
 
 Apply this priority order: correctness first; critical security is non-compensable; objective checks outrank subjective quality; optimize speed only after those constraints pass.
 
-- **Tier 0 — deterministic:** an already-failing deterministic check such as a test, build, linter, or validator. Tier 0 may block.
+- **Tier 0 — deterministic:** an already-failing deterministic check such as a test, build, linter, or validator (`npm run validate` in this harness). Tier 0 may block.
 - Explicit counterexamples are Tier 1 evidence, not Tier 0; reviewer judgment selected the claim they reproduce.
 - **Tier 1 — judgment with deterministic evidence:** a finding may block only when its attached artifact, failing test, or counterexample reproduces the failure. Without that evidence it is Tier 2.
 - **Tier 2 — subjective judgment:** style, taste, and unevidenced concerns are advisory only. Log them; never use them as gates.
 - A critical-security failure cannot be offset by speed, aggregate quality, or passing unrelated checks.
 
-After implementation, always follow this DAG:
+After implementation, always follow **Pattern 3** from [gate-dag.md](../references/gate-dag.md):
 
-1. Run local deterministic verification.
-2. If it passes, dispatch readonly code and security reviews in parallel.
-3. Address every Tier 0 and Tier 1 finding; log Tier 2 findings as advisory.
-4. Declare ship-ready only when the required nodes returned and no Tier 0 or Tier 1 finding remains unresolved.
+1. Reach `checkpoint:impl-verified` — local deterministic verification (`npm run validate` when in this harness, plus task-specific tests/build). If it fails, stop; do not dispatch gate agents.
+2. Wave 1 — dispatch triggered readonly code, security, and library reviews in parallel (`Task`); include `data-model-documenter` only if implementation close did not already run it.
+3. Wave 2 — if `DATA_MODEL.md` changed, dispatch `data-model-verifier` after Wave 1 (never in parallel with the documenter).
+4. Address every Tier 0 and Tier 1 finding (fix or explicitly waive); log Tier 2 findings as advisory via the findings ledger.
+5. Declare `checkpoint:ship-ready` only when every required node returned and no unresolved Tier 0 or evidence-backed Tier 1 remains. Only then mark complete, open/ready a PR, merge, tag, or release.

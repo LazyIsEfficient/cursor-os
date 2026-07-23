@@ -1,5 +1,5 @@
 ---
-description: Orchestrate Cursor subagents with bounded, safe parallelism
+description: Orchestrate Cursor subagents with Pattern 3 ship gates and bounded parallelism
 alwaysApply: true
 ---
 
@@ -15,3 +15,15 @@ Keep the main thread focused on decomposition, briefing, integration, and decisi
 - If file ownership, independence, or available isolation is unknown, serialize the work.
 - Integrate and verify returned work in the main thread; a subagent report is not proof of repository state.
 - Use only `Task` fields documented by the active Cursor environment. Do not assume undocumented fields or Cloud parity.
+
+## Pattern 3 — Build + review pairing (mandatory)
+
+After any implementation beyond a trivial diff — before saying work is complete — execute the gate DAG in [gate-dag.md](../references/gate-dag.md):
+
+1. **checkpoint:impl-verified** — local verification passes (`npm run validate` in this harness + brief tests/build).
+2. Implementation close — when an implementation agent implemented (`engineer`, `rust-engineer`, `godot-engineer`, `phaser-engineer`), it dispatches `data-model-documenter` before returning.
+3. Wave 1 (parallel `Task`s): triggered reviewers — always `security-reviewer` on non-docs-only; add `code-reviewer` / `library-reviewer` / `data-model-documenter` fallback per path triggers.
+4. Wave 2 (conditional): `data-model-verifier` when `DATA_MODEL.md` changed after Wave 1.
+5. **checkpoint:ship-ready** — required nodes returned; Tier 0/1 fixed or explicitly waived.
+
+**Forbidden:** reporting complete without required waves; re-dispatching `data-model-documenter` when an implementation agent already ran `G-data-document`; dispatching `data-model-verifier` in parallel with `data-model-documenter`; opening a PR before ship-ready.

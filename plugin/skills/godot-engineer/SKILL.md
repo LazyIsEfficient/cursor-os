@@ -59,6 +59,6 @@ This skill targets **Godot 4.x** with **C# (.NET 8+)** as the primary language. 
 ## Adjacent concerns
 
 - **Game design, balance, and store catalog** are upstream of this skill and not covered here. Take the design doc, system specs, and tuning numbers as inputs; ship tunable parameters as data, not magic numbers.
-- **Security review.** Multiplayer games have real security concerns: cheating, save tampering, server-side validation, anti-replay. Dispatch the [security-reviewer](../../agents/security-reviewer.md) agent via `Task` for any networked game.
+- **Security review.** Multiplayer games have real security concerns: cheating, save tampering, server-side validation, anti-replay. Tell the caller a security review is required for any networked game — `security-reviewer` is orchestrator-owned (do not dispatch it from the implementation agent).
 - **Backend deployment** matters only for the *server* side of a multiplayer game — dedicated server, matchmaker, persistent world. Single-player and peer-to-peer games have no such surface.
 - [../phaser-engineer/SKILL.md](../phaser-engineer/SKILL.md) — sibling skill for the same engineering concern in Phaser 3 + TypeScript.
