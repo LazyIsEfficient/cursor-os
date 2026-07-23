@@ -33,9 +33,13 @@ if [[ -n "$BODY_FILE" ]]; then
   PR_BODY="$(cat "$BODY_FILE")"
 fi
 
-if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
-  BASE_SHA="$(git -C "$REPO_ROOT" rev-parse origin/main 2>/dev/null || git -C "$REPO_ROOT" rev-parse main)"
-  HEAD_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+# Fixture tests inject SHIP_GATES_CHANGED_FILES and must not require a local main ref
+# (CI shallow PR checkouts often lack origin/main and main).
+if [[ -z "${SHIP_GATES_CHANGED_FILES:-}" ]]; then
+  if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+    BASE_SHA="$(git -C "$REPO_ROOT" rev-parse origin/main 2>/dev/null || git -C "$REPO_ROOT" rev-parse main)"
+    HEAD_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+  fi
 fi
 
 if [[ -n "${SHIP_GATES_CHANGED_FILES:-}" ]]; then
