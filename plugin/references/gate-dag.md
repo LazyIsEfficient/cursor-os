@@ -36,7 +36,7 @@ dag:
 
 ## Implementation close (`G-data-document`)
 
-When implementation runs through an **implementation agent** (`engineer`, `rust-engineer`, `godot-engineer`, `phaser-engineer`), that agent **must dispatch `data-model-documenter` before returning** — not the orchestrator.
+When implementation runs through an **implementation agent** (`engineer`, `rust-engineer`, `godot-engineer`, `phaser-engineer`, `web3-engineer`, `devops-engineer`), that agent **must dispatch `data-model-documenter` before returning** — not the orchestrator.
 
 Canonical contract: [implementation-close.md](../skills/data-model-documentation/references/implementation-close.md)
 

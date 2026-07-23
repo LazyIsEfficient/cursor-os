@@ -39,6 +39,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **Plugin parity with `~/.cursor` globals:** agents `devops-engineer`,
+  `web3-engineer`, `technical-pm`, `marketer`, and `game-design-shaper` plus
+  their required skill packs (~15 skills including marketing, web3, devops,
+  and game-design). Always-on rules `communication`, `grounding`, and
+  `memory-discipline`; Pattern 3b ship-gate language in `orchestrator-first`.
+  Operator retirement steps for stale global agents/rules live in
+  [plugin loading verification](docs/plugin-loading-verification.md).
 - **Pattern 3 ship gates (agentic-os mirror):** canonical
   [`plugin/references/gate-dag.md`](plugin/references/gate-dag.md) with
   `checkpoint:impl-verified` → Wave 1/2 → `checkpoint:ship-ready`; upgraded
@@ -50,10 +57,10 @@ here therefore corresponds to a single consistent version across the repository.
   reviewer checkboxes. Implementation agents require session close
   (`G-data-document`) and Rust’s agent floor matches the skill CI shape.
 - **Install collision warnings** for operators with an existing `~/.cursor`:
-  agent/rule name-collision list (8 of 9 agents; `capability-probe` unique;
-  `factual-correctness.mdc` among rules) with explicit **UNVERIFIED**
-  precedence, hook stacking including the fail-closed 5s
-  `beforeShellExecution` gate and possible duplicate `sessionStart`
+  agent/rule name-collision guidance (all plugin agents except
+  `capability-probe` may collide; doctrine rule filenames may collide) with
+  explicit **UNVERIFIED** precedence, hook stacking including the fail-closed
+  5s `beforeShellExecution` gate and possible duplicate `sessionStart`
   injection, and the symlink → `registeredInPluginsJson: false` /
   `editorComponentLoading: not-proven` discovery gap with the
   `capability-probe` transcript confirmation step in both README install

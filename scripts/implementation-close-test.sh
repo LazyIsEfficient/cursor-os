@@ -8,6 +8,8 @@ AGENTS=(
   rust-engineer
   godot-engineer
   phaser-engineer
+  devops-engineer
+  web3-engineer
 )
 CLOSE_REF='data-model-documentation/references/implementation-close.md'
 

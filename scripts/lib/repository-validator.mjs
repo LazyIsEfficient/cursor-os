@@ -89,10 +89,15 @@ export const READONLY_AGENTS = new Set([
 ]);
 export const WRITING_AGENTS = new Set([
   "data-model-documenter",
+  "devops-engineer",
   "engineer",
+  "game-design-shaper",
   "godot-engineer",
+  "marketer",
   "phaser-engineer",
   "rust-engineer",
+  "technical-pm",
+  "web3-engineer",
 ]);
 
 // capability-probe is a deliberate minimal discovery sentinel: its whole

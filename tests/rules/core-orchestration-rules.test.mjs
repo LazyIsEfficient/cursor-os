@@ -8,8 +8,11 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const rulesDirectory = join(testDirectory, "../../plugin/rules");
 const expectedRules = [
   "actual-diff-verification.mdc",
+  "communication.mdc",
   "evidence-review-tiers.mdc",
   "factual-correctness.mdc",
+  "grounding.mdc",
+  "memory-discipline.mdc",
   "orchestrator-first.mdc",
 ];
 
@@ -64,6 +67,34 @@ test("grounding rule makes correctness and explicit stopping non-negotiable", as
   ]);
 });
 
+test("communication rule requires short responses and confirm-before-destructive", async () => {
+  const { body } = (await loadRules())["communication.mdc"];
+  requirePatterns(body, "communication.mdc", [
+    /short responses/i,
+    /markdown links for code references/i,
+    /Confirm before destructive/i,
+  ]);
+});
+
+test("grounding discipline requires read-quote-UNVERIFIED", async () => {
+  const { body } = (await loadRules())["grounding.mdc"];
+  requirePatterns(body, "grounding.mdc", [
+    /Read before claiming/i,
+    /Quote before changing/i,
+    /`UNVERIFIED:/u,
+  ]);
+});
+
+test("memory discipline uses in-repo .cursor/memory", async () => {
+  const { body } = (await loadRules())["memory-discipline.mdc"];
+  requirePatterns(body, "memory-discipline.mdc", [
+    /\.cursor\/memory\//u,
+    /MEMORY\.md/u,
+    /metadata/u,
+    /Do not write/i,
+  ]);
+});
+
 test("dispatch rule bounds Cursor-native parallel work and Pattern 3", async () => {
   const { body } = (await loadRules())["orchestrator-first.mdc"];
   requirePatterns(body, "orchestrator-first.mdc", [
@@ -80,6 +111,10 @@ test("dispatch rule bounds Cursor-native parallel work and Pattern 3", async () 
     /gate-dag\.md/u,
     /data-model-documenter/u,
     /data-model-verifier/u,
+    /Pattern 3b/u,
+    /check-pr-ship-gates/u,
+    /web3-engineer/u,
+    /devops-engineer/u,
   ]);
 
   const taskFieldClaims = [...body.matchAll(/`([a-z_]+):[^`]*`/gu)].map((match) => match[1]);

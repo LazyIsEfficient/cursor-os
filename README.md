@@ -39,15 +39,16 @@ resource savings cannot offset a failed gate. See the
 
 The consumer plugin in [`plugin/`](plugin/README.md) contains:
 
-- <!-- components:agent:start -->twelve agents: `engineer`,
-  `rust-engineer`, `godot-engineer`, and `phaser-engineer` for dispatched
-  implementation; `data-model-documenter` for cataloging data contracts;
-  `code-reviewer` and `security-reviewer` for read-only review;
-  `data-model-verifier`, `library-investigator`, `library-reviewer`, and
-  `adversarial-claims-reviewer` for evidence-only audit; and
+- <!-- components:agent:start -->seventeen agents: `engineer`,
+  `rust-engineer`, `godot-engineer`, `phaser-engineer`, `devops-engineer`, and
+  `web3-engineer` for dispatched implementation; `data-model-documenter` for
+  cataloging data contracts; `code-reviewer` and `security-reviewer` for
+  read-only review; `data-model-verifier`, `library-investigator`,
+  `library-reviewer`, and `adversarial-claims-reviewer` for evidence-only audit;
+  `technical-pm`, `marketer`, and `game-design-shaper` for domain shaping; and
   `capability-probe` for capability
   detection;<!-- components:agent:end -->
-- <!-- components:skill:start -->twenty-two skills: `prompt-shaping`,
+- <!-- components:skill:start -->thirty-seven skills: `prompt-shaping`,
   `planning-and-task-breakdown`, `incremental-implementation`,
   `code-review-and-quality`, and `security-engineering` for the core
   shape/plan/implement/review path; `data-model-documentation`,
@@ -58,10 +59,15 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `typescript-data-engineering`, and `browser-testing-with-devtools` for
   TypeScript and browser work; `rust-engineer`, `godot-engineer`, and
   `phaser-engineer` for the Rust and game stacks; `deployment-pipelines` and
-  `release-manager` for pipelines and release coordination; and
+  `release-manager` for pipelines and release coordination;
   `library-investigator` and `adversarial-claims-reviewer` for auditing this
-  plugin's own surfaces and documents that make formal
-  claims;<!-- components:skill:end -->
+  plugin's own surfaces and documents that make formal claims;
+  `devops-engineer` and `web3-smart-contract-engineering` for platform and
+  EVM work; `game-design-shaper`, `game-systems-designer`, `game-balancer`, and
+  `iap-manager` for game design and monetization ops; `marketing-shaper`,
+  `content-ops`, `conversion-ops`, `growth-engine`, `outbound-engine`,
+  `seo-ops`, `revenue-intelligence`, `autoresearch`, and `telemetry` for
+  marketing, growth, and measurement;<!-- components:skill:end -->
 - <!-- components:command:start -->three commands: `/review-gate`,
   `/triage-findings`, and `/state`;<!-- components:command:end -->
 - always-applied factual-correctness, orchestration, review-tier, and

@@ -39,10 +39,22 @@
       "sha256": "54e0f16c2f6a0a38975024c8112623d8ecf93169c222039045b0ea1da7e76b6a"
     },
     {
+      "id": "devops-engineer",
+      "kind": "agent",
+      "path": "plugin/agents/devops-engineer.md",
+      "sha256": "7ef485a92627817b41a82b57e1d04a68f2be1e15b56872f7812523fe8f8c64fd"
+    },
+    {
       "id": "engineer",
       "kind": "agent",
       "path": "plugin/agents/engineer.md",
       "sha256": "3d924d35f2b41980aa500092e2485a5ca591d8f9eb14b37c0ce996fcae5bf1fd"
+    },
+    {
+      "id": "game-design-shaper",
+      "kind": "agent",
+      "path": "plugin/agents/game-design-shaper.md",
+      "sha256": "8d6ab6894097854e7c3c577f53eee607010289099f386ed2b71473bc1a1fee04"
     },
     {
       "id": "godot-engineer",
@@ -63,6 +75,12 @@
       "sha256": "de7dd9d341e293ae7710f0ce5f993ed37d1e764d88a48dc822f6b5fe1e947655"
     },
     {
+      "id": "marketer",
+      "kind": "agent",
+      "path": "plugin/agents/marketer.md",
+      "sha256": "2f61f210b76f640f2ae9544b5a5e718f3eac1c236ed9ac0b12efe3219c4155f8"
+    },
+    {
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
@@ -79,6 +97,18 @@
       "kind": "agent",
       "path": "plugin/agents/security-reviewer.md",
       "sha256": "0623021a85238eacd2562ebdc25c426573cd723c6f5eabfe1b39b79313356cd7"
+    },
+    {
+      "id": "technical-pm",
+      "kind": "agent",
+      "path": "plugin/agents/technical-pm.md",
+      "sha256": "748646156a01c3da37232191b4b8b278f15327a416dccea2581898fc644a48cb"
+    },
+    {
+      "id": "web3-engineer",
+      "kind": "agent",
+      "path": "plugin/agents/web3-engineer.md",
+      "sha256": "5aed22bfb6b24445db618014d2ddc1880f353f7dbbdd039343036cf482191003"
     },
     {
       "id": "review-gate",
@@ -111,6 +141,12 @@
       "sha256": "5d31abc8e3a494f9293634dc03164b8b4db0947e51d3edc0d4952b5a8045c1d4"
     },
     {
+      "id": "communication",
+      "kind": "rule",
+      "path": "plugin/rules/communication.mdc",
+      "sha256": "736ed0615745d34ac5dbd2321b9ac0c4d4e3665cb0d66b8737c2d6116ed5b0f0"
+    },
+    {
       "id": "evidence-review-tiers",
       "kind": "rule",
       "path": "plugin/rules/evidence-review-tiers.mdc",
@@ -123,10 +159,22 @@
       "sha256": "d781e124f331bfb9da537d35c39049b37a580d936bdfb01c9550977e78dfcaa2"
     },
     {
+      "id": "grounding",
+      "kind": "rule",
+      "path": "plugin/rules/grounding.mdc",
+      "sha256": "882451c27780231580fb9deadaa849fea8dbedf1223904852baa881e78380c3c"
+    },
+    {
+      "id": "memory-discipline",
+      "kind": "rule",
+      "path": "plugin/rules/memory-discipline.mdc",
+      "sha256": "d2c6f5b87f3a3b70bd21aa432aed67db81ecfddce20dcf19f7e87c0fb66c105a"
+    },
+    {
       "id": "orchestrator-first",
       "kind": "rule",
       "path": "plugin/rules/orchestrator-first.mdc",
-      "sha256": "b3862fc0df398da3d446fec4b98f4a055c86fd1cc4ee058d08ec9ea20d287777"
+      "sha256": "401890f81ac5d1b8ae94333975c3495a3b7b973f3587f5d557c47446a9257ff6"
     },
     {
       "id": "before-shell-execution",
@@ -175,6 +223,36 @@
       "kind": "reference",
       "path": "plugin/skills/adversarial-claims-reviewer/references/protocol.md",
       "sha256": "df375ce34852a64ec96a0a2da5356bd5ac0f0afe89d35a5bae9b92fe6b19ddb0"
+    },
+    {
+      "id": "autoresearch",
+      "kind": "skill",
+      "path": "plugin/skills/autoresearch/SKILL.md",
+      "sha256": "605a3e7549cd2f01601ab3355abf6e960c4f3e39aae12a142cd73492c51ed3d4"
+    },
+    {
+      "id": "skills-autoresearch-readme",
+      "kind": "reference",
+      "path": "plugin/skills/autoresearch/readme.md",
+      "sha256": "464e6c5168dec586074591302d2fec6c48111126e0e12dee45bc4a2c80f6ab28"
+    },
+    {
+      "id": "skills-autoresearch-references-content-types",
+      "kind": "reference",
+      "path": "plugin/skills/autoresearch/references/content-types.md",
+      "sha256": "a307ccf5c793dd716774a90822e02e2ae4d72cde71aedcd783818f703278ccdc"
+    },
+    {
+      "id": "skills-autoresearch-references-execution-protocol",
+      "kind": "reference",
+      "path": "plugin/skills/autoresearch/references/execution-protocol.md",
+      "sha256": "420432709c444b145d2bee21ff851bf116e32c89ed9a6cc0ea8732029ff7141b"
+    },
+    {
+      "id": "skills-autoresearch-references-round-structure",
+      "kind": "reference",
+      "path": "plugin/skills/autoresearch/references/round-structure.md",
+      "sha256": "81d4215012597988a3c1fe3eaa4ff6bf357a5f43eea1c8a43e5d0b6322ebd05e"
     },
     {
       "id": "browser-testing-with-devtools",
@@ -231,6 +309,150 @@
       "sha256": "316daf7f73d9a780ed189101fd42421baa3931405bee52cab5ee7eb13c41d8b9"
     },
     {
+      "id": "content-ops",
+      "kind": "skill",
+      "path": "plugin/skills/content-ops/SKILL.md",
+      "sha256": "3b227e48b7ac1bdeebd5376c264378fc4405ab11ad088b284d4b8491600fb542"
+    },
+    {
+      "id": "skills-content-ops-experts-humanizer",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/humanizer.md",
+      "sha256": "584ce11c6eef66ea1a8f5c4fb9bc746aa9e424647310c1717927ac625bef9c45"
+    },
+    {
+      "id": "skills-content-ops-experts-instagram",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/instagram.md",
+      "sha256": "087191eaeeac4fab3d506b127378242babe762f953b3926bd4df55d73a06af7e"
+    },
+    {
+      "id": "skills-content-ops-experts-linkedin",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/linkedin.md",
+      "sha256": "738bca641f53d0915f18ab3ebe8394b8e8d36372cd41780d1e0f8d3f1ad5bba6"
+    },
+    {
+      "id": "skills-content-ops-experts-newsletter",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/newsletter.md",
+      "sha256": "9a74e3141f12be0aa651cb65a96fae3589b0d2bc501bffcbf63bd989db779f99"
+    },
+    {
+      "id": "skills-content-ops-experts-podcast-quotes",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/podcast-quotes.md",
+      "sha256": "16cbcbbfb88db16b2e63c0936835bc8079719fd32ed114b280f6652cd1d4cb34"
+    },
+    {
+      "id": "skills-content-ops-experts-recruiting",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/recruiting.md",
+      "sha256": "79c16d28adaa9c5f43b563df5f4d3bd886c844b06bbb854f0ec41f1a79923127"
+    },
+    {
+      "id": "skills-content-ops-experts-seo-strategy",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/seo-strategy.md",
+      "sha256": "a4677b0c455ddfa9f9a7fe704e5606145be89b984eaebe7cc8f018b70e1cfefa"
+    },
+    {
+      "id": "skills-content-ops-experts-x-articles",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/x-articles.md",
+      "sha256": "d8e19001067b0abd606ed576228659082a4989be1827a9379eddc6c41ea69e4d"
+    },
+    {
+      "id": "skills-content-ops-experts-youtube-shorts",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/experts/youtube-shorts.md",
+      "sha256": "f72dbcad543199f0238178d3218855cba5e4662d45d1dc8f63449bcb57939f5a"
+    },
+    {
+      "id": "skills-content-ops-readme",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/readme.md",
+      "sha256": "346e44d296f41fba1d1079706c050e32a4e0fdba4b7b79117dd0218b822dd214"
+    },
+    {
+      "id": "skills-content-ops-references-expert-assembly",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/references/expert-assembly.md",
+      "sha256": "32bd2c18ed372b1ce17d078a16d9c9b438fe98f84361ec857f9d770f421f0cc9"
+    },
+    {
+      "id": "skills-content-ops-references-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/references/patterns.md",
+      "sha256": "eea99c4efd921e4b2d5150558f7d662af1e160e569d1eddd4293fad0166d16a9"
+    },
+    {
+      "id": "skills-content-ops-references-procedure-steps",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/references/procedure-steps.md",
+      "sha256": "1d79c148f3e619eed48e9e7ceb53bb9c5dace03a1b50348dbba67558e48cbe69"
+    },
+    {
+      "id": "skills-content-ops-scoring-rubrics-content-quality",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/scoring-rubrics/content-quality.md",
+      "sha256": "69fed4f1739d527a89bc6de69b6eea14f242b5d3e9e5c8e5f6ebbffbc6abeeb1"
+    },
+    {
+      "id": "skills-content-ops-scoring-rubrics-conversion-quality",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/scoring-rubrics/conversion-quality.md",
+      "sha256": "9597b8920c3f0d649eb8c8c6672d7350780eb2a4a5795c432348fdbf681a486d"
+    },
+    {
+      "id": "skills-content-ops-scoring-rubrics-evaluation-quality",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/scoring-rubrics/evaluation-quality.md",
+      "sha256": "3b4c1a88cb59406d6da2bc98990f196f241d843dd2983519d4538aaa6fbc700a"
+    },
+    {
+      "id": "skills-content-ops-scoring-rubrics-strategic-quality",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/scoring-rubrics/strategic-quality.md",
+      "sha256": "7bf1eb344502e8060fbd6a33abf1c1a9a57588832be4a68060dc55f36620d5ad"
+    },
+    {
+      "id": "skills-content-ops-scoring-rubrics-visual-quality",
+      "kind": "reference",
+      "path": "plugin/skills/content-ops/scoring-rubrics/visual-quality.md",
+      "sha256": "3eff70d087925898fa2a510a8ef87d35cf607849b2b0c16daa9453dd60068b9b"
+    },
+    {
+      "id": "conversion-ops",
+      "kind": "skill",
+      "path": "plugin/skills/conversion-ops/SKILL.md",
+      "sha256": "a9c4071a8e32c36c4c68cb925a9a1f2a76d55d78132f5e1ea83dead2d3b85d96"
+    },
+    {
+      "id": "skills-conversion-ops-readme",
+      "kind": "reference",
+      "path": "plugin/skills/conversion-ops/readme.md",
+      "sha256": "d11a0d8fbe4c1b9a19b9cd561ce692db2b58856919be70e99b7493541566be0d"
+    },
+    {
+      "id": "skills-conversion-ops-references-cro-audit",
+      "kind": "reference",
+      "path": "plugin/skills/conversion-ops/references/cro-audit.md",
+      "sha256": "e5412290c41f241535e55408ed841304bdec20c7ccf8b6d23ccd3b74976e19f3"
+    },
+    {
+      "id": "skills-conversion-ops-references-recommended-workflow",
+      "kind": "reference",
+      "path": "plugin/skills/conversion-ops/references/recommended-workflow.md",
+      "sha256": "c91d6de1482986a69716a0652fe68c163abb5199be59827d894c5648e98938f9"
+    },
+    {
+      "id": "skills-conversion-ops-references-survey-lead-magnet",
+      "kind": "reference",
+      "path": "plugin/skills/conversion-ops/references/survey-lead-magnet.md",
+      "sha256": "4c7c6b66d72a801e8ce4f797e55643cb3009f6fe7a4e02506cab8acf8b0989f8"
+    },
+    {
       "id": "data-model-documentation",
       "kind": "skill",
       "path": "plugin/skills/data-model-documentation/SKILL.md",
@@ -246,7 +468,7 @@
       "id": "skills-data-model-documentation-references-implementation-close",
       "kind": "reference",
       "path": "plugin/skills/data-model-documentation/references/implementation-close.md",
-      "sha256": "d36f152c70df7f693f2d3d8dc2665165e405943b5d6fd3c74d019df6442a234e"
+      "sha256": "4073e0694d5df6ccdd6db784d1cdcb9864b5528aa7ea8f5307aa5173135f49e3"
     },
     {
       "id": "skills-data-model-documentation-references-ingestion-kinds",
@@ -315,10 +537,232 @@
       "sha256": "7c937fb90dcd2e04f67a2e8ddcc9113069fc682fd347a9d9b461c4df8fe015a6"
     },
     {
+      "id": "devops-engineer",
+      "kind": "skill",
+      "path": "plugin/skills/devops-engineer/SKILL.md",
+      "sha256": "94f33d32c3398038fabf24201e44a2e29a5921d5f55a6de35700a5e92c7668d9"
+    },
+    {
+      "id": "skills-devops-engineer-references-cicd-pipelines",
+      "kind": "reference",
+      "path": "plugin/skills/devops-engineer/references/cicd-pipelines.md",
+      "sha256": "e494787499998e4f31c74d560945256317838e6cca75ad95f3dc8ffd85f534f1"
+    },
+    {
+      "id": "skills-devops-engineer-references-helm-charts",
+      "kind": "reference",
+      "path": "plugin/skills/devops-engineer/references/helm-charts.md",
+      "sha256": "1b46fde48d49c43088f20bde203cf33f3bc1cf773759410a050544dc4c6b7a26"
+    },
+    {
+      "id": "skills-devops-engineer-references-kubernetes-operations",
+      "kind": "reference",
+      "path": "plugin/skills/devops-engineer/references/kubernetes-operations.md",
+      "sha256": "abac672628592c4379bae940c99cf863607d8f6f905283b2c348bf5fea4301e3"
+    },
+    {
+      "id": "skills-devops-engineer-references-pulumi-iac",
+      "kind": "reference",
+      "path": "plugin/skills/devops-engineer/references/pulumi-iac.md",
+      "sha256": "93fd2f8fed3f645487f1b9bea3d9b3d6c3dc2b45cb03139453974df55f3cc5c8"
+    },
+    {
       "id": "findings-ledger",
       "kind": "skill",
       "path": "plugin/skills/findings-ledger/SKILL.md",
       "sha256": "5a9c3e9ea1d4b51bfc334d5a2406f11ea0ad120314de330a220e7b583e6b190c"
+    },
+    {
+      "id": "game-balancer",
+      "kind": "skill",
+      "path": "plugin/skills/game-balancer/SKILL.md",
+      "sha256": "8e677a3a44bf05c315517d0405eb38ac15666dd516dff404ae94d17e73fe0789"
+    },
+    {
+      "id": "skills-game-balancer-assets-balance-pass-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/assets/balance-pass-checklist.md",
+      "sha256": "68ad31e61c4e820a55934d8442006949416318aa4d43d293d467018fdaad2764"
+    },
+    {
+      "id": "skills-game-balancer-assets-balance-table-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/assets/balance-table-template.md",
+      "sha256": "55f1a81708bbe7f06e20a83e9c7c40b86f9e4677fa90d144c0b17377fa68527e"
+    },
+    {
+      "id": "skills-game-balancer-assets-economy-spreadsheet-skeleton",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/assets/economy-spreadsheet-skeleton.md",
+      "sha256": "ea055e7fc48914fd2334961a6d5ca9507376625187cbe08f973ab99fafd890f7"
+    },
+    {
+      "id": "skills-game-balancer-assets-progression-curve-skeleton",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/assets/progression-curve-skeleton.md",
+      "sha256": "c726714a44b14b2365a1f52407663f83d63f17f55ce31e625f5259e9341c2627"
+    },
+    {
+      "id": "skills-game-balancer-references-balance-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/balance-anti-patterns.md",
+      "sha256": "f378a44257d9a5cf68f739ec4a217827876696fc98c5603fddef1c39464104dd"
+    },
+    {
+      "id": "skills-game-balancer-references-balance-pass-types",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/balance-pass-types.md",
+      "sha256": "30d0b60d598a383376d668faa9416edbe9622ae3e7886bb09ee4bbd05ba2a5ae"
+    },
+    {
+      "id": "skills-game-balancer-references-curve-fitting",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/curve-fitting.md",
+      "sha256": "9c5b59b4e85481d769c1bc4c5fcbdac39f055733e022a3716ef4c62ed944e53e"
+    },
+    {
+      "id": "skills-game-balancer-references-difficulty-and-pacing",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/difficulty-and-pacing.md",
+      "sha256": "0a04416a694fc63b1b222fb7fde8deff1fb5fd77ab360b8fc83f1b1954681c0b"
+    },
+    {
+      "id": "skills-game-balancer-references-economy-design",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/economy-design.md",
+      "sha256": "f3b3c0d066166be704158c3268f3cb595c4fe8341b8c8e3aeef4ed4be1381606"
+    },
+    {
+      "id": "skills-game-balancer-references-live-rebalancing",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/live-rebalancing.md",
+      "sha256": "d098eecc2f51c570f3a62fc6f175661edfc41093088c9079f8b217b3149a7bc9"
+    },
+    {
+      "id": "skills-game-balancer-references-progression-math",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/progression-math.md",
+      "sha256": "687cf445351a15d4b475ba640ab1a1abecc110871a654e3dc4a18db8be358119"
+    },
+    {
+      "id": "skills-game-balancer-references-pvp-balance",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/pvp-balance.md",
+      "sha256": "3597dca744dcd116476e3c29c6dcec975e5ead7d14ebc4e3372b1bed86c05f5f"
+    },
+    {
+      "id": "skills-game-balancer-references-simulation-and-playtesting",
+      "kind": "reference",
+      "path": "plugin/skills/game-balancer/references/simulation-and-playtesting.md",
+      "sha256": "ccdb5d594bd8fc6e3f8592860bf7baf58a8723c6c8eda525768ae7874e1eed9f"
+    },
+    {
+      "id": "game-design-shaper",
+      "kind": "skill",
+      "path": "plugin/skills/game-design-shaper/SKILL.md",
+      "sha256": "f161f28dba970a73e8714c45ae86ad9c6aed75c56d2768931c269e5c4a584594"
+    },
+    {
+      "id": "skills-game-design-shaper-assets-full-game-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/assets/full-game-template.md",
+      "sha256": "06ea8ba02399a53e432cbda071cb603f16494208cad0eafe1f9678a98185933f"
+    },
+    {
+      "id": "skills-game-design-shaper-assets-jam-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/assets/jam-template.md",
+      "sha256": "19e881ce4c58ce622e562d22bc3f0595b9bca32c2c3148f2f77ee6b19c1e665b"
+    },
+    {
+      "id": "skills-game-design-shaper-assets-live-game-update-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/assets/live-game-update-template.md",
+      "sha256": "1f20304bd47ebb7182891a32de67af25d9a0069a9f6b31e95a7a7ee6771319aa"
+    },
+    {
+      "id": "skills-game-design-shaper-assets-prototype-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/assets/prototype-template.md",
+      "sha256": "de99274f2cf433e724ca9ddfec7aee0720d256074110155248be4ab071e3a9e4"
+    },
+    {
+      "id": "skills-game-design-shaper-references-interview-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/references/interview-checklist.md",
+      "sha256": "3e75dec5614dc3110be0626ad4c1bff825f3f2270d97a16790d9fbf3d64dcea6"
+    },
+    {
+      "id": "skills-game-design-shaper-references-procedure",
+      "kind": "reference",
+      "path": "plugin/skills/game-design-shaper/references/procedure.md",
+      "sha256": "821645315e658f15ffcf8dabe763323943add32752fa8b5ad16d20448d255aa3"
+    },
+    {
+      "id": "game-systems-designer",
+      "kind": "skill",
+      "path": "plugin/skills/game-systems-designer/SKILL.md",
+      "sha256": "cf574a48100f88aab1a918572d7748f23f8195b060d3b15882c525d5fa816e49"
+    },
+    {
+      "id": "skills-game-systems-designer-assets-design-doc-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/assets/design-doc-template.md",
+      "sha256": "31137055678152456199c94c79ea2e0de3f0cd0fa1c6b37d009a1d6aaa71d703"
+    },
+    {
+      "id": "skills-game-systems-designer-assets-level-spec-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/assets/level-spec-template.md",
+      "sha256": "e8e9892030e9e26027ff1b3bdaaa5cffa4fd0b22399bda42d631da54f13f63db"
+    },
+    {
+      "id": "skills-game-systems-designer-assets-system-spec-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/assets/system-spec-template.md",
+      "sha256": "783dd2b3eb08f24405ff6127152ba61178e2407564f8c6a9c64253f10d92d336"
+    },
+    {
+      "id": "skills-game-systems-designer-references-cohesion-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/cohesion-checklist.md",
+      "sha256": "b5eb1af9df7e6c18f7c720421f4b5979c3266253cb1d30cc671ee2f304768c86"
+    },
+    {
+      "id": "skills-game-systems-designer-references-content-and-levels",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/content-and-levels.md",
+      "sha256": "0a1b36a3d53c7f3f3174a495f3eb9a2724d251154af840523bcbc876b3dcfc18"
+    },
+    {
+      "id": "skills-game-systems-designer-references-core-loops-and-progression",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/core-loops-and-progression.md",
+      "sha256": "dbfa318d7d56be8637b50a6901d916e0035b9c3a8ed3e16c4b5937c6a13206f5"
+    },
+    {
+      "id": "skills-game-systems-designer-references-mda-framework",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/mda-framework.md",
+      "sha256": "ae11870fe7f9dd63a98f1c2e2ef771abc61dd04634e66feb89d4b0bc7e8c1770"
+    },
+    {
+      "id": "skills-game-systems-designer-references-narrative-and-pacing",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/narrative-and-pacing.md",
+      "sha256": "c925ec8fa0efd39aa69b7be6e4d57d81ee7a220b2db244b981be56302800f2fc"
+    },
+    {
+      "id": "skills-game-systems-designer-references-onboarding-and-failure",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/onboarding-and-failure.md",
+      "sha256": "362084ff23f7847694cef2f034b9c025a17c07919af198221e1398e43411667f"
+    },
+    {
+      "id": "skills-game-systems-designer-references-player-verbs",
+      "kind": "reference",
+      "path": "plugin/skills/game-systems-designer/references/player-verbs.md",
+      "sha256": "453db66f97f3bd17a0e1ad5a31fac82271591d753daf1507a206b34bfee4028b"
     },
     {
       "id": "godot-engineer",
@@ -429,6 +873,126 @@
       "sha256": "0953ce772a02d58a9f58812ee7863134bc22c5c111969a54cceaed6047d8c7aa"
     },
     {
+      "id": "growth-engine",
+      "kind": "skill",
+      "path": "plugin/skills/growth-engine/SKILL.md",
+      "sha256": "12d63cc6ec4768a255cf8e53f4e3f22b50bd2f4bdc58d544c88f16634cd1939a"
+    },
+    {
+      "id": "skills-growth-engine-readme",
+      "kind": "reference",
+      "path": "plugin/skills/growth-engine/readme.md",
+      "sha256": "95ec344ae811e52fc0b1dfd1615c1753a375a3902aa170bd8bd56b91cf2716bf"
+    },
+    {
+      "id": "skills-growth-engine-references-commands",
+      "kind": "reference",
+      "path": "plugin/skills/growth-engine/references/commands.md",
+      "sha256": "7d2fb97bfdf08db7ae5bcbfba523429897999fd3edf0bcf95eff70fd8583a39a"
+    },
+    {
+      "id": "skills-growth-engine-references-configuration",
+      "kind": "reference",
+      "path": "plugin/skills/growth-engine/references/configuration.md",
+      "sha256": "f31f54e16146e7f127c3128c30082db102562c89e3e4a61c978750da15e00ba9"
+    },
+    {
+      "id": "iap-manager",
+      "kind": "skill",
+      "path": "plugin/skills/iap-manager/SKILL.md",
+      "sha256": "1e545e8dbb35e70c78f690b2af1e2397ef2ce4c12089d0416acf4f9acc9c3489"
+    },
+    {
+      "id": "skills-iap-manager-assets-bundle-composition-template",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/assets/bundle-composition-template.md",
+      "sha256": "02b9074f1ea22eb0f9cb1dd794db94074b23800403929ba5cf6e741f247a3f28"
+    },
+    {
+      "id": "skills-iap-manager-assets-iap-catalog-template",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/assets/iap-catalog-template.md",
+      "sha256": "ab8fc2f74b353cbdb870cfdfe797be4a24b9a59db807c67d3ef89894ae7fa316"
+    },
+    {
+      "id": "skills-iap-manager-assets-price-test-plan-template",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/assets/price-test-plan-template.md",
+      "sha256": "cace33aaf7e15d3b61178b98d6e825280d3d670ab105cbc40bb46443c44f7277"
+    },
+    {
+      "id": "skills-iap-manager-assets-price-tier-ladder-template",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/assets/price-tier-ladder-template.md",
+      "sha256": "6911182316659ce61e19f980b189f531fb373a3df07abd99706653c366c9a5b6"
+    },
+    {
+      "id": "skills-iap-manager-assets-region-price-table-template",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/assets/region-price-table-template.md",
+      "sha256": "89a8074fb1a17695d843e1164fd59bcde5b62b18bccbc729f8b5bb1caf86ddc7"
+    },
+    {
+      "id": "skills-iap-manager-references-bundles-and-starter-packs",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/bundles-and-starter-packs.md",
+      "sha256": "243c98a6e6e2981ec90ad259e832ab252878c6ca998834b4434560247b4884f9"
+    },
+    {
+      "id": "skills-iap-manager-references-catalog-types",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/catalog-types.md",
+      "sha256": "112502ee041cb85ddf8095bfe54dad014db2b954b98f0d3c5e56b53d981a5ee3"
+    },
+    {
+      "id": "skills-iap-manager-references-iap-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/iap-anti-patterns.md",
+      "sha256": "06abc9e8ee168b1267036cf85f04367cf0df17078b0fdcc6c9af4583e5185d00"
+    },
+    {
+      "id": "skills-iap-manager-references-price-localization",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/price-localization.md",
+      "sha256": "2ca4c7a835b806b1497c6adec1e882ac549e823ffdbcdcd5c906e42ed9f32f30"
+    },
+    {
+      "id": "skills-iap-manager-references-price-testing",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/price-testing.md",
+      "sha256": "1cbc0cc707524436e4f7f31ffe32ee0ef373831bbb6dbc4da7d8a582bffb7853"
+    },
+    {
+      "id": "skills-iap-manager-references-price-tier-ladder",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/price-tier-ladder.md",
+      "sha256": "67360b6b12a209d795a45e88b61f937fed5ccee29bb7c0f5ac1975a97877aa4c"
+    },
+    {
+      "id": "skills-iap-manager-references-sku-design-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/sku-design-patterns.md",
+      "sha256": "17f963536512ce5c2be8051c21e46bb0dd004af777731e93c469148aa39e6092"
+    },
+    {
+      "id": "skills-iap-manager-references-store-config-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/store-config-checklist.md",
+      "sha256": "0463c22a3a9111f3bb6b5627b9d85d2fd0dc7b61af60c542ec7f74899058f967"
+    },
+    {
+      "id": "skills-iap-manager-references-store-side-ux",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/store-side-ux.md",
+      "sha256": "ee203f7e90b618580a0ce34d98a8ece976d8ee0dce11b4c67384c2545f1b7834"
+    },
+    {
+      "id": "skills-iap-manager-references-web3-iap-notes",
+      "kind": "reference",
+      "path": "plugin/skills/iap-manager/references/web3-iap-notes.md",
+      "sha256": "909ea26921044476f019857f75ef74882beb95a4275f0f22957e0347211ca40a"
+    },
+    {
       "id": "incremental-implementation",
       "kind": "skill",
       "path": "plugin/skills/incremental-implementation/SKILL.md",
@@ -459,10 +1023,106 @@
       "sha256": "b7fb50ccc22102bb6b777726e612571afd1adaf8824735e3c740e11ed3c81d36"
     },
     {
+      "id": "marketing-shaper",
+      "kind": "skill",
+      "path": "plugin/skills/marketing-shaper/SKILL.md",
+      "sha256": "a33694211c9826ad91ae72bd1f078f4a433ba223cea71ba141b14259086ab1f4"
+    },
+    {
+      "id": "skills-marketing-shaper-assets-campaign-template",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/assets/campaign-template.md",
+      "sha256": "01cc027836008f707d72adf851f4eeba9e2a9a6a4f2ca195c2e3ce125a795910"
+    },
+    {
+      "id": "skills-marketing-shaper-assets-content-template",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/assets/content-template.md",
+      "sha256": "d97e9504c69ad441b5e60880f6a6a936d02806397a79b68a72055c875c295175"
+    },
+    {
+      "id": "skills-marketing-shaper-assets-optimization-template",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/assets/optimization-template.md",
+      "sha256": "097b1954c6d9381935c2cc652a13f9420ab7e3d39cc469ee6449dcdc84ec26eb"
+    },
+    {
+      "id": "skills-marketing-shaper-assets-pipeline-template",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/assets/pipeline-template.md",
+      "sha256": "d496eae200f7ccbef8b1276cdf6ee2c9b8abf1bdd6ccefdf27f964edd4cedd28"
+    },
+    {
+      "id": "skills-marketing-shaper-assets-research-template",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/assets/research-template.md",
+      "sha256": "b31a79969ed5c26612dffe20129abf9859e47aa209037c48f437c7cb63f6e953"
+    },
+    {
+      "id": "skills-marketing-shaper-references-interview-checklist",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/references/interview-checklist.md",
+      "sha256": "c8656a5eca8afcf3fa4bfbf93638f1bc454525584982ad113dd2a7c5d4126584"
+    },
+    {
+      "id": "skills-marketing-shaper-references-procedure",
+      "kind": "reference",
+      "path": "plugin/skills/marketing-shaper/references/procedure.md",
+      "sha256": "c67354fcdfe9ee0cf3c7b813e69aeb83cb1793572ff4ab0984770bcbe8c5af0e"
+    },
+    {
       "id": "memory-extraction",
       "kind": "skill",
       "path": "plugin/skills/memory-extraction/SKILL.md",
       "sha256": "4cd00ac469d284966a66db4d43a64fc2a6337446a62c84ee11db06e836efcc22"
+    },
+    {
+      "id": "outbound-engine",
+      "kind": "skill",
+      "path": "plugin/skills/outbound-engine/SKILL.md",
+      "sha256": "42a7c3e927bdf1ebf3c3f6d0be1068a3fdb38c82803abccb6e7f88afab599c50"
+    },
+    {
+      "id": "skills-outbound-engine-assets-icp-template",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/assets/icp-template.md",
+      "sha256": "e3673405cdda5ef05a0cf43853f5711416fb64e700d6add81c00f2d88da5055b"
+    },
+    {
+      "id": "skills-outbound-engine-readme",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/readme.md",
+      "sha256": "541da672915ff0fef485cbfe7543c838a0caadb2d8b0b8f8c4f34c26bea71a99"
+    },
+    {
+      "id": "skills-outbound-engine-references-capacity-math",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/references/capacity-math.md",
+      "sha256": "0726c1d4a6e551e7315258f6813cf8ddf94db8aad18651981b478eb1e151be19"
+    },
+    {
+      "id": "skills-outbound-engine-references-copy-rules",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/references/copy-rules.md",
+      "sha256": "95b87b97b4f196251bee7c887e9281fac1155fb28c4527c57000570abe7666b9"
+    },
+    {
+      "id": "skills-outbound-engine-references-expert-panel",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/references/expert-panel.md",
+      "sha256": "bce61e633a951bd0ba8f465333f7339fc2e2fa208365d7411dfb0c1534579865"
+    },
+    {
+      "id": "skills-outbound-engine-references-instantly-rules",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/references/instantly-rules.md",
+      "sha256": "f23d9b2b52928b3ef31da5fdc57b2163d9bd49c4e40b9c6a21b208df6cfc4e02"
+    },
+    {
+      "id": "skills-outbound-engine-references-workflow",
+      "kind": "reference",
+      "path": "plugin/skills/outbound-engine/references/workflow.md",
+      "sha256": "aebdf721c9c2bd8243910f3ff9fef63dfd6833b062fdf413b18eabf83d0063eb"
     },
     {
       "id": "phaser-engineer",
@@ -535,6 +1195,30 @@
       "kind": "reference",
       "path": "plugin/skills/release-manager/references/release-cut-mechanics.md",
       "sha256": "c1c182379a9dca5dbc54133b40a4e4ce6920da2bcb8a8f72465c9709c647d8ce"
+    },
+    {
+      "id": "revenue-intelligence",
+      "kind": "skill",
+      "path": "plugin/skills/revenue-intelligence/SKILL.md",
+      "sha256": "07b3107f61721dc988bc285646420f163d980bc41b4e1258c60bb04c6a19b577"
+    },
+    {
+      "id": "skills-revenue-intelligence-readme",
+      "kind": "reference",
+      "path": "plugin/skills/revenue-intelligence/readme.md",
+      "sha256": "2e384fe29bb8a733e9cb77fd82053faeafd36e43c9b6a634947b111e4429dd59"
+    },
+    {
+      "id": "skills-revenue-intelligence-references-configuration",
+      "kind": "reference",
+      "path": "plugin/skills/revenue-intelligence/references/configuration.md",
+      "sha256": "32fdd9881e26c074d98b5c940a69be10fb6a0b86fdb31ec42d0a74bc44e98304"
+    },
+    {
+      "id": "skills-revenue-intelligence-references-tool-reference",
+      "kind": "reference",
+      "path": "plugin/skills/revenue-intelligence/references/tool-reference.md",
+      "sha256": "1a4ac74ef739484fe452fc03a582c6e35ca573dad3db440932c9743a3b0a412c"
     },
     {
       "id": "rust-engineer",
@@ -669,6 +1353,30 @@
       "sha256": "aab1923bc8afc9bc58b41ffe990691a08de9b140fd8f9c341ef77ef69ed2ff6a"
     },
     {
+      "id": "seo-ops",
+      "kind": "skill",
+      "path": "plugin/skills/seo-ops/SKILL.md",
+      "sha256": "e4de5dc065ce55925f107e83434d75cd93166805c9e17c2d73bc74d89f7db769"
+    },
+    {
+      "id": "skills-seo-ops-readme",
+      "kind": "reference",
+      "path": "plugin/skills/seo-ops/readme.md",
+      "sha256": "d666e4a682618113292dabbc2705df189affd1f3d836c385b69175498d54c947"
+    },
+    {
+      "id": "skills-seo-ops-references-configuration-and-scoring",
+      "kind": "reference",
+      "path": "plugin/skills/seo-ops/references/configuration-and-scoring.md",
+      "sha256": "c9cf6c5e11e133f7883a51c2a904794be00a5077d8814fa6eaaef37c0dfed0c1"
+    },
+    {
+      "id": "skills-seo-ops-references-tool-reference",
+      "kind": "reference",
+      "path": "plugin/skills/seo-ops/references/tool-reference.md",
+      "sha256": "905f6f5947be3d9d02813f41b0f61f71cc9a0b99018d809bdc57bbc72761b708"
+    },
+    {
       "id": "session-state",
       "kind": "skill",
       "path": "plugin/skills/session-state/SKILL.md",
@@ -721,6 +1429,18 @@
       "kind": "reference",
       "path": "plugin/skills/skill-library-review/references/tool-allowlists.md",
       "sha256": "9a0b35b7cac8431e1ae0acf5c685fcdc9dea03c695ddc4ff919cc3d907e935e8"
+    },
+    {
+      "id": "telemetry",
+      "kind": "skill",
+      "path": "plugin/skills/telemetry/SKILL.md",
+      "sha256": "3db4aa38d64d979baebf3024f2fe3e8890ba80ae285ffcf7863f6388e2f3cea8"
+    },
+    {
+      "id": "skills-telemetry-readme",
+      "kind": "reference",
+      "path": "plugin/skills/telemetry/readme.md",
+      "sha256": "44c5be1201c1d51363d62b7a240af0078c71f1483c7eee6187206d444826e09b"
     },
     {
       "id": "typescript-data-engineering",
@@ -877,6 +1597,84 @@
       "kind": "reference",
       "path": "plugin/skills/typescript-testing-frontend/references/test-utilities.md",
       "sha256": "1eaac0f3bbbbbeb283e0afcf61863157753204ef558b8b6b677e7575304614e7"
+    },
+    {
+      "id": "web3-smart-contract-engineering",
+      "kind": "skill",
+      "path": "plugin/skills/web3-smart-contract-engineering/SKILL.md",
+      "sha256": "09f29384e2562b4600310577d69e9461b5469b41ded310fe7a7a95a4de0a711f"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-allocation-module",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/allocation-module.md",
+      "sha256": "fcc6a3fcafa18bd542fc5d828b47bc5b77763169400b56f83c52cf20db2a4a69"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-deployment",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/deployment.md",
+      "sha256": "3970bae1683c247be25c695795c21ffee6b52d73497183d9829aec1b797e708d"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-erc4626-staking-vault",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/erc4626-staking-vault.md",
+      "sha256": "54fb179ce05797003dd3e8557850962ba38ab938a48494b771e55a7bcd67ab86"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-frameworks-and-tooling",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/frameworks-and-tooling.md",
+      "sha256": "784e511195b55e60a4ae4307e03a17da8bf02397886210eb2c8d87cc455bd542"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-governance-and-factories",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/governance-and-factories.md",
+      "sha256": "92ce613b75a03b9efc2371d1f96807f7060e68e62ef600c7bb10c5e40fc7e42b"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-merkle-proofs",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/merkle-proofs.md",
+      "sha256": "108cb4121f20607f174338b400a181eab928463c8388e17b0f6d6f83e3afd840"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-networks-and-config",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/networks-and-config.md",
+      "sha256": "bb5d333357ae927a4ed496cf0764fd08ec91509254e395395335339436d37587"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-security-rules",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/security-rules.md",
+      "sha256": "bc6def3762c81dd0d78690e19b80af45bec74c61b37a28db1193de6544a158ba"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-signature-verification",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/signature-verification.md",
+      "sha256": "f35c7843643e500ce6b26d1c222c2eacbe8bae434d90e83565675823a8b5cbae"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-testing-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/testing-patterns.md",
+      "sha256": "e4affb2bbc37d55a437743e432512f2e07842a8bf82fb4ab6008f7c5983f059b"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-token-contracts",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/token-contracts.md",
+      "sha256": "386cb0e1c7fa71a756bcd7f046da1497eeea674c4b007854ecd0ad81247b3255"
+    },
+    {
+      "id": "skills-web3-smart-contract-engineering-references-velocity-control",
+      "kind": "reference",
+      "path": "plugin/skills/web3-smart-contract-engineering/references/velocity-control.md",
+      "sha256": "10b833c47ff1c741b56cc6771dfebd400cc87e701bba0eab966457af70ffc3df"
     }
   ],
   "platformCapabilities": [
