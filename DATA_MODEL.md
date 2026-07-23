@@ -12,6 +12,9 @@
 |---|---|---|
 | 2026-07-23 | `pattern3-ship-gates` | Cataloged `GatePlanResult` JSON from `gate-plan.sh --json`; corrected `RepositoryValidationResult.checks` to include `documented-components`. |
 | 2026-07-23 | `port-pattern3-data-model-agents` | No data-contract changes in this run. |
+| 2026-07-22 | `fix/35-shell-guard-bypass-followup` | Closed follow-up shell-guard bypasses: deny `GIT_CONFIG_*` env injection, peel Homebrew GNU `gtimeout`/`gnice`/`gstdbuf`/`gtime`, structurally re-check high-impact basenames after unknown launchers, and deny `git --config-env`. |
+| 2026-07-22 | `fix/35-shell-guard-allowlist` | Inverted `BeforeShellExecutionHook` to default-deny allowlist with named `eval` exceptions first, expansion/ANSI-C denial, launcher peeling, high-impact deny shapes, and git `-c` shell-escape denial. |
+| 2026-07-22 | `fix/36-plugin-install-collision-docs` | Noted that the user-facing `plugins/local` symlink does not write `plugins.json`, unlike the temporary lifecycle adapter's `CursorPluginRegistry` path; pointed install-collision / hook-stacking docs at `docs/plugin-loading-verification.md`. |
 | 2026-07-20 | `main` | Updated local-install state to schema 2 and documented structural managed-registry restoration without whole-config digest ownership. |
 | 2026-07-20 | `main` | Bound pair records to benchmark inputs, made network enforcement/attempt evidence cross-validated, preserved invalid preflight records, and cataloged lifecycle evidence plus concurrent registry restoration. |
 | 2026-07-20 | `main` | Cataloged manifest-bound result evidence, pre-execution evaluator integrity, strict benchmark child environments, authenticated config preflight, exact install registration repair, process-substitution detection, and sanitized artifact exports. |
@@ -36,7 +39,7 @@
 |---|---|
 | **Kind** | `api` |
 | **Ingestion route** | Cursor schema-v1 `beforeShellExecution`, running from the active workspace, invokes `node "${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs"` using Cursor's supplied plugin-root environment value, writes one JSON event to standard input, and reads one JSON permission decision from standard output |
-| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `readInput`, `main`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
+| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `readInput`, `main`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
 
 #### Shape
 
@@ -74,7 +77,7 @@ Output:
 | `user_message` | string | deny only | Deterministic user-facing denial naming the matched rule |
 | `agent_message` | string | deny only | Deterministic instruction stating that the guard denied the command |
 
-Input must be a JSON object no larger than 1 MiB. The guard normalizes absolute executable paths to their basename, unwraps leading assignments plus `env`, `sudo`, `command`, `builtin`, and `nohup`, and recursively inspects shell `-c` payloads. It also inspects nested `$()` and backtick substitutions to a maximum depth of three while treating single-quoted substitution text as inert. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, unterminated substitutions, and excessive substitution nesting return the deterministic `deny` shape using rule `invalid-hook-input`. Allowed commands return only `{ "permission": "allow" }`.
+Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: allow named `eval` exceptions → deny active expansions (including ANSI-C `$'...'` quoting, `$()`, backticks, and process substitutions) → peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime`) → deny any `GIT_CONFIG_*` assignment in the segment → structurally re-check remaining argv words whose basename is a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments (non-`GIT_CONFIG_*`), optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`), and optional command launchers (`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms) whose operands are re-inspected. Absolute paths are reduced to basenames for wrapper, launcher, and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) are denied anywhere they expand; ordinary single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), `git -c` assignments that bind shell-running values (`alias.*`, values containing `!`, `core.pager`, `diff.external`, and related keys), `git --config-env` / `--config-env=*` (fail-closed; value is opaque in the command string), `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that family), selected `gh` and `npm`/`pnpm` mutation forms, and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, `git-config-injection`, `git-config-env-injection`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`. Pipe-into-interpreter and `find -delete` remain explicit residual risks.
 
 ### BenchmarkArtifactExportCliResult
 
@@ -657,6 +660,17 @@ The manifest rejects unsupported fields. Configured component paths must be non-
 | **Kind** | `persistence` |
 | **Ingestion route** | `installLocalPlugin` reads and updates `<explicit-cursor-root>/plugins.json`; `uninstallLocalPlugin` structurally compares current and original registries without the managed entry, then either restores the original bytes/removal or merges only the managed entry back to its original state/removal |
 | **Source** | `scripts/lib/local-install-adapter.mjs` (`CONFIG_FILE`, `writeManagedConfig`, `installLocalPlugin`, `uninstallLocalPlugin`); `tests/validator/install-lifecycle.test.mjs` (registry lifecycle assertions) |
+
+This registry object is owned by the **temporary lifecycle adapter**, which
+mutates an explicit non-user Cursor root and refuses the real `~/.cursor`. The
+documented operator symlink under `~/.cursor/plugins/local/<pluginId>` does
+**not** write `plugins.json`; `npm run plugin:editor:verify` therefore reports
+`registeredInPluginsJson: false` for that layout until a registry entry exists
+by some other means. Do not treat lifecycle-adapter registry evidence as proof
+of Editor discovery for the symlink install path. Hook stacking and agent-name
+precedence against an existing user `~/.cursor` are documented in
+[plugin loading verification](docs/plugin-loading-verification.md#0-collisions-with-an-existing-cursor),
+not as separate catalog entities.
 
 #### Shape
 

@@ -128,6 +128,36 @@ This repository never creates that symlink or writes `~/.cursor`. Remove it
 manually with `rm ~/.cursor/plugins/local/cursor-harness`. Restart Cursor after
 local plugin changes if discovery does not refresh.
 
+### Existing `~/.cursor` collisions (read before installing)
+
+Experienced Cursor users often already have global agents, rules, and hooks.
+Symlink install does **not** replace that tree; it only adds a plugin path.
+Predict collisions before you rely on a name:
+
+- **Agent and rule names may collide.** Eight of nine plugin agents share
+  common global names:
+  `adversarial-claims-reviewer`, `code-reviewer`, `engineer`, `godot-engineer`,
+  `library-investigator`, `phaser-engineer`, `rust-engineer`, and
+  `security-reviewer`. Only `capability-probe` is plugin-unique. The same
+  question applies to `factual-correctness.mdc` among the rules.
+  **UNVERIFIED:** this repository has no proven Cursor precedence rule for
+  plugin vs global agents/rules (shadow, reverse, or both listed). Do not
+  assume one. Confirm which definition runs — prefer invoking
+  `capability-probe` (unique sentinel
+  `cursor-harness-agent-discovered`) over trusting a colliding name.
+- **Hooks stack.** Plugin hooks add alongside any existing `~/.cursor` hooks
+  for the same events; they do not replace them. The plugin registers
+  `beforeShellExecution` with `failClosed: true` and a 5s timeout — if that
+  hook errors or times out, it can gate **every** shell command. `sessionStart`
+  injectors can therefore run twice (yours plus the plugin's).
+- **On-disk symlink ≠ Editor loaded the plugin.** The documented
+  `plugins/local` symlink does not write `plugins.json`. After install,
+  `npm run plugin:editor:verify` typically reports
+  `registeredInPluginsJson: false` and `editorComponentLoading: not-proven`
+  (exit `3`) until you invoke `capability-probe`, save the transcript, and
+  re-run with `--transcript`. Details:
+  [plugin loading verification](docs/plugin-loading-verification.md).
+
 If the installed CLI does not expose `--plugin-dir`, authenticated benchmark
 runs can use the project-overlay adapter. It copies agents, rules, and skills
 into an isolated trial workspace. It intentionally omits executable hooks
@@ -144,7 +174,7 @@ validates and copies that template into a fresh per-trial config home.
 Plugins and workspace hooks execute local code with the Cursor process's user
 permissions. Install only from a reviewed revision, inspect the manifest and
 hook script, and do not treat Marketplace review as a security boundary. The
-guard is a narrow destructive-command control, not a shell parser, sandbox,
+guard is a default-deny allowlist over safe command forms, not a sandbox,
 endpoint-protection product, or substitute for backups and least privilege.
 Report vulnerabilities privately through GitHub's advisory form, not a public
 issue — see [Reporting a vulnerability](SECURITY.md#reporting-a-vulnerability).

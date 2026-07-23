@@ -53,27 +53,47 @@ Node-standard-library-only script through the exact safely quoted command
 five-second timeout and `failClosed: true`. Cursor expands
 `CURSOR_PLUGIN_ROOT` to the installed plugin directory; this avoids resolving
 the script against the active workspace used as the hook's working directory.
-The Node script itself does not inspect environment variables.
+The Node script itself does not inspect environment variables. Plugin hooks
+**stack** with any existing user hooks for the same events rather than
+replacing them; after install, this fail-closed guard therefore participates
+in every shell command decision alongside the operator's other
+`beforeShellExecution` hooks. See
+[plugin loading verification](docs/plugin-loading-verification.md#0-collisions-with-an-existing-cursor).
 
-The guard denies a deliberately small set of recognizable high-impact
-operations:
+The guard is a default-deny allowlist over tokenized command forms:
 
-- recursive forced deletion of high-impact filesystem targets;
-- Git worktree/index discard, forced cleaning, branch force-deletion, and
-  force-push forms;
-- selected remote object and package registry deletion/publication commands;
-- direct shell mutation or redirection targeting evaluator or canary paths.
+- allow named `eval` exceptions first (`eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"` only);
+- deny active command substitutions (`$()`, backticks), process
+  substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) wherever
+  they expand;
+- peel known wrappers and command launchers (`timeout`, `nice`, `busybox`,
+  `time`, `stdbuf`, plus Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` /
+  `gtime`) and re-apply policy to the resolved command;
+- after peel, structurally re-check any remaining argv word whose basename is
+  a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) so
+  unlisted launchers (`ionice`, `xargs`, …) cannot hide destructive shapes;
+- deny `GIT_CONFIG_*` environment assignments (same control family as
+  `git -c` / `--config-env` shell-escape injection), including unknown
+  `GIT_CONFIG_*` names;
+- deny high-impact resolved shapes even when literal, including recursive
+  force `rm`, destructive Git forms, `git -c` / `--config-env` shell-escape
+  config injection, selected `gh` and package-registry mutations, and
+  evaluator/canary path mutations or redirects;
+- allow only remaining literal path-like command words with safe args
+  shapes;
+- recursively allowlist shell `-c` payloads;
+- deny malformed input with deterministic JSON.
 
-Malformed input is denied with deterministic JSON. The script does not use the
-network, execute parsed text, read files, inspect environment variables, or
-read credentials.
+The script does not use the network, execute parsed text, read files, inspect
+environment variables, or read credentials.
 
-This hook is a safety interlock, not a shell parser, sandbox, authorization
-system, or security boundary. Shell expansion, aliases, generated commands,
-alternate binaries, editor tools, and non-shell paths can bypass textual
-matching. Cursor rules and LLM instructions are also not security boundaries.
-Sensitive operations still require operating-system permissions, repository
-protections, least-privilege credentials, and human review.
+This hook is a safety interlock, not a sandbox, authorization system, or
+security boundary. Pipe-into-interpreter forms (`printf … | bash`), aliases,
+`find -delete`, and non-shell tools are outside the allowlist's claims.
+Cursor rules and LLM instructions are also not security boundaries. Sensitive
+operations still require operating-system permissions, repository protections,
+least-privilege credentials, and human review.
 
 ## Evaluator integrity
 

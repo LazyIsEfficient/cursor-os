@@ -14,6 +14,29 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Changed
+
+- **Shell guard follow-up bypass closures** (`beforeShellExecution`): deny
+  `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that
+  family); peel Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime` like
+  their unprefixed forms; after wrapper/launcher peel, structurally re-check
+  any remaining argv word whose basename is a high-impact executable (`rm`,
+  `git`, `gh`, `npm`, `pnpm`, `busybox`) so unlisted launchers cannot hide
+  destructive shapes; deny `git --config-env` / `--config-env=*` (same control
+  family as `-c`, value is opaque in the command string). Residuals remain
+  pipe-into-interpreter and `find -delete`. See PR #39 / issue #35.
+
+- **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
+  inverted from a pure destructive-command denylist to positively recognized
+  safe forms (literal command words, no active `$()` / backtick / process /
+  ANSI-C `$'...'` substitutions, peeled wrappers/launchers, recursive shell
+  `-c` allowlisting), composed with a high-impact deny layer for recursive
+  force `rm`, destructive Git/`gh`/package-registry shapes, `git -c`
+  shell-escape config injection, and evaluator/canary path mutations. `eval`
+  is denied except the exact named forms `eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
+  pipe-into-interpreter remains an explicit residual risk. See issue #35.
+
 ### Added
 
 - **Pattern 3 ship gates (agentic-os mirror):** canonical
@@ -26,6 +49,18 @@ here therefore corresponds to a single consistent version across the repository.
   (library paths under `plugin/`) plus CI `ship-gates` job that enforces PR
   reviewer checkboxes. Implementation agents require session close
   (`G-data-document`) and Rust’s agent floor matches the skill CI shape.
+- **Install collision warnings** for operators with an existing `~/.cursor`:
+  agent/rule name-collision list (8 of 9 agents; `capability-probe` unique;
+  `factual-correctness.mdc` among rules) with explicit **UNVERIFIED**
+  precedence, hook stacking including the fail-closed 5s
+  `beforeShellExecution` gate and possible duplicate `sessionStart`
+  injection, and the symlink → `registeredInPluginsJson: false` /
+  `editorComponentLoading: not-proven` discovery gap with the
+  `capability-probe` transcript confirmation step in both README install
+  sections. Depth lives in
+  [plugin loading verification](docs/plugin-loading-verification.md);
+  capability matrix, `SECURITY.md`, and `DATA_MODEL.md` cross-link the same
+  facts without inventing Cursor merge semantics.
 - **Operator-run plugin loading verification tooling**
   (`npm run plugin:editor:verify`, `npm run plugin:cli:verify`) for the two
   plugin-loading claims that previously had no tooling at all. The editor

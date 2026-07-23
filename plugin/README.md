@@ -42,8 +42,8 @@ Attribution: Cursor Harness contributors
   `/state`.<!-- components:command:end -->
 - **Rules:** factual correctness, orchestrator-first dispatch, deterministic
   diff verification, and evidence review tiers.
-- **Hooks:** four events. A fail-closed `beforeShellExecution` command guard
-  for a narrow set of destructive local shell operations, plus three advisory
+- **Hooks:** four events. A fail-closed `beforeShellExecution` default-deny
+  allowlist for safe local shell command forms, plus three advisory
   fail-open hooks: `sessionStart` (injects `SESSION-STATE.md` and the
   `.cursor/memory/` index), `preCompact` (notifies the user that state must be
   re-read after compaction), and `stop` (nudges memory extraction once per
@@ -136,6 +136,30 @@ it writes to your Cursor directory. Remove it yourself with:
 ```sh
 rm ~/.cursor/plugins/local/cursor-harness
 ```
+
+### Existing `~/.cursor` collisions
+
+If you already have global agents, rules, or hooks under `~/.cursor`, install
+adds this plugin beside them — it does not replace that configuration.
+
+- **Name collisions (precedence UNVERIFIED).** Eight agents share common global
+  names: `adversarial-claims-reviewer`, `code-reviewer`, `engineer`,
+  `godot-engineer`, `library-investigator`, `phaser-engineer`, `rust-engineer`,
+  and `security-reviewer`. Only `capability-probe` is unique to this plugin.
+  `factual-correctness.mdc` can collide the same way among rules. This package
+  does not document a Cursor precedence rule because none is proven here —
+  confirm which definition runs (invoke `capability-probe`; expect exactly
+  `cursor-harness-agent-discovered`).
+- **Hooks stack.** Plugin hooks register alongside yours. The fail-closed
+  `beforeShellExecution` guard (`failClosed: true`, 5s timeout) will gate every
+  shell command if it errors or times out. `sessionStart` injectors can
+  duplicate.
+- **Confirm Editor loading separately.** The symlink does not write
+  `plugins.json`. On-disk presence is not proof the Editor loaded the plugin.
+  After linking, run the repository's `npm run plugin:editor:verify` (expect
+  `registeredInPluginsJson: false` and `editorComponentLoading: not-proven`
+  until a `capability-probe` transcript is supplied). See
+  [plugin loading verification](https://github.com/LazyIsEfficient/cursor-os/blob/main/docs/plugin-loading-verification.md).
 
 ## Verification
 
