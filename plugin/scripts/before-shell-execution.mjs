@@ -1,3 +1,10 @@
+import {
+  GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+  GH_PR_WITHOUT_VERIFY_RULE,
+  verifyLedgerAllowsGhPr,
+  verifyLedgerProjectRoot,
+} from "./lib/verify-ledger-lib.mjs";
+
 const MAX_INPUT_BYTES = 1024 * 1024;
 const MAX_NESTED_SHELL_DEPTH = 3;
 
@@ -90,7 +97,7 @@ const GIT_SHELL_ESCAPE_KEYS = new Set([
   "merge.tool",
 ]);
 
-function decision(permission, rule) {
+function decision(permission, rule, agentMessage) {
   if (permission === "allow") {
     return { permission: "allow" };
   }
@@ -99,6 +106,7 @@ function decision(permission, rule) {
     permission: "deny",
     user_message: `Command blocked by the local shell guard (${rule}).`,
     agent_message:
+      agentMessage ??
       "The deterministic beforeShellExecution guard denied this command. Ask the user to perform or explicitly revise the operation.",
   };
 }
@@ -610,6 +618,32 @@ function gitCommand(arguments_) {
   };
 }
 
+// Peel `gh` global options (`-R`/`--repo`, `--hostname`, …) so high-impact
+// matching sees `pr create|ready` / `repo delete` after flags.
+const GH_VALUE_TAKING_FLAGS = new Set(["-R", "--repo", "--hostname"]);
+
+function ghCommand(arguments_) {
+  let index = 0;
+
+  while (index < arguments_.length && arguments_[index].startsWith("-")) {
+    const argument = arguments_[index];
+    if (argument.includes("=")) {
+      index += 1;
+      continue;
+    }
+    if (GH_VALUE_TAKING_FLAGS.has(argument)) {
+      index += 2;
+      continue;
+    }
+    index += 1;
+  }
+
+  return {
+    subcommand: (arguments_[index] ?? "").toLowerCase(),
+    arguments: arguments_.slice(index + 1),
+  };
+}
+
 function isRecursiveForceDelete(arguments_) {
   const recursive =
     arguments_.includes("--recursive") ||
@@ -622,7 +656,8 @@ function isRecursiveForceDelete(arguments_) {
 
 // High-impact shapes that remain denied even when the command word is a literal
 // allowlisted form. Compose after named exceptions and expansion denial.
-function highImpactRule(segment, executable, arguments_) {
+// `workspaceRoot` is used for the verify-ledger PR gate (`gh pr create|ready`).
+function highImpactRule(segment, executable, arguments_, workspaceRoot) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
       segment[index].kind === "operator" &&
@@ -685,12 +720,25 @@ function highImpactRule(segment, executable, arguments_) {
     }
   }
 
-  if (
-    executable === "gh" &&
-    ((arguments_[0] === "repo" && arguments_[1] === "delete") ||
-      (arguments_[0] === "release" && arguments_[1] === "delete"))
-  ) {
-    return "remote-object-delete";
+  if (executable === "gh") {
+    const parsed = ghCommand(arguments_);
+
+    if (
+      (parsed.subcommand === "repo" && parsed.arguments[0] === "delete") ||
+      (parsed.subcommand === "release" && parsed.arguments[0] === "delete")
+    ) {
+      return "remote-object-delete";
+    }
+
+    if (
+      parsed.subcommand === "pr" &&
+      (parsed.arguments[0] === "create" || parsed.arguments[0] === "ready")
+    ) {
+      const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+      if (!allow.ok) {
+        return GH_PR_WITHOUT_VERIFY_RULE;
+      }
+    }
   }
 
   if (
@@ -703,7 +751,7 @@ function highImpactRule(segment, executable, arguments_) {
   return null;
 }
 
-function inspectResolvedCommand(segment, words, index, depth) {
+function inspectResolvedCommand(segment, words, index, depth, workspaceRoot) {
   const word = words[index];
   if (!isSafeCommandWord(word)) {
     return "unsafe-command-word";
@@ -716,7 +764,7 @@ function inspectResolvedCommand(segment, words, index, depth) {
     return "eval-not-allowlisted";
   }
 
-  const impact = highImpactRule(segment, executable, arguments_);
+  const impact = highImpactRule(segment, executable, arguments_, workspaceRoot);
   if (impact) {
     return impact;
   }
@@ -741,7 +789,7 @@ function inspectResolvedCommand(segment, words, index, depth) {
       if (depth <= 0) {
         return "nested-shell-depth-exceeded";
       }
-      return inspectCommand(arguments_[commandIndex + 1], depth - 1);
+      return inspectCommand(arguments_[commandIndex + 1], depth - 1, workspaceRoot);
     }
 
     for (const argument of arguments_) {
@@ -764,7 +812,7 @@ function inspectResolvedCommand(segment, words, index, depth) {
 // high-impact basename (or eval / nested shell) and re-apply policy from that
 // word onward. Closes `ionice rm -rf` / `xargs rm -rf` without listing every
 // launcher. Residual: pipe-into-interpreter (and tools like `find -delete`).
-function inspectFromHighImpactScan(segment, words, startIndex, depth) {
+function inspectFromHighImpactScan(segment, words, startIndex, depth, workspaceRoot) {
   for (let scan = startIndex; scan < words.length; scan += 1) {
     const word = words[scan];
     // Flags and non-path-like mid-argv words are not command basenames — skip.
@@ -784,7 +832,13 @@ function inspectFromHighImpactScan(segment, words, startIndex, depth) {
       executable === "." ||
       executable === "source"
     ) {
-      const rule = inspectResolvedCommand(segment, words, scan, depth);
+      const rule = inspectResolvedCommand(
+        segment,
+        words,
+        scan,
+        depth,
+        workspaceRoot,
+      );
       if (rule) {
         return rule;
       }
@@ -796,7 +850,7 @@ function inspectFromHighImpactScan(segment, words, startIndex, depth) {
   return null;
 }
 
-function inspectSegment(segment, depth) {
+function inspectSegment(segment, depth, workspaceRoot) {
   const words = segment
     .filter((token) => token.kind === "word")
     .map((token) => token.value);
@@ -852,18 +906,30 @@ function inspectSegment(segment, depth) {
 
     // First non-wrapper/non-launcher word: apply direct policy, then structural
     // high-impact scan so unknown launchers cannot hide destructive argv.
-    const direct = inspectResolvedCommand(segment, words, index, depth);
+    const direct = inspectResolvedCommand(
+      segment,
+      words,
+      index,
+      depth,
+      workspaceRoot,
+    );
     if (direct) {
       return direct;
     }
 
-    return inspectFromHighImpactScan(segment, words, index + 1, depth);
+    return inspectFromHighImpactScan(
+      segment,
+      words,
+      index + 1,
+      depth,
+      workspaceRoot,
+    );
   }
 
   return "unsafe-command-word";
 }
 
-function inspectCommand(command, depth = MAX_NESTED_SHELL_DEPTH) {
+function inspectCommand(command, depth = MAX_NESTED_SHELL_DEPTH, workspaceRoot = process.cwd()) {
   const trimmed = command.trim();
   if (NAMED_EXCEPTIONS.has(trimmed)) {
     return null;
@@ -879,7 +945,7 @@ function inspectCommand(command, depth = MAX_NESTED_SHELL_DEPTH) {
   }
 
   for (const segment of segments) {
-    const rule = inspectSegment(segment, depth);
+    const rule = inspectSegment(segment, depth, workspaceRoot);
     if (rule) {
       return rule;
     }
@@ -921,9 +987,18 @@ async function main() {
       throw new Error("invalid hook payload");
     }
 
-    const rule = inspectCommand(payload.command);
+    const workspaceRoot = verifyLedgerProjectRoot(payload);
+    const rule = inspectCommand(
+      payload.command,
+      MAX_NESTED_SHELL_DEPTH,
+      workspaceRoot,
+    );
+    const agentMessage =
+      rule === GH_PR_WITHOUT_VERIFY_RULE
+        ? GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE
+        : undefined;
     process.stdout.write(
-      `${JSON.stringify(decision(rule ? "deny" : "allow", rule))}\n`,
+      `${JSON.stringify(decision(rule ? "deny" : "allow", rule, agentMessage))}\n`,
     );
   } catch {
     process.stdout.write(

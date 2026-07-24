@@ -42,13 +42,13 @@
       "id": "devops-engineer",
       "kind": "agent",
       "path": "plugin/agents/devops-engineer.md",
-      "sha256": "7ef485a92627817b41a82b57e1d04a68f2be1e15b56872f7812523fe8f8c64fd"
+      "sha256": "e683764feca27a37186a23994f1238149d7f45078e5b9aebaf01abbe69abc0ad"
     },
     {
       "id": "engineer",
       "kind": "agent",
       "path": "plugin/agents/engineer.md",
-      "sha256": "3d924d35f2b41980aa500092e2485a5ca591d8f9eb14b37c0ce996fcae5bf1fd"
+      "sha256": "cfa58260b075f009e7c12e333fe58bd9bb166e381fddc066658d2777a9fbce7f"
     },
     {
       "id": "game-design-shaper",
@@ -60,7 +60,7 @@
       "id": "godot-engineer",
       "kind": "agent",
       "path": "plugin/agents/godot-engineer.md",
-      "sha256": "825caa80194fdab168c883dad208ec475453e72d066ed3a9bce2cc85c27c453e"
+      "sha256": "017b76321fbf666bfc7c6209f77409a736a2e8b6a7e398f22fd3dc6301355da2"
     },
     {
       "id": "library-investigator",
@@ -84,13 +84,13 @@
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
-      "sha256": "4f8e782702d5cb1849121276e650e50574419262485320de6bf20025266aa614"
+      "sha256": "da94372233daf59be2d4b951ddc27d9b5354d86ddffc6fb9142cf6cdb988b8ef"
     },
     {
       "id": "rust-engineer",
       "kind": "agent",
       "path": "plugin/agents/rust-engineer.md",
-      "sha256": "250f9955fefac0adef5a04c6846a11c9109ec68597e132866c502e58880b5820"
+      "sha256": "86413924cb7be86e63cbb8265af5cadcb7f3d753d5ae5a4d737c7fd9b180caae"
     },
     {
       "id": "security-reviewer",
@@ -108,7 +108,7 @@
       "id": "web3-engineer",
       "kind": "agent",
       "path": "plugin/agents/web3-engineer.md",
-      "sha256": "5aed22bfb6b24445db618014d2ddc1880f353f7dbbdd039343036cf482191003"
+      "sha256": "18d4cf18a20812ecb03a6073ff7a9b63cf1aa629fba00928747aea6af82ffce8"
     },
     {
       "id": "agent-new",
@@ -162,7 +162,7 @@
       "id": "actual-diff-verification",
       "kind": "rule",
       "path": "plugin/rules/actual-diff-verification.mdc",
-      "sha256": "5d31abc8e3a494f9293634dc03164b8b4db0947e51d3edc0d4952b5a8045c1d4"
+      "sha256": "4abd39e64984b51c273280fd598d188b87fa6e21afca9c3a3d077d5d9d6b46d8"
     },
     {
       "id": "anti-patterns",
@@ -216,7 +216,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "157e523c3be15e74252c1cf3296f3a00683e4a627923c37e062228f2adb98931"
+      "sha256": "808ca763cb6b849f4d5fa83eac7c0bc245f8b4b2571ecf19e769edc2430232d2"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -273,6 +273,12 @@
       "sha256": "708b249d3212ebbe1ebccbee7a8fb0c546f2700cb82d5077d76f44a5f561e53f"
     },
     {
+      "id": "verify-ledger-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
+      "sha256": "c8f1a8f06c5c166ebcfe81c067afd8571c8e38980ef83c51b1226266b1775254"
+    },
+    {
       "id": "memory-extract-nudge",
       "kind": "script",
       "path": "plugin/scripts/memory-extract-nudge.mjs",
@@ -289,6 +295,12 @@
       "kind": "script",
       "path": "plugin/scripts/pre-compact-notice.mjs",
       "sha256": "69fe94a9569c716c90913c714ce81973135419360b0c4d979434ddb712fd1fcf"
+    },
+    {
+      "id": "record-verify",
+      "kind": "script",
+      "path": "plugin/scripts/record-verify.mjs",
+      "sha256": "a957a0dbff4bcaac8560feeaa7dfbcb0769d3e0a10cdadd6820d2851f9f76e1e"
     },
     {
       "id": "session-state-inject",

@@ -33,6 +33,7 @@
     "release:bump": "node scripts/bump-version.mjs",
     "release:dry-run": "node scripts/release.mjs",
     "release:test": "node --test tests/release/*.test.mjs",
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "verify:record": "node plugin/scripts/record-verify.mjs"
   }
 }

@@ -35,9 +35,10 @@ Reach `checkpoint:impl-verified` before returning: build plus the affected
 tests, exercise the changed scene at runtime when behavior changed, and run
 every brief verification command to exit 0. In this harness repository, also
 run `npm run validate` on non-docs-only diffs. Skipped checks are not passes.
+After verification succeeds, record with `npm run verify:record -- --run -- <cmd>`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
-relevant output, acceptance results, frame-budget impact, any new asset,
+relevant output, `verify_ledger` status, acceptance results, frame-budget impact, any new asset,
 package, or server-endpoint dependency, and `G-data-document:` status. For a
 networked or save-tampering surface, tell the caller a security review is
 required (orchestrator-owned — do not dispatch it yourself).

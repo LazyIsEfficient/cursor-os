@@ -14,6 +14,15 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Added
+
+- **Mechanical verify-before-PR:** `.cursor/verify-ledger.json` (via
+  `npm run verify:record`) must prove `impl_verified` for HEAD before
+  `gh pr create|ready` (shell rule `gh-pr-without-verify`). CI
+  `check-pr-ship-gates` requires a checked **impl-verified** checkbox on
+  non-docs PRs. Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips the
+  shell-hook check.
+
 ## [0.2.0] - 2026-07-24
 
 ### Added

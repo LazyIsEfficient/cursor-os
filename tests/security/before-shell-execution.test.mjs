@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+  GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+  GH_PR_WITHOUT_VERIFY_RULE,
+  VERIFY_PR_GATE_DISABLED_ENV,
+  verifyLedgerPath,
+} from "../../scripts/lib/verify-ledger-lib.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = resolve(
@@ -12,12 +19,13 @@ const scriptPath = resolve(
 );
 const configPath = resolve(repositoryRoot, "plugin/hooks/hooks.json");
 
-function runHook(input) {
+function runHook(input, { cwd = repositoryRoot, env } = {}) {
   const result = spawnSync(process.execPath, [scriptPath], {
-    cwd: repositoryRoot,
+    cwd,
     encoding: "utf8",
+    env: env ? { ...process.env, ...env } : process.env,
     input,
-    timeout: 1_000,
+    timeout: 5_000,
   });
 
   assert.equal(result.error, undefined);
@@ -26,8 +34,39 @@ function runHook(input) {
   return JSON.parse(result.stdout);
 }
 
-function commandDecision(command) {
-  return runHook(`${JSON.stringify({ command, cwd: repositoryRoot, sandbox: true })}\n`);
+function commandDecision(command, options) {
+  return runHook(
+    `${JSON.stringify({ command, cwd: options?.cwd ?? repositoryRoot, sandbox: true })}\n`,
+    options,
+  );
+}
+
+function writeValidVerifyLedger(root, headSha) {
+  mkdirSync(join(root, ".cursor"), { recursive: true });
+  const at = new Date().toISOString();
+  writeFileSync(
+    verifyLedgerPath(root),
+    `${JSON.stringify(
+      {
+        version: 1,
+        conversation_id: "test",
+        impl_verified: true,
+        verified_at: at,
+        head_sha: headSha,
+        commands: [{ cmd: "npm test", exit_code: 0, at }],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
+function gitHeadSha(root) {
+  const result = spawnSync("git", ["-C", root, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0);
+  return result.stdout.trim();
 }
 
 test("allows benign everyday commands", () => {
@@ -299,7 +338,72 @@ test("dispatch-gate failClosed hooks always declare failClosed", async () => {
   }
 });
 
-test("guard source has no execution, network, credential, or filesystem APIs", async () => {
+test("denies gh pr create|ready without a valid verify ledger", () => {
+  // Ensure no leftover ledger from other tests.
+  try {
+    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
+  } catch {
+    /* ignore */
+  }
+
+  for (const command of [
+    "gh pr create",
+    "gh pr ready",
+    "gh pr create --fill",
+    "gh -R owner/repo pr create",
+    "gh --repo owner/repo pr create",
+    "gh --repo=owner/repo pr create",
+    "gh -R owner/repo pr ready",
+  ]) {
+    const response = commandDecision(command);
+    assert.equal(response.permission, "deny", command);
+    assert.match(
+      response.user_message,
+      new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+      command,
+    );
+    assert.equal(response.agent_message, GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE, command);
+  }
+});
+
+test("allows gh pr create|ready with a valid verify ledger for HEAD", () => {
+  const headSha = gitHeadSha(repositoryRoot);
+  writeValidVerifyLedger(repositoryRoot, headSha);
+  try {
+    for (const command of ["gh pr create", "gh pr ready"]) {
+      assert.deepEqual(
+        commandDecision(command),
+        { permission: "allow" },
+        command,
+      );
+    }
+  } finally {
+    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
+  }
+});
+
+test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
+  try {
+    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
+  } catch {
+    /* ignore */
+  }
+
+  assert.deepEqual(
+    commandDecision("gh pr create", {
+      env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
+    }),
+    { permission: "allow" },
+  );
+
+  // Other high-impact gh forms remain denied even with the emergency env.
+  const denied = commandDecision("gh repo delete owner/repository", {
+    env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
+  });
+  assert.equal(denied.permission, "deny");
+});
+
+test("guard entry has no direct fs/network/credential APIs (ledger via lib)", async () => {
   const source = await readFile(scriptPath, "utf8");
 
   assert.doesNotMatch(
@@ -309,6 +413,9 @@ test("guard source has no execution, network, credential, or filesystem APIs", a
   assert.doesNotMatch(source, /\b(?:eval|Function)\s*\(/u);
   assert.doesNotMatch(source, /\bprocess\.env\b/u);
   assert.doesNotMatch(source, /\b(?:homedir|readFile|readFileSync|fetch)\s*\(/u);
+  assert.match(source, /verify-ledger-lib\.mjs/u);
+  assert.match(source, /GH_PR_WITHOUT_VERIFY_RULE/u);
+  assert.match(source, /ghCommand/u);
   assert.match(source, /NAMED_EXCEPTIONS/u);
   assert.match(source, /MAX_INPUT_BYTES/u);
   assert.match(source, /isSafeCommandWord/u);

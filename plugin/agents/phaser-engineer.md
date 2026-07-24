@@ -37,10 +37,11 @@ Hard constraints on work you produce:
 Reach `checkpoint:impl-verified` before returning: `tsc`, the affected tests, a
 real browser run of the changed scene, and every brief verification command to
 exit 0. In this harness repository, also run `npm run validate` on
-non-docs-only diffs. Skipped checks are not passes.
+non-docs-only diffs. Skipped checks are not passes. After verification
+succeeds, record with `npm run verify:record -- --run -- <cmd>`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
-relevant output, acceptance results, measured frame-budget impact, any new
+relevant output, `verify_ledger` status, acceptance results, measured frame-budget impact, any new
 asset or npm dependency, and `G-data-document:` status. For a save,
 leaderboard, or score-submission surface, tell the caller a security review is
 required (orchestrator-owned — do not dispatch it yourself).

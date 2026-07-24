@@ -8,17 +8,24 @@ GATE="$REPO/scripts/check-pr-ship-gates.sh"
 pass() { echo "PASS $1"; }
 fail() { echo "FAIL $1"; exit 1; }
 
-BODY_OK=$'- [x] code-reviewer — dispatched\n- [x] security-reviewer — dispatched\n- [x] data-model-documenter — dispatched'
-BODY_NO_SEC=$'- [x] code-reviewer\n- [x] data-model-documenter'
-BODY_NO_DATA=$'- [x] code-reviewer\n- [x] security-reviewer'
-BODY_LIB_OK=$'- [x] code-reviewer\n- [x] security-reviewer\n- [x] data-model-documenter\n- [x] library-reviewer'
-BODY_DATA_MODEL_OK=$'- [x] code-reviewer\n- [x] security-reviewer\n- [x] data-model-documenter\n- [x] data-model-verifier'
-BODY_SENSITIVE_OK=$'- [x] security-reviewer\n- [x] data-model-documenter'
+BODY_OK=$'- [x] impl-verified — recorded\n- [x] code-reviewer — dispatched\n- [x] security-reviewer — dispatched\n- [x] data-model-documenter — dispatched'
+BODY_NO_IMPL=$'- [x] code-reviewer — dispatched\n- [x] security-reviewer — dispatched\n- [x] data-model-documenter — dispatched'
+BODY_NO_SEC=$'- [x] impl-verified\n- [x] code-reviewer\n- [x] data-model-documenter'
+BODY_NO_DATA=$'- [x] impl-verified\n- [x] code-reviewer\n- [x] security-reviewer'
+BODY_LIB_OK=$'- [x] impl-verified\n- [x] code-reviewer\n- [x] security-reviewer\n- [x] data-model-documenter\n- [x] library-reviewer'
+BODY_DATA_MODEL_OK=$'- [x] impl-verified\n- [x] code-reviewer\n- [x] security-reviewer\n- [x] data-model-documenter\n- [x] data-model-verifier'
+BODY_SENSITIVE_OK=$'- [x] impl-verified\n- [x] security-reviewer\n- [x] data-model-documenter'
 
 if SHIP_GATES_CHANGED_FILES="scripts/validate.mjs" PR_BODY="$BODY_OK" bash "$GATE"; then
-  pass "code change + all three agents"
+  pass "code change + impl-verified + all three agents"
 else
-  fail "code change + all three agents"
+  fail "code change + impl-verified + all three agents"
+fi
+
+if SHIP_GATES_CHANGED_FILES="scripts/validate.mjs" PR_BODY="$BODY_NO_IMPL" bash "$GATE" 2>/dev/null; then
+  fail "missing impl-verified should trip"
+else
+  pass "missing impl-verified trips"
 fi
 
 if SHIP_GATES_CHANGED_FILES="scripts/validate.mjs" PR_BODY="$BODY_NO_SEC" bash "$GATE" 2>/dev/null; then
@@ -39,6 +46,12 @@ else
   fail "docs-only skip"
 fi
 
+if SHIP_GATES_CHANGED_FILES="README.md" PR_BODY="$BODY_NO_IMPL" bash "$GATE"; then
+  pass "docs-only skip without impl-verified"
+else
+  fail "docs-only skip without impl-verified"
+fi
+
 if SHIP_GATES_CHANGED_FILES="plugin/skills/session-state/SKILL.md" PR_BODY="$BODY_LIB_OK" bash "$GATE"; then
   pass "skill SKILL.md + all reviewers"
 else
@@ -46,7 +59,7 @@ else
 fi
 
 if SHIP_GATES_CHANGED_FILES="plugin/skills/session-state/SKILL.md" PR_BODY='- [x] library-reviewer' bash "$GATE" 2>/dev/null; then
-  fail "skill SKILL.md library-only should trip (needs code+security+data-model)"
+  fail "skill SKILL.md library-only should trip (needs impl-verified+code+security+data-model)"
 else
   pass "skill SKILL.md library-only trips"
 fi
