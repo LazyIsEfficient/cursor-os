@@ -20,7 +20,7 @@ Identify which brief type fits:
    - **Assumed** — fill with default, tag inline: `[Assumed: <value> — say if wrong]`.
    - **Deferred** — mark `<TBD — to investigate>`.
 6. **Round 2 (only if needed).** 1–3 questions covering only unresolved load-bearing items. No round 3.
-7. Output the filled template in a single fenced markdown block. Add one line: *"Here is your game brief. Paste it into a fresh session with `game-concept-creator` (if concept is open) or `game-systems-designer` (if concept is locked) available, or say 'go' and I'll hand it to the right skill now."* Then stop.
+7. Output the filled template in a single fenced markdown block. Add one line: *"Here is your game brief. Paste it into a fresh session with [game-concept-creator](../../game-concept-creator/SKILL.md) (if concept is open) or `game-systems-designer` (if concept is locked) available, or say 'go' and I'll hand it to the right skill now."* Then stop.
 
 ## Hard Rules
 

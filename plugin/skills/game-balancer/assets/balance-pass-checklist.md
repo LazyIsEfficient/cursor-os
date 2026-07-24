@@ -50,14 +50,14 @@
 - [ ] Cadences set per metric (real-time / hourly / daily / cohort)
 - [ ] Alert thresholds set (above / below model triggers re-tune review)
 - [ ] Hand-off to `godot-engineer` (or other engine team) for instrumentation
-- [ ] Hand-off to `site-reliability-engineering` for SLI / alerting setup
+- [ ] Hand-off to [site-reliability-engineering](../../site-reliability-engineering/SKILL.md) for SLI / alerting setup
 
 ## Cross-skill validation
 
 - [ ] **`game-systems-designer`** has reviewed and signed off that no rule changes were silently made
-- [ ] **`game-monetization-strategist`** has reviewed and signed off that the economy supports the target ARPDAU / LTV
+- [ ] **[game-monetization-strategist](../../game-monetization-strategist/SKILL.md)** has reviewed and signed off that the economy supports the target ARPDAU / LTV
 - [ ] **`iap-manager`** has the currency velocities needed to size starter packs and bundles
-- [ ] **`game-marketer`** has the time-to-content numbers needed for store-page promises and soft-launch KPI floors
+- [ ] **[game-marketer](../../game-marketer/SKILL.md)** has the time-to-content numbers needed for store-page promises and soft-launch KPI floors
 
 ## Documentation
 

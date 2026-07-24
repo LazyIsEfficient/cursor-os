@@ -19,6 +19,18 @@ const scripts = {
 // has to satisfy the static safety scan below.
 const shellGuard = "plugin/scripts/before-shell-execution.mjs";
 
+// Dispatch-gate thin entries: registered in hooks.json; logic (and writes) live
+// in plugin/scripts/lib/. Entries must still pass the static safety scan.
+const dispatchGateScripts = [
+  "plugin/scripts/dispatch-gate-session-init.mjs",
+  "plugin/scripts/dispatch-gate-pre-tool.mjs",
+  "plugin/scripts/dispatch-gate-post-tool.mjs",
+  "plugin/scripts/dispatch-gate-before-read.mjs",
+  "plugin/scripts/dispatch-gate-after-file-edit.mjs",
+  "plugin/scripts/dispatch-gate-subagent-stop.mjs",
+  "plugin/scripts/dispatch-gate-stop.mjs",
+];
+
 // Mirrors the runHook helper in before-shell-execution.test.mjs: every advisory
 // hook must exit 0, stay silent on stderr, and emit exactly one JSON object.
 function runHook(script, input, options = {}) {
@@ -375,7 +387,7 @@ function declaredHookScripts() {
 test("the static safety scan covers every script registered in hooks.json", () => {
   assert.deepEqual(
     [...declaredHookScripts()].sort(),
-    [...Object.values(scripts), shellGuard].sort(),
+    [...Object.values(scripts), shellGuard, ...dispatchGateScripts].sort(),
     "a hooks.json script is not covered by the static safety scan below",
   );
 });

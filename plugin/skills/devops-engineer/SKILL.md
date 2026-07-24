@@ -55,7 +55,7 @@ After completing DevOps work, confirm each item before reporting done:
 
 ## Related skills
 
-- `site-reliability-engineering` — operates the production systems this skill provisions; SRE owns SLOs, incidents, and on-call while DevOps owns the cluster and IaC that underpin them.
+- [site-reliability-engineering](../site-reliability-engineering/SKILL.md) — operates the production systems this skill provisions; SRE owns SLOs, incidents, and on-call while DevOps owns the cluster and IaC that underpin them.
 - `cloud-infrastructure` — provisions the cloud primitives (VPCs, managed databases, IAM) that Kubernetes clusters and Pulumi stacks run on top of.
 - `security-and-hardening` — RBAC design, secrets management, and supply-chain security for container images and IaC overlap heavily; consult for any security-sensitive cluster change.
 - `ci-cd-and-automation` — owns CI/CD workflow authoring (GitHub Actions YAML, quality gates, feature flags); use when the task is about *writing pipeline config*, not the Helm/Pulumi deploy targets those pipelines hit.

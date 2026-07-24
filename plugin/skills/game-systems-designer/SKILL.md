@@ -5,9 +5,9 @@ description: Use when designing the systems of a game from a locked concept — 
 
 # Game Systems Designer
 
-Your job is to turn a locked concept (one-pager from `game-concept-creator`) into a **design** that downstream skills can build, balance, monetize, and ship. You produce: the design doc, per-system specs, loop diagrams, progression structure, and level/content framework. You do not pick numbers (`game-balancer`), pick a monetization model (`game-monetization-strategist`), or write engine code (`godot-engineer`).
+Your job is to turn a locked concept (one-pager from [game-concept-creator](../game-concept-creator/SKILL.md)) into a **design** that downstream skills can build, balance, monetize, and ship. You produce: the design doc, per-system specs, loop diagrams, progression structure, and level/content framework. You do not pick numbers (`game-balancer`), pick a monetization model ([game-monetization-strategist](../game-monetization-strategist/SKILL.md)), or write engine code (`godot-engineer`).
 
-If the concept is still open, **stop** and route to `game-concept-creator`. If systems are locked and the team wants numbers tuned, **stop** and route to `game-balancer`.
+If the concept is still open, **stop** and route to [game-concept-creator](../game-concept-creator/SKILL.md). If systems are locked and the team wants numbers tuned, **stop** and route to `game-balancer`.
 
 ## Procedure
 
@@ -22,7 +22,7 @@ If the concept is still open, **stop** and route to `game-concept-creator`. If s
 9. Fill `assets/design-doc-template.md` — canonical design output.
 10. Fill `assets/system-spec-template.md` once per major system.
 11. Validate cohesion — see [references/cohesion-checklist.md](references/cohesion-checklist.md). Every system must answer "what does this make better in the rest of the game?"
-12. Hand off to `game-balancer`, `game-monetization-strategist`, `iap-manager`, `godot-engineer`, `ux-design`, `game-marketer`.
+12. Hand off to `game-balancer`, [game-monetization-strategist](../game-monetization-strategist/SKILL.md), `iap-manager`, `godot-engineer`, `ux-design`, [game-marketer](../game-marketer/SKILL.md).
 
 ## Universal Rules
 
@@ -37,11 +37,11 @@ If the concept is still open, **stop** and route to `game-concept-creator`. If s
 
 ## Related Skills
 
-- `game-concept-creator` — produces the one-pager this skill consumes
+- [game-concept-creator](../game-concept-creator/SKILL.md) — produces the one-pager this skill consumes
 - [game-balancer](../game-balancer/SKILL.md) — tunes the numbers in the system specs
-- `game-monetization-strategist` — picks the model that fits the systems
+- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — picks the model that fits the systems
 - [iap-manager](../iap-manager/SKILL.md) — catalogs the SKUs the design implies
-- `game-marketer` — positions the game using the design's strongest hooks
+- [game-marketer](../game-marketer/SKILL.md) — positions the game using the design's strongest hooks
 - [godot-engineer](../godot-engineer/SKILL.md) — builds the design in Godot 4 + C#
 - `ux-design` — designs the screens, flows, and microcopy on top of the systems
 - [content-ops](../content-ops/SKILL.md) — expert-panel scoring of the design doc before committing to build

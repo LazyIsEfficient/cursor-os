@@ -264,20 +264,33 @@ different machine or CLI version can invalidate it.
 - **Parallel subagent observation:** unverified. The hook reference documents
   `is_parallel_worker` on `subagentStart`, but no live parallel run or hook event
   was captured.
-- **Per-prompt context injection:** explicitly unavailable. Cursor has no
-  per-prompt context-injection hook. `beforeSubmitPrompt` exposes only
-  `continue` and `user_message`, so it can allow or block a prompt but cannot
-  add context to it. The Claude original's `UserPromptSubmit` digest
+- **Marketplace installation in Customize:** unverified and editor-only/manual.
+- **Cloud Agent parity:** unverified; no Cloud Agent probe was run. Do not treat
+  local Editor/CLI results as Cloud evidence.
+
+## Won't port (platform limits)
+
+These agentic-os behaviors are **out of scope for cursor-os** because Cursor
+does not expose the required platform surface. They are not backlog items until
+that surface exists and is re-verified in the matrix.
+
+- **Per-prompt session reinjection:** explicitly unavailable — **won't port**.
+  Cursor has no per-prompt context-injection hook. `beforeSubmitPrompt` exposes
+  only `continue` and `user_message`, so it can allow or block a prompt but
+  cannot add context to it. The Claude original's `UserPromptSubmit` digest
   re-injection therefore has no Cursor equivalent. Consequence: session state is
   injected once at `sessionStart` and is **not** restored after a compaction —
   `preCompact` is observational and its `user_message` reaches the user, not the
-  model's context, so state must be re-read manually via `/state`. Evidence:
+  model's context, so state must be re-read manually via `/state`. Keep that
+  mitigation; do not invent a reinjection shim. Evidence:
   [Hooks documentation](https://cursor.com/docs/hooks).
 - **`sessionStart` in Cloud Agents:** documented as unsupported, consistent with
-  this repository's existing local-only scope and Cloud Agent exclusion.
-  Evidence: [Hooks documentation](https://cursor.com/docs/hooks).
-- **Marketplace installation in Customize:** unverified and editor-only/manual.
-- **Cloud Agent parity:** unverified; no Cloud Agent probe was run.
+  this repository's existing local-only scope and Cloud Agent exclusion. Not a
+  port target. Evidence: [Hooks documentation](https://cursor.com/docs/hooks).
+
+Related: opt-in dispatch-gate is portable and shipped **disabled** — see
+[dispatch-enforcement.md](dispatch-enforcement.md). That is operator policy, not
+a platform won't-port.
 
 ## Reproduce
 

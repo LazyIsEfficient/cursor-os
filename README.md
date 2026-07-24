@@ -48,7 +48,7 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `technical-pm`, `marketer`, and `game-design-shaper` for domain shaping; and
   `capability-probe` for capability
   detection;<!-- components:agent:end -->
-- <!-- components:skill:start -->thirty-seven skills: `prompt-shaping`,
+- <!-- components:skill:start -->forty-five skills: `prompt-shaping`,
   `planning-and-task-breakdown`, `incremental-implementation`,
   `code-review-and-quality`, and `security-engineering` for the core
   shape/plan/implement/review path; `data-model-documentation`,
@@ -56,26 +56,31 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   library audit method; `findings-ledger`, `session-state`, and
   `memory-extraction` for finding recurrence and durable state;
   `typescript-testing-backend`, `typescript-testing-frontend`,
-  `typescript-data-engineering`, and `browser-testing-with-devtools` for
-  TypeScript and browser work; `rust-engineer`, `godot-engineer`, and
-  `phaser-engineer` for the Rust and game stacks; `deployment-pipelines` and
-  `release-manager` for pipelines and release coordination;
+  `typescript-data-engineering`, `typescript-analytics`, and
+  `browser-testing-with-devtools` for TypeScript and browser work;
+  `rust-engineer`, `godot-engineer`, and `phaser-engineer` for the Rust and
+  game stacks; `deployment-pipelines`, `release-manager`, and
+  `site-reliability-engineering` for pipelines, release, and runtime ops;
   `library-investigator` and `adversarial-claims-reviewer` for auditing this
   plugin's own surfaces and documents that make formal claims;
   `devops-engineer` and `web3-smart-contract-engineering` for platform and
-  EVM work; `game-design-shaper`, `game-systems-designer`, `game-balancer`, and
-  `iap-manager` for game design and monetization ops; `marketing-shaper`,
-  `content-ops`, `conversion-ops`, `growth-engine`, `outbound-engine`,
-  `seo-ops`, `revenue-intelligence`, `autoresearch`, and `telemetry` for
-  marketing, growth, and measurement;<!-- components:skill:end -->
-- <!-- components:command:start -->three commands: `/review-gate`,
-  `/triage-findings`, and `/state`;<!-- components:command:end -->
-- always-applied factual-correctness, orchestration, review-tier, and
-  actual-diff rules; and
-- four hook events backed by dependency-free Node scripts: a fail-closed
-  `beforeShellExecution` guard, plus advisory `sessionStart` (session-state and
-  memory-index injection), `preCompact` (post-compaction re-read notice), and
-  `stop` (memory-extraction nudge) hooks that fail open.
+  EVM work; `game-design-shaper`, `game-concept-creator`,
+  `game-systems-designer`, `game-balancer`, `game-monetization-strategist`,
+  `iap-manager`, and `game-marketer` for game design and monetization ops;
+  `marketing-shaper`, `content-ops`, `content-pipeline`, `conversion-ops`,
+  `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
+  `autoresearch`, `codebase-cost-estimator`, `security`, and `telemetry` for
+  marketing, growth, measurement, and sanitization;<!-- components:skill:end -->
+- <!-- components:command:start -->seven commands: `/review-gate`,
+  `/triage-findings`, `/state`, `/skill-new`, `/agent-new`,
+  `/audit-library`, and `/eval-harness`;<!-- components:command:end -->
+- always-applied factual-correctness, orchestration, review-tier,
+  actual-diff, anti-patterns, and briefing rules; and
+- nine hook events backed by dependency-free Node scripts: a fail-closed
+  `beforeShellExecution` guard; advisory `sessionStart` / `preCompact` /
+  `stop` (and related) hooks that fail open; plus an **opt-in** dispatch-gate
+  layer (`preToolUse` / `beforeReadFile` fail-closed when enabled — ships
+  disabled; see [docs/dispatch-enforcement.md](docs/dispatch-enforcement.md)).
 
 The core path is: shape an unclear request, plan an explicit dependency graph,
 implement in tested increments, run deterministic local verification, dispatch
@@ -155,7 +160,10 @@ Predict collisions before you rely on a name:
   for the same events; they do not replace them. The plugin registers
   `beforeShellExecution` with `failClosed: true` and a 5s timeout — if that
   hook errors or times out, it can gate **every** shell command. `sessionStart`
-  injectors can therefore run twice (yours plus the plugin's).
+  injectors can therefore run twice (yours plus the plugin's). Dispatch
+  enforcement hooks are registered but **disabled by default** (`enabled:
+  false`); enabling is an operator choice —
+  [dispatch-enforcement.md](docs/dispatch-enforcement.md).
 - **On-disk symlink ≠ Editor loaded the plugin.** The documented
   `plugins/local` symlink does not write `plugins.json`. After install,
   `npm run plugin:editor:verify` typically reports

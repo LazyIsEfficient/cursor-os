@@ -8,6 +8,8 @@ const testDirectory = dirname(fileURLToPath(import.meta.url));
 const rulesDirectory = join(testDirectory, "../../plugin/rules");
 const expectedRules = [
   "actual-diff-verification.mdc",
+  "anti-patterns.mdc",
+  "briefing.mdc",
   "communication.mdc",
   "evidence-review-tiers.mdc",
   "factual-correctness.mdc",
@@ -155,5 +157,27 @@ test("review rule fixes tier semantics, priorities, and Pattern 3 DAG", async ()
     /data-model-verifier/u,
     /explicitly waive/i,
     /checkpoint:ship-ready/u,
+  ]);
+});
+
+test("anti-patterns rule forbids overlapping writes and skipped gates", async () => {
+  const { body } = (await loadRules())["anti-patterns.mdc"];
+  requirePatterns(body, "anti-patterns.mdc", [
+    /best-of-n-runner/u,
+    /Skipping the shaper/i,
+    /without reading the diff/i,
+    /Sequential `Task` dispatch/u,
+    /gate is the gate/i,
+  ]);
+});
+
+test("briefing rule requires cold-context Task prompts with done criteria", async () => {
+  const { body } = (await loadRules())["briefing.mdc"];
+  requirePatterns(body, "briefing.mdc", [
+    /`Task` subagent/u,
+    /why it matters/i,
+    /what `done` looks like/u,
+    /already ruled out/i,
+    /delegates synthesis/i,
   ]);
 });

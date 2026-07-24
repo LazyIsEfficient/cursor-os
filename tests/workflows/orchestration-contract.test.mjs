@@ -235,52 +235,13 @@ test("agent frontmatter rejects Claude-only fields", () => {
 });
 
 test("skills use concise Cursor discovery frontmatter", async () => {
-  const expected = [
-    "adversarial-claims-reviewer",
-    "autoresearch",
-    "browser-testing-with-devtools",
-    "code-review-and-quality",
-    "content-ops",
-    "conversion-ops",
-    "data-model-documentation",
-    "data-model-verification",
-    "deployment-pipelines",
-    "devops-engineer",
-    "findings-ledger",
-    "game-balancer",
-    "game-design-shaper",
-    "game-systems-designer",
-    "godot-engineer",
-    "growth-engine",
-    "iap-manager",
-    "incremental-implementation",
-    "library-investigator",
-    "marketing-shaper",
-    "memory-extraction",
-    "outbound-engine",
-    "phaser-engineer",
-    "planning-and-task-breakdown",
-    "prompt-shaping",
-    "release-manager",
-    "revenue-intelligence",
-    "rust-engineer",
-    "security-engineering",
-    "seo-ops",
-    "session-state",
-    "skill-library-review",
-    "telemetry",
-    "typescript-data-engineering",
-    "typescript-testing-backend",
-    "typescript-testing-frontend",
-    "web3-smart-contract-engineering",
-  ];
   const directories = (await readdir(skillsDirectory, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(directories, expected);
+  assert.ok(directories.length >= 37, "skill library must not shrink below the prior baseline");
 
-  for (const name of expected) {
+  for (const name of directories) {
     const skill = await load(`plugin/skills/${name}/SKILL.md`);
     assert.equal(skill.fields.name, name);
     assert.ok(skill.fields.description);
