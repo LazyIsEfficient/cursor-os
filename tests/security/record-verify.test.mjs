@@ -16,10 +16,15 @@ import {
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = resolve(repositoryRoot, "plugin/scripts/record-verify.mjs");
 
-function runRecord(args, { cwd = repositoryRoot } = {}) {
+function runRecord(args, { cwd = repositoryRoot, env } = {}) {
   return spawnSync(process.execPath, [scriptPath, ...args], {
     cwd,
     encoding: "utf8",
+    // Blank CURSOR_PROJECT_DIR so verifyLedgerProjectRoot({}) honors cwd
+    // (mirrors tests/security/context-hooks.test.mjs). Otherwise an ambient
+    // CURSOR_PROJECT_DIR would redirect appends to the real repo ledger and
+    // reintroduce the cross-file race this helper isolates.
+    env: { ...process.env, CURSOR_PROJECT_DIR: "", ...env },
   });
 }
 
@@ -106,7 +111,7 @@ test("rejects trivial commands before spawn", () => {
 
 test("requires --profile on first write for HEAD", () => {
   withTempProjectRoot((root) => {
-    const result = runRecord(["--run", "--", "node", "--version"], {
+    const result = runRecord(["--run", "--", "node", "-e", "process.exit(0)"], {
       cwd: root,
     });
     assert.equal(result.status, 2);
@@ -162,6 +167,12 @@ test("verifyCommandIsTrivial detects weak commands", () => {
   assert.equal(verifyCommandIsTrivial("/bin/false"), true);
   assert.equal(verifyCommandIsTrivial("true x"), true);
   assert.equal(verifyCommandIsTrivial("env true"), true);
+  assert.equal(verifyCommandIsTrivial("nice true"), true);
+  assert.equal(verifyCommandIsTrivial("pwd"), true);
+  assert.equal(verifyCommandIsTrivial("date"), true);
+  assert.equal(verifyCommandIsTrivial("whoami"), true);
+  assert.equal(verifyCommandIsTrivial("node --version"), true);
+  assert.equal(verifyCommandIsTrivial("git status"), true);
   assert.equal(verifyCommandIsTrivial(":"), true);
   assert.equal(verifyCommandIsTrivial("echo"), true);
   assert.equal(verifyCommandIsTrivial("echo hello"), true);
@@ -198,6 +209,53 @@ test("custom profile rejects path-prefixed true/false no-ops", () => {
       "abc123",
     ).ok,
     false,
+  );
+});
+
+test("custom profile rejects inert spawned commands (pwd/date bypass)", () => {
+  const at = new Date().toISOString();
+  const spawned = (cmd) => ({ cmd, exit_code: 0, at, spawned: true });
+  // Tier 1 finding: ≥2 non-trivial alone was gameable with pwd + date.
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [spawned("pwd"), spawned("date")]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("whoami"),
+      spawned("uname"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("nice true"),
+      spawned("timeout 1 true"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerValidateForHead(
+      {
+        version: 2,
+        profile: "custom",
+        conversation_id: "",
+        impl_verified: true,
+        verified_at: at,
+        head_sha: "abc123",
+        commands: [spawned("pwd"), spawned("date")],
+      },
+      "abc123",
+    ).ok,
+    false,
+  );
+  // Verification-shaped pair still satisfies custom.
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("make test"),
+      spawned("pytest"),
+    ]),
+    true,
   );
 });
 

@@ -29,13 +29,14 @@ here therefore corresponds to a single consistent version across the repository.
   version `2` with a required `profile` (`node-harness` | `rust` |
   `custom`). PR validity requires every command to have `spawned: true`
   and profile coverage (node-harness: validate + test; rust: `cargo fmt
-  --check`, clippy, test/nextest; custom: ≥2 non-trivial spawned
-  commands). `record-verify` accepts only `--profile … --run -- <cmd>`;
+  --check`, clippy, test/nextest; custom: ≥2 verification-shaped spawned
+  commands — test/lint/build runners, not identity probes like `pwd`/`date`).
+  `record-verify` accepts only `--profile … --run -- <cmd>`;
   `--cmd`/`--exit` fake recording is removed. Trivial commands (`true`,
-  `/bin/true`, `echo`, `env true`, …) are rejected. Profile coverage is
-  argv-shaped (not substring), so embedding tokens in `node -e` payloads
-  does not satisfy node-harness/rust requirements. Version 1 ledgers fail
-  the PR gate (`bad-version`).
+  `/bin/true`, `echo`, `env true`, `pwd`, `nice true`, …) are rejected.
+  Profile coverage is argv-shaped (not substring), so embedding tokens in
+  `node -e` payloads does not satisfy node-harness/rust requirements.
+  Version 1 ledgers fail the PR gate (`bad-version`).
   **Residual:** Write-tool forging a full v2 ledger with `spawned: true`
   remains possible — not claimed solved.
 

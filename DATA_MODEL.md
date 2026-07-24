@@ -10,6 +10,7 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `feat/verify-ledger-profiles` | Tightened `custom` profile coverage to a verification-shaped positive allowlist (closes `pwd`+`date` PR-gate bypass); expanded trivial/wrapper peeling; blanked `CURSOR_PROJECT_DIR` in record-verify test isolation. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Bumped `VerifyLedger` to version 2 with required `profile`, `spawned` on commands, profile coverage rules, and `--run`-only `VerifyRecordCliResult` (removed `--cmd`/`--exit`; noted Write-tool forgery residual). |
 | 2026-07-24 | `feat/verify-before-pr` | Re-verified verify-before-PR catalog against sources; added `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE` to `BeforeShellExecutionHook` Source; confirmed `VerifyLedger` / `VerifyRecordCliResult` / `GatePlanResult` impl-verified notes match code. |
 | 2026-07-24 | `feat/verify-before-pr` | Corrected `VerifyLedger` PR-validity (`version === 1`, nullable `verified_at`); cataloged `VerifyRecordCliResult`; noted hard-coded CI `impl-verified` checkbox on `GatePlanResult` / ship-gates (not in planner `checkboxes`); clarified `gh-pr-without-verify` agent_message override on `BeforeShellExecutionHook`. |
@@ -133,13 +134,13 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 | `at` | string | yes | ISO-8601 timestamp at append time (written always; not separately re-checked by `verifyLedgerValidateForHead`) |
 | `spawned` | boolean | yes | Must be `true` for PR validity (`unspawned-command` otherwise). Only `record-verify --run` sets this |
 
-Profile coverage (`verifyLedgerProfileCoverage` — argv-shaped match after peeling `env`/`command`/`builtin`/`nohup`; substring embedding inside `node -e` payloads does not count):
+Profile coverage (`verifyLedgerProfileCoverage` — argv-shaped match after peeling wrappers (`env`/`command`/`builtin`/`nohup`/`sudo`/`nice`/`time`/`timeout`/`stdbuf`/`busybox` and GNU `g*` variants); substring embedding inside `node -e` payloads does not count):
 
 | profile | Required matches |
 |---|---|
 | `node-harness` | (1) `npm run validate` OR `node scripts/validate.mjs` (2) `npm test` OR `npm run test` |
 | `rust` | (1) `cargo fmt` with `--check` (2) `cargo clippy` (3) `cargo test` OR `cargo nextest` |
-| `custom` | ≥2 non-trivial spawned commands |
+| `custom` | ≥2 spawned non-trivial **verification-shaped** commands (positive allowlist: npm/pnpm/yarn/bun scripts, node `--test`/scripts, cargo runners, make/just/pytest/go/…, `scripts/`/`bin/` paths). Identity probes (`pwd`/`date`/`whoami`/`git status`/`node --version`) do not count |
 
 Valid for PR (`verifyLedgerValidateForHead` / `verifyLedgerIsValidForHead`) when `version === 2`, profile known, `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, every `exit_code === 0`, every `spawned === true`, and profile coverage holds. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox). **Residual:** Write-tool forging a full v2 ledger with `spawned: true` remains possible.
 

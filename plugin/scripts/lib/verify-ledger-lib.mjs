@@ -175,17 +175,57 @@ export function tokenizeVerifyCommand(cmd) {
   return tokens;
 }
 
-/** Peel env/command/builtin/nohup (and env KEY=val) so argv matching sees the real binary. */
+/** Wrappers peeled so argv matching / trivial checks see the real binary. */
+const VERIFY_ARGV_WRAPPERS = new Set([
+  "env",
+  "command",
+  "builtin",
+  "nohup",
+  "sudo",
+  "nice",
+  "gnice",
+  "time",
+  "gtime",
+  "timeout",
+  "gtimeout",
+  "stdbuf",
+  "gstdbuf",
+  "busybox",
+]);
+
+/** Identity / info binaries that never count as verification evidence. */
+const VERIFY_TRIVIAL_BINARIES = new Set([
+  "echo",
+  "printf",
+  "true",
+  "false",
+  ":",
+  "pwd",
+  "date",
+  "whoami",
+  "uname",
+  "id",
+  "hostname",
+  "which",
+  "type",
+  "printenv",
+  "basename",
+  "dirname",
+  "yes",
+  "sleep",
+  "clear",
+  "tput",
+]);
+
+/**
+ * Peel wrappers (env/command/builtin/nohup/sudo/nice/time/timeout/stdbuf/…)
+ * and env KEY=val so argv matching sees the real binary.
+ */
 function peelVerifyArgv(tokens) {
   const peeled = [...tokens];
   while (peeled.length > 0) {
     const base = commandBasename(peeled[0]).toLowerCase();
-    if (
-      base !== "env" &&
-      base !== "command" &&
-      base !== "builtin" &&
-      base !== "nohup"
-    ) {
+    if (!VERIFY_ARGV_WRAPPERS.has(base)) {
       break;
     }
     peeled.shift();
@@ -194,6 +234,54 @@ function peelVerifyArgv(tokens) {
         peeled.length > 0 &&
         /^[A-Za-z_][A-Za-z0-9_]*=/u.test(peeled[0])
       ) {
+        peeled.shift();
+      }
+    } else if (base === "timeout" || base === "gtimeout") {
+      // Skip optional flags then required DURATION.
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
+        const option = peeled[0];
+        peeled.shift();
+        if (
+          ["-k", "--kill-after", "-s", "--signal"].includes(option) ||
+          option.startsWith("--kill-after=") ||
+          option.startsWith("--signal=")
+        ) {
+          if (!option.includes("=") && peeled.length > 0) {
+            peeled.shift();
+          }
+        }
+      }
+      if (peeled.length > 0) {
+        peeled.shift();
+      }
+    } else if (base === "nice" || base === "gnice") {
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
+        const option = peeled[0];
+        peeled.shift();
+        if (option === "-n" || option === "--adjustment") {
+          if (peeled.length > 0) {
+            peeled.shift();
+          }
+        }
+      }
+    } else if (base === "stdbuf" || base === "gstdbuf") {
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
+        peeled.shift();
+      }
+    } else if (base === "sudo") {
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
+        const option = peeled[0];
+        peeled.shift();
+        if (["-u", "-g", "-h", "-p", "-C"].includes(option) && peeled.length > 0) {
+          peeled.shift();
+        }
+      }
+    } else if (base === "time" || base === "gtime") {
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
+        peeled.shift();
+      }
+    } else if (base === "busybox") {
+      while (peeled.length > 0 && peeled[0].startsWith("-")) {
         peeled.shift();
       }
     }
@@ -223,11 +311,23 @@ export function verifyCommandIsTrivial(cmd) {
     return true;
   }
   const base = commandBasename(tokens[0]);
+  if (VERIFY_TRIVIAL_BINARIES.has(base)) {
+    return true;
+  }
+  // `git` identity/status forms never verify product code.
   if (
-    base === "echo" ||
-    base === "printf" ||
-    base === "true" ||
-    base === "false"
+    base === "git" &&
+    (tokens[1] === "status" ||
+      tokens[1] === "rev-parse" ||
+      tokens[1] === "--version" ||
+      tokens[1] === "version")
+  ) {
+    return true;
+  }
+  // Version-only probes (`node --version`, `npm -v`, …).
+  if (
+    tokens.length === 2 &&
+    (tokens[1] === "--version" || tokens[1] === "-v" || tokens[1] === "-V")
   ) {
     return true;
   }
@@ -300,6 +400,100 @@ function matchesCargoTest(tokens) {
 }
 
 /**
+ * Positive allowlist for `custom` profile coverage — ≥2 spawned commands that
+ * look like real verification (test/lint/build runners), not identity probes.
+ * Denylisting alone is endless (`pwd`/`date`/`whoami`/…); this closes the
+ * Tier 1 bypass of clearing the PR gate with two inert spawned commands.
+ */
+function matchesCustomVerification(tokens) {
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    return false;
+  }
+  if (
+    matchesNodeHarnessValidate(tokens) ||
+    matchesNodeHarnessTest(tokens) ||
+    matchesCargoFmtCheck(tokens) ||
+    matchesCargoClippy(tokens) ||
+    matchesCargoTest(tokens)
+  ) {
+    return true;
+  }
+
+  const bin = commandBasename(tokens[0] ?? "").toLowerCase();
+
+  // Package-manager script runners.
+  if (
+    ["npm", "pnpm", "yarn", "bun"].includes(bin) &&
+    tokens[1] === "run" &&
+    typeof tokens[2] === "string" &&
+    tokens[2].length > 0
+  ) {
+    return true;
+  }
+  if (["pnpm", "yarn", "bun"].includes(bin) && tokens[1] === "test") {
+    return true;
+  }
+
+  // Node test runners / scripts.
+  if (bin === "node") {
+    if (tokens.includes("--test")) {
+      return true;
+    }
+    const script = typeof tokens[1] === "string" ? tokens[1].replace(/\\/gu, "/") : "";
+    if (/\.(mjs|cjs|js)$/iu.test(script)) {
+      return true;
+    }
+  }
+
+  // Common language / build test & lint runners.
+  if (
+    [
+      "make",
+      "just",
+      "task",
+      "tox",
+      "nox",
+      "pytest",
+      "mvn",
+      "gradle",
+      "gradlew",
+      "bazel",
+      "sbt",
+      "go",
+      "deno",
+      "cmake",
+      "ninja",
+      "meson",
+    ].includes(bin)
+  ) {
+    return true;
+  }
+
+  if (
+    (bin === "python" || bin === "python3") &&
+    tokens[1] === "-m" &&
+    ["pytest", "unittest", "mypy", "ruff", "flake8", "pylint"].includes(
+      tokens[2],
+    )
+  ) {
+    return true;
+  }
+
+  // Project-local scripts under scripts/ or bin/, or names that embed
+  // test/validate/lint/check/verify.
+  const first = tokens[0] ?? "";
+  if (
+    /^(?:\.\/)?(?:scripts|bin)\//u.test(first.replace(/\\/gu, "/")) ||
+    (/(?:test|validate|lint|check|verify)/iu.test(bin) &&
+      (first.includes("/") || /\.(sh|py|rb|pl|mjs|cjs|js)$/iu.test(bin)))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Whether recorded commands satisfy the stack profile's required coverage.
  * Matching is argv-shaped (not substring): embedding tokens inside `node -e`
  * payloads does not count.
@@ -335,16 +529,19 @@ export function verifyLedgerProfileCoverage(profile, commands) {
   }
 
   if (profile === "custom") {
-    const nonTrivialSpawned = commands.filter(
+    const qualifying = commands.filter(
       (entry) =>
         entry !== null &&
         typeof entry === "object" &&
         !Array.isArray(entry) &&
         entry.spawned === true &&
         typeof entry.cmd === "string" &&
-        !verifyCommandIsTrivial(entry.cmd),
+        !verifyCommandIsTrivial(entry.cmd) &&
+        matchesCustomVerification(
+          peelVerifyArgv(tokenizeVerifyCommand(entry.cmd)),
+        ),
     );
-    return nonTrivialSpawned.length >= 2;
+    return qualifying.length >= 2;
   }
 
   return false;
@@ -572,5 +769,5 @@ export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Choose a stack profile and record only via spawn: " +
   "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
   "node-harness needs validate + test; rust needs cargo fmt --check, clippy, and test/nextest; " +
-  "custom needs ≥2 non-trivial spawned commands. Fake `--cmd/--exit` recording is removed. " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
   "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check.";
