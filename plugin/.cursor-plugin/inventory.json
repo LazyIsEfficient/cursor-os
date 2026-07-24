@@ -216,7 +216,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "7461e9c1234727390a2e61dc7d39b0aedd580c4d3e796fc5b97c13c6e0bec48d"
+      "sha256": "808ca763cb6b849f4d5fa83eac7c0bc245f8b4b2571ecf19e769edc2430232d2"
     },
     {
       "id": "dispatch-gate-after-file-edit",
