@@ -545,8 +545,15 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
       // normally with a code of our choosing.
       assert.equal(terminatingSignal, signal);
       assert.equal(code, null);
-      // Nothing survives under the work root.
-      assert.deepEqual(await readdir(workRoot), []);
+      // Nothing survives under the work root. Poll briefly: the signal handler kills the
+      // detached mock CLI then rmSyncs; under CI load the directory entry can lag the exit
+      // event by a tick or two even when cleanup already ran.
+      let leftovers = await readdir(workRoot);
+      for (let attempt = 0; attempt < 40 && leftovers.length > 0; attempt += 1) {
+        await setTimeout(25);
+        leftovers = await readdir(workRoot);
+      }
+      assert.deepEqual(leftovers, []);
     } finally {
       if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
     }

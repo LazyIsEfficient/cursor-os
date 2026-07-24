@@ -14,6 +14,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Telemetry probe / benchmark signal cleanup:** credential signal handlers
+  now SIGKILL in-flight `spawnCaptured` children (detached process groups)
+  before `rmSync`, with retries — closes a CI flake where SIGINT left a
+  `cursor-telemetry-probe-*` directory under the work root.
+
 ### Added
 
 - **Mechanical verify-before-PR:** `.cursor/verify-ledger.json` (via

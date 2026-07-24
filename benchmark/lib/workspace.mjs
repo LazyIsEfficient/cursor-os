@@ -10,6 +10,7 @@ import {
   listFiles,
   sha256,
 } from "./util.mjs";
+import { terminateActiveCapturedChildrenSync } from "./process.mjs";
 
 const PROMPT_PATH = ".cursor-harness/prompt.txt";
 export const SANDBOX_PATH = ".cursor/sandbox.json";
@@ -82,11 +83,14 @@ let signalHandlerDepth = 0;
 
 function removeActiveCursorHomesSync() {
   const removed = [];
+  // Match the telemetry probe: kill in-flight detached CLI children before rm so a
+  // signal mid-call cannot leave credential trees behind on busy runners.
+  terminateActiveCapturedChildrenSync();
   for (const cursorHomePath of activeCursorHomePaths) {
     try {
       // Synchronous by necessity: the process is about to terminate, so an awaited rm would
       // not finish before the default disposition kills us.
-      rmSync(cursorHomePath, { recursive: true, force: true });
+      rmSync(cursorHomePath, { recursive: true, force: true, maxRetries: 10, retryDelay: 10 });
       removed.push(cursorHomePath);
     } catch (error) {
       process.stderr.write(`failed to remove Cursor config home ${cursorHomePath}: ${error.message}\n`);
