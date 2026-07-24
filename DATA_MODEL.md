@@ -10,6 +10,9 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-23 | `feat/agentic-os-parity` | Cataloged `ContentPipelineEnvironment` process env vars from content-pipeline Python scripts and `.env.example`. |
+| 2026-07-23 | `feat/agentic-os-parity` | Cataloged opt-in dispatch-gate config, per-session ledger, audit NDJSON lines, and Cursor hook permission/followup/context response shapes. |
+| 2026-07-23 | `feat/plugin-global-parity` | No data-contract changes in this run. |
 | 2026-07-23 | `plugin-parity` | No data-contract changes in this run. |
 | 2026-07-23 | `port-marketing-agents-skills` | No data-contract changes in this run. |
 | 2026-07-23 | `pattern3-ship-gates` | Cataloged `GatePlanResult` JSON from `gate-plan.sh --json`; corrected `RepositoryValidationResult.checks` to include `documented-components`. |
@@ -482,6 +485,46 @@ Observed metrics contain `status: observed`, a non-negative numeric `value`, and
 
 The authenticated run rejects a missing `--cursor-config-template`, requires an installed CLI with print/stream-JSON/sandbox capabilities, and runs `agent status` against a temporary copy of the template before any benchmark trials. The template path must be absolute; its target must be a non-empty real directory rather than a symbolic link and, for each trial, must resolve outside the agent workspace. Template files are copied into the trial's fresh `cursor-home`, which remains outside both the workspace and exported evidence.
 
+### ContentPipelineEnvironment
+
+| Field | Value |
+|---|---|
+| **Kind** | `api` |
+| **Ingestion route** | Process environment read by `plugin/skills/content-pipeline/scripts/*.py` via `os.environ.get` at script startup (and again for `ANTHROPIC_API_KEY` / `QUOTE_MINING_FEEDS` during LLM or feed resolution); documented for operators in `plugin/skills/content-pipeline/.env.example` |
+| **Source** | `plugin/skills/content-pipeline/.env.example`; `plugin/skills/content-pipeline/scripts/editorial-brain.py`; `plugin/skills/content-pipeline/scripts/content-transform.py`; `plugin/skills/content-pipeline/scripts/quote-mining-engine.py`; `plugin/skills/content-pipeline/scripts/content-quality-scorer.py`; `plugin/skills/content-pipeline/scripts/content-quality-gate.py` |
+
+#### Shape
+
+```text
+{
+  ANTHROPIC_API_KEY?: string,          // required for LLM stages
+  CONTENT_OPS_DATA_DIR?: string,       // default: <skill-dir>/data
+  EDITORIAL_BRAIN_MODEL?: string,      // default: claude-sonnet-4-20250514
+  CONTENT_OPS_SKILL_DIR?: string,      // default: <skill-dir>/../content-ops
+  VOICE_CONFIG_FILE?: string,          // default: <skill-dir>/config/voice.md
+  STYLE_GUIDE_FILE?: string,           // default: <skill-dir>/config/style-guide.md
+  QUOTE_MINING_FEEDS_FILE?: string,    // default: <skill-dir>/config/feeds.json
+  QUOTE_MINING_FEEDS?: string,         // inline JSON object string
+  QUOTE_MINING_NOTES_DIR?: string,     // default: empty
+  QUOTE_MINING_SPEAKER?: string        // default: empty
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `ANTHROPIC_API_KEY` | string | conditional | Required for LLM stages: `editorial-brain.py` exits if empty; `content-transform.py` requires it unless `--template-only` |
+| `CONTENT_OPS_DATA_DIR` | string (path) | no | Shared data directory; default `PROJECT_DIR / "data"` (`PROJECT_DIR` = skill root). Used by editorial-brain, content-transform, content-quality-scorer, content-quality-gate, quote-mining-engine |
+| `EDITORIAL_BRAIN_MODEL` | string | no | Model id for `editorial-brain.py`; default `claude-sonnet-4-20250514` |
+| `CONTENT_OPS_SKILL_DIR` | string (path) | no | Path to sibling `content-ops` skill; default `PROJECT_DIR.parent / "content-ops"`. Used by `content-transform.py` for expert panels / rubrics |
+| `VOICE_CONFIG_FILE` | string (path) | no | Voice config path for LLM mode in `content-transform.py`; default `PROJECT_DIR / "config" / "voice.md"` |
+| `STYLE_GUIDE_FILE` | string (path) | no | Style guide path for LLM mode in `content-transform.py`; default `PROJECT_DIR / "config" / "style-guide.md"` |
+| `QUOTE_MINING_FEEDS_FILE` | string (path) | no | JSON feeds file path for `quote-mining-engine.py`; default `PROJECT_DIR / "config" / "feeds.json"`. Object shape: feed name → RSS URL string |
+| `QUOTE_MINING_FEEDS` | string (JSON object) | no | Inline feeds JSON when feeds file is missing/unreadable; parsed with `json.loads`. Same object shape as the feeds file |
+| `QUOTE_MINING_NOTES_DIR` | string (path) | no | Directory of markdown/text notes for quote mining; default empty string |
+| `QUOTE_MINING_SPEAKER` | string | no | Speaker name filter for meeting notes; default empty string |
+
 ### CursorAuthenticationPreflightResult
 
 | Field | Value |
@@ -708,6 +751,210 @@ Managed plugin entry:
 An install is `unchanged` only when the recorded source digest and a fresh digest of the installed destination tree both equal the current source digest and the managed registry entry exactly matches the installed plugin. The managed entry must be an object with exactly `path` and `version`, where `path` is the exact forward-slash destination relative to the explicit Cursor root and `version` is the current source-manifest version. Missing, malformed, extra-field, wrong-path, or wrong-version registration is drift and is repaired while unrelated registry fields and plugin entries are preserved.
 
 On uninstall, the adapter parses the current and original registries and compares them structurally after excluding the managed plugin entry. It restores the original registry bytes, or removes an originally absent registry, only when the unrelated structures are equal and the current managed entry exactly matches the installed path and recorded `installedVersion`. Otherwise, when a current registry exists, it restores or removes only the managed entry and serializes the current registry with unrelated top-level fields and plugin registrations preserved. If the current registry is absent, an originally present registry is restored from its saved bytes; an originally absent registry remains absent.
+
+### DispatchGateAuditLine
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Append-only NDJSON at `<project>/.cursor/dispatch-gate-audit.jsonl` (gitignored); written by `dispatchGateAuditLog` on preToolUse / beforeReadFile / afterFileEdit checks |
+| **Source** | `plugin/scripts/lib/dispatch-gate-lib.mjs` (`dispatchGateAuditLog`); `.gitignore` (`/.cursor/dispatch-gate-audit.jsonl`) |
+
+#### Shape
+
+```json
+{
+  "ts": "ISO-8601 string",
+  "event": "string",
+  "decision": "string",
+  "tool_name": "string | null",
+  "hook_event_name": "string | null",
+  "subagent_id": "string | null",
+  "file_path": "string | null"
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `ts` | string | yes | `new Date().toISOString()` at write time |
+| `event` | string | yes | Caller label such as `preToolUse`, `preToolUse-impl`, `beforeReadFile`, `afterFileEdit` |
+| `decision` | string | yes | Free-form outcome tag (e.g. `allow`, `deny:<path>`, `check:<tool>:<path>`); may be empty string |
+| `tool_name` | string \| null | yes | From `payload.tool_name`, else `null` |
+| `hook_event_name` | string \| null | yes | From `payload.hook_event_name`, else `null` |
+| `subagent_id` | string \| null | yes | From `payload.subagent_id`, else `null` |
+| `file_path` | string \| null | yes | From `payload.file_path`, else `null` |
+
+Best-effort: write failures are swallowed. One JSON object per line, appended with `flag: "a"`.
+
+### DispatchGateConfig
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Opt-in policy JSON resolved first-hit: `<project>/.cursor/dispatch-gate.json` (consumer) → `${CURSOR_PLUGIN_ROOT}/.cursor/dispatch-gate.json` (plugin default; module-relative `plugin/.cursor` when `CURSOR_PLUGIN_ROOT` unset) → none (disabled). Emergency off: `DISPATCH_GATE_DISABLED=1` |
+| **Source** | `plugin/.cursor/dispatch-gate.json` (shipped default); `plugin/scripts/lib/dispatch-gate-lib.mjs` (`dispatchGateResolveConfig`, `dispatchGateIsEnabled`, `dispatchGateLoadJsonFile`); `scripts/lib/dispatch-gate-lib.mjs` (re-export) |
+
+#### Shape
+
+```json
+{
+  "version": 1,
+  "enabled": false,
+  "research_read_threshold": 3,
+  "impl_subagent_types": ["engineer", "godot-engineer", "rust-engineer", "web3-engineer", "devops-engineer", "phaser-engineer"],
+  "explore_subagent_types": ["explore", "generalPurpose"],
+  "review_subagent_types": ["code-reviewer", "security-reviewer", "library-reviewer", "data-model-verifier", "bugbot", "security-review"],
+  "documenter_subagent_types": ["data-model-documenter"],
+  "write_tools": ["Write", "StrReplace", "Delete"],
+  "research_tools": ["Read", "Grep", "Glob", "SemanticSearch"],
+  "code_path_prefixes": ["plugin/skills/", "plugin/agents/", "plugin/commands/", "plugin/rules/", "plugin/references/", "scripts/"],
+  "harness_exempt_prefixes": ["plugin/hooks/", "plugin/scripts/dispatch-gate", "plugin/scripts/lib/dispatch-gate", "scripts/lib/dispatch-gate", "scripts/dispatch-gate", ".cursor/dispatch-gate.json", "plugin/.cursor/dispatch-gate.json", "docs/dispatch-enforcement.md", "SESSION-STATE.md", ".cursor/dispatch-ledger.json"],
+  "stop_hook_enabled": true,
+  "enforce_impl_gate": true,
+  "enforce_research_gate": true
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `version` | integer | yes (shipped) | Schema marker; shipped default is `1` |
+| `enabled` | boolean | no | Explicit `false` disables. Once a config file loads, any other value (including missing key) enables. No config file ⇒ disabled (opt-in). `DISPATCH_GATE_DISABLED=1` always wins |
+| `research_read_threshold` | integer | no | Main-thread research deny floor; runtime defaults to `3` when absent |
+| `impl_subagent_types` | array<string> | no | Task types that set `impl_dispatched` / `impl_completed` |
+| `explore_subagent_types` | array<string> | no | Task types that set `explore_dispatched` |
+| `review_subagent_types` | array<string> | no | On `subagentStop` `completed`, type is added to `completed_reviews` |
+| `documenter_subagent_types` | array<string> | no | Same `completed_reviews` treatment as reviewers |
+| `write_tools` | array<string> | no | Shipped policy list; runtime write detection also hardcodes lowercase `write` / `strreplace` / `delete` / `applypatch` forms |
+| `research_tools` | array<string> | no | Shipped policy list for research tools |
+| `code_path_prefixes` | array<string> | no | Relative path prefixes treated as gated code |
+| `harness_exempt_prefixes` | array<string> | no | Paths exempt from impl gating (maintenance / self) |
+| `stop_hook_enabled` | boolean | no | Explicit `false` skips stop follow-ups; default on when absent |
+| `enforce_impl_gate` | boolean | no | Explicit `false` disables write blocking; default on when absent |
+| `enforce_research_gate` | boolean | no | Explicit `false` disables research blocking; default on when absent |
+
+Shipped plugin default sets `enabled: false`. Consumer file at the project root wins entirely when present (not field-merged).
+
+### DispatchGateHook
+
+| Field | Value |
+|---|---|
+| **Kind** | `api` |
+| **Ingestion route** | Cursor schema-v1 hooks registered in `plugin/hooks/hooks.json` (additive): `sessionStart` → `dispatch-gate-session-init.mjs`; `preToolUse` / `beforeReadFile` (`failClosed: true`) → permission decision; `postToolUse` / `afterFileEdit` / `subagentStop` → `{}`; `stop` (`loop_limit: 3`) → `{}` or `{followup_message}`. Each entry runs `node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-*.mjs"`, reads one JSON event on stdin (max 1 MiB), writes one JSON line on stdout, exits 0 |
+| **Source** | `plugin/hooks/hooks.json`; `plugin/scripts/dispatch-gate-session-init.mjs`; `plugin/scripts/dispatch-gate-pre-tool.mjs`; `plugin/scripts/dispatch-gate-post-tool.mjs`; `plugin/scripts/dispatch-gate-before-read.mjs`; `plugin/scripts/dispatch-gate-after-file-edit.mjs`; `plugin/scripts/dispatch-gate-subagent-stop.mjs`; `plugin/scripts/dispatch-gate-stop.mjs`; `plugin/scripts/lib/dispatch-gate-lib.mjs` (`dispatchGateAllow`, `dispatchGateDeny`, `dispatchGateStopOk`, `dispatchGateStopFollowup`, `dispatchGateHandle*`); `plugin/scripts/lib/dispatch-gate-plan-lib.mjs` (stop-hook reviewer demand via `dispatchPlanRun` / `dispatchPlanMissingReviews`); `scripts/lib/dispatch-gate-*.mjs` (re-exports) |
+
+#### Shape
+
+```json
+{
+  "shared_input_fields": {
+    "workspace_roots": ["string", "..."],
+    "conversation_id": "string",
+    "session_id": "string",
+    "parent_conversation_id": "string",
+    "subagent_id": "string",
+    "tool_name": "string",
+    "tool_input": { "subagent_type": "string", "subagentType": "string", "...": "..." },
+    "file_path": "string",
+    "subagent_type": "string",
+    "status": "string",
+    "hook_event_name": "string",
+    "...": "additional Cursor event fields are accepted"
+  },
+  "sessionStart_output": {
+    "additional_context": "string"
+  } | {},
+  "permission_output": {
+    "permission": "allow"
+  } | {
+    "permission": "deny",
+    "agent_message": "string",
+    "user_message": "string"
+  },
+  "empty_output": {},
+  "stop_output": {} | {
+    "followup_message": "string"
+  }
+}
+```
+
+#### Properties
+
+Shared / event-specific input (untrusted Cursor payload; missing keys tolerated):
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `workspace_roots` | array<string> | no | First element used as project root when present |
+| `conversation_id` / `session_id` / `parent_conversation_id` | string | no | Conversation binding for ledger; `subagentStop` prefers `parent_conversation_id` |
+| `subagent_id` | string | no | When set, treats the call as subagent context (gates skipped) |
+| `tool_name` | string | no | `preToolUse` / `postToolUse` tool identity |
+| `tool_input.subagent_type` \| `tool_input.subagentType` | string | no | Task dispatch type recorded on `postToolUse` |
+| `file_path` | string | no | Absolute path on `afterFileEdit` / some write payloads |
+| `subagent_type` | string | no | Type on `subagentStop` |
+| `status` | string | no | `subagentStop` / `stop`; stop follow-ups only when `completed` (default if absent on stop) |
+
+Outputs by event:
+
+| Event | Output | Required keys | Notes |
+|---|---|---|---|
+| `sessionStart` | `{additional_context}` or `{}` | none when disabled | Enabled: inits ledger and returns orchestrator briefing string |
+| `preToolUse` / `beforeReadFile` | permission object | `permission` | `allow` alone, or `deny` with `agent_message` + `user_message` (`user_message` falls back to agent message). Entries always emit a permission object and exit 0 even under `failClosed` |
+| `postToolUse` / `afterFileEdit` / `subagentStop` | `{}` | — | Side-effect only (ledger / audit updates) |
+| `stop` | `{}` or `{followup_message}` | — | Follow-up when required reviewers missing or `ungated_code_edits` non-empty; skipped when disabled, `stop_hook_enabled === false`, or status ≠ `completed` |
+
+Malformed / oversized stdin: failClosed permission entries (`preToolUse`, `beforeReadFile`) emit `permission: deny` on catch (mirror shell guard); other thin entries emit `{}`. Path classification for stop-hook reviewer demand mirrors `scripts/lib/gate-plan-lib.sh` via `dispatch-gate-plan-lib.mjs` (camelCase in-memory plan, not the `GatePlanResult` CLI JSON).
+
+### DispatchGateLedger
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Per-session JSON at `<project>/.cursor/dispatch-ledger.json` (gitignored); mkdir lock at `.cursor/dispatch-ledger.json.lock`; rewritten on `sessionStart` and mutated by research/Task/write/subagentStop/afterFileEdit handlers |
+| **Source** | `plugin/scripts/lib/dispatch-gate-lib.mjs` (`dispatchGateInitLedger`, `dispatchGateEnsureLedger`, `dispatchGateWriteLedger`, `dispatchGateRecord*`); `.gitignore` (`/.cursor/dispatch-ledger.json`, `/.cursor/dispatch-ledger.json.lock`) |
+
+#### Shape
+
+```json
+{
+  "version": 1,
+  "conversation_id": "string",
+  "research_reads": 0,
+  "explore_dispatched": false,
+  "impl_dispatched": false,
+  "impl_completed": false,
+  "completed_reviews": ["string"],
+  "completed_subagents": [{ "type": "string", "at": "ISO-8601 string" }],
+  "modified_paths": ["string"],
+  "ungated_code_edits": ["string"],
+  "writes_on_main": 0
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `version` | integer | yes | Always `1` on init |
+| `conversation_id` | string | yes | From session payload; `"unknown"` when absent. Mismatch with a new conversation id re-inits the ledger |
+| `research_reads` | integer | yes | Incremented on main-thread research (`beforeReadFile` and non-`Read` research tools on `postToolUse`) |
+| `explore_dispatched` | boolean | yes | Set when a Task type is in `explore_subagent_types` |
+| `impl_dispatched` | boolean | yes | Set when a Task type is in `impl_subagent_types` |
+| `impl_completed` | boolean | yes | Set on `subagentStop` with `status === "completed"` for an impl type |
+| `completed_reviews` | array<string> | yes | Unique reviewer/documenter `subagent_type` values after completed stops |
+| `completed_subagents` | array<object> | yes | Append-only `{type, at}` records on Task dispatch |
+| `modified_paths` | array<string> | yes | Relative paths of main-thread writes |
+| `ungated_code_edits` | array<string> | yes | Code-prefix edits on main while `impl_completed` is false (afterFileEdit) |
+| `writes_on_main` | integer | yes | Count of recorded main-thread write paths |
+
+`completed_subagents[]` element:
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `type` | string | yes | `subagent_type` / `subagentType` from Task `tool_input` |
+| `at` | string | yes | ISO-8601 timestamp at dispatch record time |
 
 ### GatePlanResult
 

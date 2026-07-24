@@ -33,6 +33,6 @@ References (`references/`):
 
 ## Related skills
 
-- `content-pipeline` — script-driven content production (RSS quote mining, video-clip discovery, repurposing, batch draft gating). Its `content-transform` stage reuses this skill's `experts/` panels and `scoring-rubrics/content-quality.md` as its in-loop quality gate.
+- [content-pipeline](../content-pipeline/SKILL.md) — script-driven content production (RSS quote mining, video-clip discovery, repurposing, batch draft gating). Its `content-transform` stage reuses this skill's `experts/` panels and `scoring-rubrics/content-quality.md` as its in-loop quality gate.
 - [autoresearch](../autoresearch/SKILL.md) — pre-launch variant generation + multi-round optimization of conversion copy.
 - [conversion-ops](../conversion-ops/SKILL.md) — post-publish conversion layer.

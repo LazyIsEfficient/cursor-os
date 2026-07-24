@@ -54,7 +54,7 @@
       "id": "game-design-shaper",
       "kind": "agent",
       "path": "plugin/agents/game-design-shaper.md",
-      "sha256": "8d6ab6894097854e7c3c577f53eee607010289099f386ed2b71473bc1a1fee04"
+      "sha256": "b6bd359b51bbefef6f5ff7176bc8c2b5d28894bac56b1dd12aa5fb98cdea7516"
     },
     {
       "id": "godot-engineer",
@@ -111,10 +111,34 @@
       "sha256": "5aed22bfb6b24445db618014d2ddc1880f353f7dbbdd039343036cf482191003"
     },
     {
+      "id": "agent-new",
+      "kind": "command",
+      "path": "plugin/commands/agent-new.md",
+      "sha256": "e2f5b399dc483ca12bb2031286618ee47eb63e992d663d2851718499dd1bc438"
+    },
+    {
+      "id": "audit-library",
+      "kind": "command",
+      "path": "plugin/commands/audit-library.md",
+      "sha256": "c2716c870f805fd6768abb8cdc2e6589515ea584af96f5ebf5538460943d840e"
+    },
+    {
+      "id": "eval-harness",
+      "kind": "command",
+      "path": "plugin/commands/eval-harness.md",
+      "sha256": "edab4ae6697d3409b0cc7da334758f6f2ea74b2b9a37eb7053db440559f14421"
+    },
+    {
       "id": "review-gate",
       "kind": "command",
       "path": "plugin/commands/review-gate.md",
       "sha256": "3c09ac5e0a9770a1c19927017c44e37d04d18733282bc43012ad9c0472a5e264"
+    },
+    {
+      "id": "skill-new",
+      "kind": "command",
+      "path": "plugin/commands/skill-new.md",
+      "sha256": "9b60471fbdce034d1c398d6e6435e59f22e4df863fd520de0e8bae041f92fbc8"
     },
     {
       "id": "state",
@@ -132,13 +156,25 @@
       "id": "hooks",
       "kind": "hook",
       "path": "plugin/hooks/hooks.json",
-      "sha256": "dd371a14effa0a35c6f7924fb80140a3b2058faadab1ab635c160c4fac9c0da1"
+      "sha256": "977e590b19cb1eea2e6bbfa44b0b3f4891287b5ccaa1c4368d1936b79dad85f3"
     },
     {
       "id": "actual-diff-verification",
       "kind": "rule",
       "path": "plugin/rules/actual-diff-verification.mdc",
       "sha256": "5d31abc8e3a494f9293634dc03164b8b4db0947e51d3edc0d4952b5a8045c1d4"
+    },
+    {
+      "id": "anti-patterns",
+      "kind": "rule",
+      "path": "plugin/rules/anti-patterns.mdc",
+      "sha256": "894acde86991cc54f3d5fe63cbcc053d026a65c4fd64763c385e881c5982aec8"
+    },
+    {
+      "id": "briefing",
+      "kind": "rule",
+      "path": "plugin/rules/briefing.mdc",
+      "sha256": "d6015637fa9fa8fcaeb6d6bab4914b8a177505761ad5c38eda1cd9093bf27d72"
     },
     {
       "id": "communication",
@@ -181,6 +217,60 @@
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
       "sha256": "157e523c3be15e74252c1cf3296f3a00683e4a627923c37e062228f2adb98931"
+    },
+    {
+      "id": "dispatch-gate-after-file-edit",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-after-file-edit.mjs",
+      "sha256": "05bda3304f134b90eec8926393e80c980db8313d593cff00ef263633e7d3a587"
+    },
+    {
+      "id": "dispatch-gate-before-read",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-before-read.mjs",
+      "sha256": "ea6ef1dd7e74165062a242c79728289957c265a8d7d88c94d8d7ee1167b763ef"
+    },
+    {
+      "id": "dispatch-gate-post-tool",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-post-tool.mjs",
+      "sha256": "3bd1bf8ba82811f1af4a423dd72c724e9947bc2ccad0b1e6a40380b53d024059"
+    },
+    {
+      "id": "dispatch-gate-pre-tool",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-pre-tool.mjs",
+      "sha256": "6a036e6afaeac79b610c1212918e5ad93f02b133e761a09e4c3818f49db6375d"
+    },
+    {
+      "id": "dispatch-gate-session-init",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-session-init.mjs",
+      "sha256": "7d9e019aeafc735eacf03c36727b21e98dca88de1f88bf53e635c8964c19df12"
+    },
+    {
+      "id": "dispatch-gate-stop",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-stop.mjs",
+      "sha256": "9972510b9454c80372a79b84d418b94e4f38631f9cda7c4424d4e823e9624e0c"
+    },
+    {
+      "id": "dispatch-gate-subagent-stop",
+      "kind": "script",
+      "path": "plugin/scripts/dispatch-gate-subagent-stop.mjs",
+      "sha256": "9e875e7c1d1d16cefd554c46fb5eb6a28ea7bd40ff959af579c8f351d6fb3b77"
+    },
+    {
+      "id": "dispatch-gate-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/dispatch-gate-lib.mjs",
+      "sha256": "6ff60938ec33ef5e66dffef6b184c83f63ae5210f7ac75cb066906f90de00f04"
+    },
+    {
+      "id": "dispatch-gate-plan-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/dispatch-gate-plan-lib.mjs",
+      "sha256": "708b249d3212ebbe1ebccbee7a8fb0c546f2700cb82d5077d76f44a5f561e53f"
     },
     {
       "id": "memory-extract-nudge",
@@ -309,10 +399,52 @@
       "sha256": "316daf7f73d9a780ed189101fd42421baa3931405bee52cab5ee7eb13c41d8b9"
     },
     {
+      "id": "codebase-cost-estimator",
+      "kind": "skill",
+      "path": "plugin/skills/codebase-cost-estimator/SKILL.md",
+      "sha256": "2759a0d62e17b87c7c21919a6242351f7f3ad0ab8f2e9c9cbcba5358fe52f6b5"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-assets-output-template",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/assets/output-template.md",
+      "sha256": "e4f0afa6dd14f6fc274a64b63e5ae33c6680758fdfc97686bb0df1fe18a17006"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-readme",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/readme.md",
+      "sha256": "4be657ce08db06a23ce62bbb1d2c413ef371f82845cf381dc4a9257f14f4624b"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-references-claude-roi",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/references/claude-roi.md",
+      "sha256": "96329ab3a222137ad126560d799616fb083b73b8fb63fcb997410f8bb71e7690"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-references-org-overhead",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/references/org-overhead.md",
+      "sha256": "e330a064a8d8694ab58c9adae273b7e2a9a0ecb67dbee5ff8595beeba26fab1b"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-references-rates",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/references/rates.md",
+      "sha256": "7ff4bfb88fedd20d9afac7cfd09c978076e84f61d95cd59aec1d20c32c0d4298"
+    },
+    {
+      "id": "skills-codebase-cost-estimator-references-team-cost",
+      "kind": "reference",
+      "path": "plugin/skills/codebase-cost-estimator/references/team-cost.md",
+      "sha256": "d4bd94d8c62269e0304b56352cbfd2c997414474d5ac644385236859a8bdb3d5"
+    },
+    {
       "id": "content-ops",
       "kind": "skill",
       "path": "plugin/skills/content-ops/SKILL.md",
-      "sha256": "3b227e48b7ac1bdeebd5376c264378fc4405ab11ad088b284d4b8491600fb542"
+      "sha256": "c5e932b2affd163a599d1e550c0c619ba01dcc92d50d7c89fcfde88b957b645a"
     },
     {
       "id": "skills-content-ops-experts-humanizer",
@@ -372,7 +504,7 @@
       "id": "skills-content-ops-readme",
       "kind": "reference",
       "path": "plugin/skills/content-ops/readme.md",
-      "sha256": "346e44d296f41fba1d1079706c050e32a4e0fdba4b7b79117dd0218b822dd214"
+      "sha256": "b76c5588f297e2373ed0fb54ea9d5f3a145811c2d438d622d0beaa0716252714"
     },
     {
       "id": "skills-content-ops-references-expert-assembly",
@@ -421,6 +553,18 @@
       "kind": "reference",
       "path": "plugin/skills/content-ops/scoring-rubrics/visual-quality.md",
       "sha256": "3eff70d087925898fa2a510a8ef87d35cf607849b2b0c16daa9453dd60068b9b"
+    },
+    {
+      "id": "content-pipeline",
+      "kind": "skill",
+      "path": "plugin/skills/content-pipeline/SKILL.md",
+      "sha256": "8da34bb145a3d46fef4a4d24d094c66692b7ece810f5b62521c2a97e22b25bd5"
+    },
+    {
+      "id": "skills-content-pipeline-readme",
+      "kind": "reference",
+      "path": "plugin/skills/content-pipeline/readme.md",
+      "sha256": "0b04e6387a196f8a5ebfdf13bbc88cf791cd70af4e0f4b0356dd7663c9a57b4c"
     },
     {
       "id": "conversion-ops",
@@ -540,7 +684,7 @@
       "id": "devops-engineer",
       "kind": "skill",
       "path": "plugin/skills/devops-engineer/SKILL.md",
-      "sha256": "94f33d32c3398038fabf24201e44a2e29a5921d5f55a6de35700a5e92c7668d9"
+      "sha256": "01bbad5fc59e32f819d88de20e4fe0b6adc609f8517ac87940f5410bd851d1ec"
     },
     {
       "id": "skills-devops-engineer-references-cicd-pipelines",
@@ -576,13 +720,13 @@
       "id": "game-balancer",
       "kind": "skill",
       "path": "plugin/skills/game-balancer/SKILL.md",
-      "sha256": "8e677a3a44bf05c315517d0405eb38ac15666dd516dff404ae94d17e73fe0789"
+      "sha256": "cd2e28769fbd7f4a23d83e0f286949877ebe72dc53c89ebc345c5303b35dd747"
     },
     {
       "id": "skills-game-balancer-assets-balance-pass-checklist",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/assets/balance-pass-checklist.md",
-      "sha256": "68ad31e61c4e820a55934d8442006949416318aa4d43d293d467018fdaad2764"
+      "sha256": "9f42d18806831985b9dc19e11b6c83c2417fb07fdd1852aa84c34466767af834"
     },
     {
       "id": "skills-game-balancer-assets-balance-table-template",
@@ -594,7 +738,7 @@
       "id": "skills-game-balancer-assets-economy-spreadsheet-skeleton",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/assets/economy-spreadsheet-skeleton.md",
-      "sha256": "ea055e7fc48914fd2334961a6d5ca9507376625187cbe08f973ab99fafd890f7"
+      "sha256": "745ef5f79972ac103758201355796424d7431798a7e41ba15d648c12a3e12a60"
     },
     {
       "id": "skills-game-balancer-assets-progression-curve-skeleton",
@@ -606,13 +750,13 @@
       "id": "skills-game-balancer-references-balance-anti-patterns",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/balance-anti-patterns.md",
-      "sha256": "f378a44257d9a5cf68f739ec4a217827876696fc98c5603fddef1c39464104dd"
+      "sha256": "0acbf473c39f7dafd6ce5d911bb74559d7a1b745189a18371d4ec08f63ff05a6"
     },
     {
       "id": "skills-game-balancer-references-balance-pass-types",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/balance-pass-types.md",
-      "sha256": "30d0b60d598a383376d668faa9416edbe9622ae3e7886bb09ee4bbd05ba2a5ae"
+      "sha256": "d8a38cc958a7cef1581d2c0383467c5a4389d59b3cf28ee05216f4af7df95180"
     },
     {
       "id": "skills-game-balancer-references-curve-fitting",
@@ -630,13 +774,13 @@
       "id": "skills-game-balancer-references-economy-design",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/economy-design.md",
-      "sha256": "f3b3c0d066166be704158c3268f3cb595c4fe8341b8c8e3aeef4ed4be1381606"
+      "sha256": "f9e9f33c60c04e5b3f2955afacf5f71538ff7ed96ec7fe2715c2b1187b70c579"
     },
     {
       "id": "skills-game-balancer-references-live-rebalancing",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/live-rebalancing.md",
-      "sha256": "d098eecc2f51c570f3a62fc6f175661edfc41093088c9079f8b217b3149a7bc9"
+      "sha256": "b7ea65910f295bfe40a300f25a85512da50f6d02e6bd0ae6e1421f1b461d321e"
     },
     {
       "id": "skills-game-balancer-references-progression-math",
@@ -648,19 +792,55 @@
       "id": "skills-game-balancer-references-pvp-balance",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/pvp-balance.md",
-      "sha256": "3597dca744dcd116476e3c29c6dcec975e5ead7d14ebc4e3372b1bed86c05f5f"
+      "sha256": "7de1680cd3e10a53659871c22c52d5020eda15c6522de45161e51f3221ad94dc"
     },
     {
       "id": "skills-game-balancer-references-simulation-and-playtesting",
       "kind": "reference",
       "path": "plugin/skills/game-balancer/references/simulation-and-playtesting.md",
-      "sha256": "ccdb5d594bd8fc6e3f8592860bf7baf58a8723c6c8eda525768ae7874e1eed9f"
+      "sha256": "5e0efd8a190bc32d53477764c807420162574aed691c2dab8ed9a1c4864b7318"
+    },
+    {
+      "id": "game-concept-creator",
+      "kind": "skill",
+      "path": "plugin/skills/game-concept-creator/SKILL.md",
+      "sha256": "4f1d7422afdf3ef6f1d0724c1dc0d28b2e9eca8a45ec6f86faa9492dab6a5aba"
+    },
+    {
+      "id": "skills-game-concept-creator-assets-concept-batch-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-concept-creator/assets/concept-batch-template.md",
+      "sha256": "242b1f8ed5ffb1e6d481d3e51cd22ca3b2dd88fb522781731c1b3718300b29e9"
+    },
+    {
+      "id": "skills-game-concept-creator-assets-concept-one-pager-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-concept-creator/assets/concept-one-pager-template.md",
+      "sha256": "cc9c42503bc7643084237acd21c83276e78cd437a0a8cdd9230a12b87e9ce553"
+    },
+    {
+      "id": "skills-game-concept-creator-references-concept-frameworks",
+      "kind": "reference",
+      "path": "plugin/skills/game-concept-creator/references/concept-frameworks.md",
+      "sha256": "9ea0e3057274e072b0d2ca2fd5b13c8ea7fc9c45a46a34581f4ce069a12a1307"
+    },
+    {
+      "id": "skills-game-concept-creator-references-concept-stress-tests",
+      "kind": "reference",
+      "path": "plugin/skills/game-concept-creator/references/concept-stress-tests.md",
+      "sha256": "6205543bfb1f4841261e296c5c1d34f83616dda0f9313e561ae69a657afe51b2"
+    },
+    {
+      "id": "skills-game-concept-creator-references-payment-rails-decision",
+      "kind": "reference",
+      "path": "plugin/skills/game-concept-creator/references/payment-rails-decision.md",
+      "sha256": "bde8cb4de6265b648885d0160288993607dec05be4f55228224f10139dff4c0e"
     },
     {
       "id": "game-design-shaper",
       "kind": "skill",
       "path": "plugin/skills/game-design-shaper/SKILL.md",
-      "sha256": "f161f28dba970a73e8714c45ae86ad9c6aed75c56d2768931c269e5c4a584594"
+      "sha256": "edaafd9e23b0eb0b5d36a6fb16acb018f35f277c854affaee5021324f652973b"
     },
     {
       "id": "skills-game-design-shaper-assets-full-game-template",
@@ -696,19 +876,199 @@
       "id": "skills-game-design-shaper-references-procedure",
       "kind": "reference",
       "path": "plugin/skills/game-design-shaper/references/procedure.md",
-      "sha256": "821645315e658f15ffcf8dabe763323943add32752fa8b5ad16d20448d255aa3"
+      "sha256": "cdbad4adc3fd686b6a6cba781cf1efd507276e3a85f38c940e67838ae032fc2d"
+    },
+    {
+      "id": "game-marketer",
+      "kind": "skill",
+      "path": "plugin/skills/game-marketer/SKILL.md",
+      "sha256": "5b3ba13f6029ced9edf0c9634fca88320f836028725c2fe4d497b4f2d5a89105"
+    },
+    {
+      "id": "skills-game-marketer-assets-comms-cadence-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/comms-cadence-template.md",
+      "sha256": "1f8bf7a5be22616a0452abac2bdcaf1c28156b21f0e7a3762c8f920edb915dea"
+    },
+    {
+      "id": "skills-game-marketer-assets-community-program-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/community-program-template.md",
+      "sha256": "c658947a8092ca2122f7d79a13e4a72ac2036764783f001836329f9174903991"
+    },
+    {
+      "id": "skills-game-marketer-assets-launch-plan-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/launch-plan-template.md",
+      "sha256": "50fea14daad4cf19742a615c3743bee2591a180e501b0553ce7d3f3cbd9e0ffe"
+    },
+    {
+      "id": "skills-game-marketer-assets-soft-launch-creative-plan-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/soft-launch-creative-plan-template.md",
+      "sha256": "19a04f79c39d1484cd024ece1ec1fd1b61d4f3cec462189d4107b674a828e53b"
+    },
+    {
+      "id": "skills-game-marketer-assets-store-page-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/store-page-template.md",
+      "sha256": "8e29ae34b04959f72380a30e872acbc3055ed2a9b2513a674e5f40f4c2049d9b"
+    },
+    {
+      "id": "skills-game-marketer-assets-trailer-brief-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/assets/trailer-brief-template.md",
+      "sha256": "70c125cdea451a6aadde8d711e9eabacda096fac2d81337684b0e204f2378c92"
+    },
+    {
+      "id": "skills-game-marketer-references-communities-and-influencers",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/communities-and-influencers.md",
+      "sha256": "18743ae087fead381f150037a4ff07a59efce5fc2f7a3f255116b1b040edbe97"
+    },
+    {
+      "id": "skills-game-marketer-references-launch-week",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/launch-week.md",
+      "sha256": "e5eff0fff5fbf2a9d55d79ea8783d6cb59f86831dd3da3c90bd1b3b292dc364f"
+    },
+    {
+      "id": "skills-game-marketer-references-live-ops-comms",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/live-ops-comms.md",
+      "sha256": "ccc2aab16dfc510475920d33401a0eaf27dea0be03d463d3297cd176cbca5a75"
+    },
+    {
+      "id": "skills-game-marketer-references-marketing-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/marketing-anti-patterns.md",
+      "sha256": "076a4b2d4fbb95683586ace718e797a1a5f86c4001c0b55caa4672741897d6e2"
+    },
+    {
+      "id": "skills-game-marketer-references-marketing-motions",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/marketing-motions.md",
+      "sha256": "7095dc555b330b74ab857856f18ea054694dc08e889c83fd88abd7e676514a27"
+    },
+    {
+      "id": "skills-game-marketer-references-positioning",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/positioning.md",
+      "sha256": "b84816b3278c98795ba8ba129fdfb043fc3ac8df3055a27ff8e8e7140028caef"
+    },
+    {
+      "id": "skills-game-marketer-references-re-engagement",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/re-engagement.md",
+      "sha256": "fbd87a27837911150d425632517ab44772990b5c0dcdc7dd8923654bcc06d701"
+    },
+    {
+      "id": "skills-game-marketer-references-soft-launch-creative",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/soft-launch-creative.md",
+      "sha256": "08f343dc8928db777366b76743b6473e10c29100b9536958e784ae6cc8945956"
+    },
+    {
+      "id": "skills-game-marketer-references-store-page-conversion",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/store-page-conversion.md",
+      "sha256": "e454b6742ad1bfef162305a1c319b30bff0b56916e13a1f0f2264c71e422c546"
+    },
+    {
+      "id": "skills-game-marketer-references-trailers-and-hooks",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/trailers-and-hooks.md",
+      "sha256": "eaddadb0e92e27f80b72c7c03c3bdbfdd7fcac84f16d1b4f17a939773423efbb"
+    },
+    {
+      "id": "skills-game-marketer-references-web3-mint-comms",
+      "kind": "reference",
+      "path": "plugin/skills/game-marketer/references/web3-mint-comms.md",
+      "sha256": "852bb45d4bd7fd8cdedc71f8dc796b5f1d14de575112fd05d2e4c44522ff3172"
+    },
+    {
+      "id": "game-monetization-strategist",
+      "kind": "skill",
+      "path": "plugin/skills/game-monetization-strategist/SKILL.md",
+      "sha256": "7a212d35391408a348331fdb787e05fad42abedf7081bc32e4ac479aaf58c7bd"
+    },
+    {
+      "id": "skills-game-monetization-strategist-assets-monetization-strategy-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/assets/monetization-strategy-template.md",
+      "sha256": "c63e6fc229b9fefd0192b179d924b79805ae7ad0c588818e11da1b844220722c"
+    },
+    {
+      "id": "skills-game-monetization-strategist-assets-segment-economics-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/assets/segment-economics-template.md",
+      "sha256": "82e0f0c2244850b59f03bcf1f8e935426b96cd7426f136f23a38d6ecda907b0c"
+    },
+    {
+      "id": "skills-game-monetization-strategist-assets-soft-launch-kpi-template",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/assets/soft-launch-kpi-template.md",
+      "sha256": "3c8dff2ab827f91f1068f6dd7e65e0927a2d6c0cd52b7ece1fdb6307c340b742"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-kpis-and-floors",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/kpis-and-floors.md",
+      "sha256": "0538a3ce60f396d0330b17aaecac0a5e76fc4320a3f2bec8a2862965653e36c3"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-model-stress-tests",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/model-stress-tests.md",
+      "sha256": "88094a03c08e92203f245a78bad2a02ba1c4f2e292e3fc788224b45a0558b19f"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-monetization-anti-patterns",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/monetization-anti-patterns.md",
+      "sha256": "4520bce960e4b79be9305d67c98f4cde4d136dea39a988f542b1ecd3fa10157d"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-monetization-models",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/monetization-models.md",
+      "sha256": "f3162fc0f4a02d7ef64d6aba02fbe42d7c89ddbbf0417fc1342194fbb2052710"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-retention-to-monetization",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/retention-to-monetization.md",
+      "sha256": "21ab8d1f45725f29cb1f686aa774097b667e4794cdec2624120220cc7ada25cc"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-segment-economics",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/segment-economics.md",
+      "sha256": "5b00565bd9a63c88ef2fe028353c519cbedf8ed7387cab65757c26d93cd0fe5f"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-soft-launch",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/soft-launch.md",
+      "sha256": "32eecbb32f796a9e221a9898100303416872c457b0cfc703b47961f9407561dd"
+    },
+    {
+      "id": "skills-game-monetization-strategist-references-web2-vs-web3-models",
+      "kind": "reference",
+      "path": "plugin/skills/game-monetization-strategist/references/web2-vs-web3-models.md",
+      "sha256": "cb0233a36554a016a5fb0b3758ac9b2725b2db60887812751565f3675e3dc12e"
     },
     {
       "id": "game-systems-designer",
       "kind": "skill",
       "path": "plugin/skills/game-systems-designer/SKILL.md",
-      "sha256": "cf574a48100f88aab1a918572d7748f23f8195b060d3b15882c525d5fa816e49"
+      "sha256": "2e0a2a613c6bb06891d72949bd77597ebd2ddcb86f71ffa06b962c50ba3f839a"
     },
     {
       "id": "skills-game-systems-designer-assets-design-doc-template",
       "kind": "reference",
       "path": "plugin/skills/game-systems-designer/assets/design-doc-template.md",
-      "sha256": "31137055678152456199c94c79ea2e0de3f0cd0fa1c6b37d009a1d6aaa71d703"
+      "sha256": "104d9256e7b8df3cf397d9205fb83130eae69cab1dfa7ec6e024fd1a86adc197"
     },
     {
       "id": "skills-game-systems-designer-assets-level-spec-template",
@@ -720,13 +1080,13 @@
       "id": "skills-game-systems-designer-assets-system-spec-template",
       "kind": "reference",
       "path": "plugin/skills/game-systems-designer/assets/system-spec-template.md",
-      "sha256": "783dd2b3eb08f24405ff6127152ba61178e2407564f8c6a9c64253f10d92d336"
+      "sha256": "633c108dd77c1dab698da6b8b4a072f70b0c9f935c786b458c16f0749494ffe7"
     },
     {
       "id": "skills-game-systems-designer-references-cohesion-checklist",
       "kind": "reference",
       "path": "plugin/skills/game-systems-designer/references/cohesion-checklist.md",
-      "sha256": "b5eb1af9df7e6c18f7c720421f4b5979c3266253cb1d30cc671ee2f304768c86"
+      "sha256": "ea3f375834ee80751654582756ef76cba606f02b50336040b999fce3ac97d4eb"
     },
     {
       "id": "skills-game-systems-designer-references-content-and-levels",
@@ -762,7 +1122,7 @@
       "id": "skills-game-systems-designer-references-player-verbs",
       "kind": "reference",
       "path": "plugin/skills/game-systems-designer/references/player-verbs.md",
-      "sha256": "453db66f97f3bd17a0e1ad5a31fac82271591d753daf1507a206b34bfee4028b"
+      "sha256": "c30edf9e41ba5d4bdb5af35cbf9677521210cf16b9d2ba1499a5496e63fb1700"
     },
     {
       "id": "godot-engineer",
@@ -900,7 +1260,7 @@
       "id": "iap-manager",
       "kind": "skill",
       "path": "plugin/skills/iap-manager/SKILL.md",
-      "sha256": "1e545e8dbb35e70c78f690b2af1e2397ef2ce4c12089d0416acf4f9acc9c3489"
+      "sha256": "3a013f2bce42294c994ff58bbe9911aaf2bf9112190966b51ee5d64d536f509e"
     },
     {
       "id": "skills-iap-manager-assets-bundle-composition-template",
@@ -912,13 +1272,13 @@
       "id": "skills-iap-manager-assets-iap-catalog-template",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/assets/iap-catalog-template.md",
-      "sha256": "ab8fc2f74b353cbdb870cfdfe797be4a24b9a59db807c67d3ef89894ae7fa316"
+      "sha256": "9aa209af20e215c25b2b4c00aa0be65a69918e990aac4075996003a48c336ab6"
     },
     {
       "id": "skills-iap-manager-assets-price-test-plan-template",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/assets/price-test-plan-template.md",
-      "sha256": "cace33aaf7e15d3b61178b98d6e825280d3d670ab105cbc40bb46443c44f7277"
+      "sha256": "5a9a56ac59476da7cac844ac961a120a8283bdbb6c592efdff2c9bc1a9848033"
     },
     {
       "id": "skills-iap-manager-assets-price-tier-ladder-template",
@@ -930,7 +1290,7 @@
       "id": "skills-iap-manager-assets-region-price-table-template",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/assets/region-price-table-template.md",
-      "sha256": "89a8074fb1a17695d843e1164fd59bcde5b62b18bccbc729f8b5bb1caf86ddc7"
+      "sha256": "5c3798ab893799c48b580aa3a3bd68a2cfd382c517ec7f2f0a997baf3d1b3bbb"
     },
     {
       "id": "skills-iap-manager-references-bundles-and-starter-packs",
@@ -942,25 +1302,25 @@
       "id": "skills-iap-manager-references-catalog-types",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/catalog-types.md",
-      "sha256": "112502ee041cb85ddf8095bfe54dad014db2b954b98f0d3c5e56b53d981a5ee3"
+      "sha256": "d08e81b7fefd4bfc1d82cea9bd0ab501c80b4ab003b88e1c67d1cb87d83f17d6"
     },
     {
       "id": "skills-iap-manager-references-iap-anti-patterns",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/iap-anti-patterns.md",
-      "sha256": "06abc9e8ee168b1267036cf85f04367cf0df17078b0fdcc6c9af4583e5185d00"
+      "sha256": "fcdd29db42c89e50459ec2e7eaa718551f68c5a51ce80b1c3bf7cfd243b78dc9"
     },
     {
       "id": "skills-iap-manager-references-price-localization",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/price-localization.md",
-      "sha256": "2ca4c7a835b806b1497c6adec1e882ac549e823ffdbcdcd5c906e42ed9f32f30"
+      "sha256": "7d2b5e6c4c16903777c9fb74bf02e28e71bc1882070bff749815a147c7bb05c5"
     },
     {
       "id": "skills-iap-manager-references-price-testing",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/price-testing.md",
-      "sha256": "1cbc0cc707524436e4f7f31ffe32ee0ef373831bbb6dbc4da7d8a582bffb7853"
+      "sha256": "742a019d21c1f06e9fdf22c99d252f2e1c8f738af6de6b5467b23c34c126b852"
     },
     {
       "id": "skills-iap-manager-references-price-tier-ladder",
@@ -978,19 +1338,19 @@
       "id": "skills-iap-manager-references-store-config-checklist",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/store-config-checklist.md",
-      "sha256": "0463c22a3a9111f3bb6b5627b9d85d2fd0dc7b61af60c542ec7f74899058f967"
+      "sha256": "eff8bf9f77a0da65191cecef36e697ca104b63cb3ce120174dfb1c382cd6a3d4"
     },
     {
       "id": "skills-iap-manager-references-store-side-ux",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/store-side-ux.md",
-      "sha256": "ee203f7e90b618580a0ce34d98a8ece976d8ee0dce11b4c67384c2545f1b7834"
+      "sha256": "7071758f1a281f4211f1e62551565f484148414b821575d10af2ed4776bcc07f"
     },
     {
       "id": "skills-iap-manager-references-web3-iap-notes",
       "kind": "reference",
       "path": "plugin/skills/iap-manager/references/web3-iap-notes.md",
-      "sha256": "909ea26921044476f019857f75ef74882beb95a4275f0f22957e0347211ca40a"
+      "sha256": "682504b6a783b0bdd44ff4ceda7376d486f4fac483db1c6cd79a6010e5976ece"
     },
     {
       "id": "incremental-implementation",
@@ -1353,6 +1713,18 @@
       "sha256": "aab1923bc8afc9bc58b41ffe990691a08de9b140fd8f9c341ef77ef69ed2ff6a"
     },
     {
+      "id": "security",
+      "kind": "skill",
+      "path": "plugin/skills/security/SKILL.md",
+      "sha256": "8c53c0c64b1359ad7e38546e839176a90392c9aaabe439acf6b9f36e482b5354"
+    },
+    {
+      "id": "skills-security-readme",
+      "kind": "reference",
+      "path": "plugin/skills/security/readme.md",
+      "sha256": "1687ea2d0f98c8ab56a2456563c4851f59f858fd68ecb6d0f993aed12fbce3f0"
+    },
+    {
       "id": "seo-ops",
       "kind": "skill",
       "path": "plugin/skills/seo-ops/SKILL.md",
@@ -1381,6 +1753,84 @@
       "kind": "skill",
       "path": "plugin/skills/session-state/SKILL.md",
       "sha256": "99443fb4485b987af34dc6f2a163b0163d0d41b2a5ea7483850e9dc1f8f70ba0"
+    },
+    {
+      "id": "site-reliability-engineering",
+      "kind": "skill",
+      "path": "plugin/skills/site-reliability-engineering/SKILL.md",
+      "sha256": "c18229e46b5827c301625688221d88639716e4a38a2faf83a3a86785cc79f057"
+    },
+    {
+      "id": "skills-site-reliability-engineering-assets-incident-template",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/assets/incident-template.md",
+      "sha256": "e38e63e8c184ede40fc7cca6a716e3c740a000c1ebb7b884d702c75c2495cc06"
+    },
+    {
+      "id": "skills-site-reliability-engineering-assets-postmortem-template",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/assets/postmortem-template.md",
+      "sha256": "d1465afcc7035729f3410e1eff9afa4af06e5ffb8be6d28e47e07ddf0542933e"
+    },
+    {
+      "id": "skills-site-reliability-engineering-assets-runbook-template",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/assets/runbook-template.md",
+      "sha256": "b3ce09df809e363ea2f8f46e88fe97c1c081aa2c785b6ad659f1cbf060bfe43f"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-alerting-and-paging",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/alerting-and-paging.md",
+      "sha256": "7dba47e8fccce8ba2cb722356eb7dd89ab11216bdd4d275531a1c0ecb608d424"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-capacity-and-load-management",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/capacity-and-load-management.md",
+      "sha256": "08bb32cd010b617ff6ab06b123731c5621edfc224237964ab0dab6c355ef3dcf"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-chaos-and-resilience",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/chaos-and-resilience.md",
+      "sha256": "9773a345f62b4716591e435400c75f0331c0e58e8c71feda8e4d6aa1b4e2dfa2"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-incident-response",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/incident-response.md",
+      "sha256": "1dfd7b6bcb238ebc8b849ddbaa13cf7597c4570589fc0b70423cd80827bc4c9b"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-on-call",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/on-call.md",
+      "sha256": "edf8ca095e18d5ae14b7d950b5118a9fad3291c92dffd89df19ac7f97aac1921"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-postmortems",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/postmortems.md",
+      "sha256": "e667d60df88a0f18f9ab93b1436d13d9400c25a80c75eb3cf94d73a5c14e254b"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-runbooks",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/runbooks.md",
+      "sha256": "6888bac44850c3462e6b0d9b79efb32d1638508f2ac966b490868e8be388c4ce"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-slis-slos-error-budgets",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/slis-slos-error-budgets.md",
+      "sha256": "66dfb29d94e1a110d9ecac0d4c8a84cbc35a696f5e50319f45ccb98e0a304cc7"
+    },
+    {
+      "id": "skills-site-reliability-engineering-references-toil-and-automation",
+      "kind": "reference",
+      "path": "plugin/skills/site-reliability-engineering/references/toil-and-automation.md",
+      "sha256": "332ec7b86bdf9223e0aaa259264fb36fb96b3ee595a8e3a6acf7ca18fb0dc651"
     },
     {
       "id": "skill-library-review",
@@ -1441,6 +1891,54 @@
       "kind": "reference",
       "path": "plugin/skills/telemetry/readme.md",
       "sha256": "44c5be1201c1d51363d62b7a240af0078c71f1483c7eee6187206d444826e09b"
+    },
+    {
+      "id": "typescript-analytics",
+      "kind": "skill",
+      "path": "plugin/skills/typescript-analytics/SKILL.md",
+      "sha256": "fed700a7be91414e28e09953a66ff24946b9f3e88f25c2246a5c3a0cc99ba388"
+    },
+    {
+      "id": "skills-typescript-analytics-references-error-tracking",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/error-tracking.md",
+      "sha256": "e359a879b1399c8093f9538bd082011b626f0d52b2aece56263d710d39289214"
+    },
+    {
+      "id": "skills-typescript-analytics-references-event-tracking",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/event-tracking.md",
+      "sha256": "c836230d7b0f3b32a8ca6cbb691da18c57cab16f088fe9b65d9b2ba04f1f6cd1"
+    },
+    {
+      "id": "skills-typescript-analytics-references-feature-flags",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/feature-flags.md",
+      "sha256": "9b165ba1d6a27b4d6b1e3a6c938f1feafb2956ea6ef1596488d09cbc3c4d19d7"
+    },
+    {
+      "id": "skills-typescript-analytics-references-properties-and-source-maps",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/properties-and-source-maps.md",
+      "sha256": "5caa0f0b84c14d6fac429fb03ee4e27ead82e613960ba85ca60044a1e3a8e4f6"
+    },
+    {
+      "id": "skills-typescript-analytics-references-setup-and-architecture",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/setup-and-architecture.md",
+      "sha256": "66ce026b1e2a4922496c48db9e8f824540b7cdf12635f4b6c1ba30958be3e376"
+    },
+    {
+      "id": "skills-typescript-analytics-references-typed-analytics",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/typed-analytics.md",
+      "sha256": "0c071aede00f5052e9f60a227940c6e347d8cbf2194cd70646239012d59e11b6"
+    },
+    {
+      "id": "skills-typescript-analytics-references-user-identification",
+      "kind": "reference",
+      "path": "plugin/skills/typescript-analytics/references/user-identification.md",
+      "sha256": "0c220db68f355184d2f644e8122fe90a3697a00503618382e97d6c2e97123c63"
     },
     {
       "id": "typescript-data-engineering",

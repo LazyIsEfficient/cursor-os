@@ -19,6 +19,48 @@
         "type": "command",
         "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/memory-index-inject.mjs\"",
         "timeout": 5
+      },
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-session-init.mjs\"",
+        "timeout": 5
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-pre-tool.mjs\"",
+        "timeout": 5,
+        "failClosed": true
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-post-tool.mjs\"",
+        "timeout": 5
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-before-read.mjs\"",
+        "timeout": 5,
+        "failClosed": true
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-after-file-edit.mjs\"",
+        "timeout": 5
+      }
+    ],
+    "subagentStop": [
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-subagent-stop.mjs\"",
+        "timeout": 5
       }
     ],
     "preCompact": [
@@ -34,6 +76,12 @@
         "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/memory-extract-nudge.mjs\"",
         "timeout": 5,
         "loop_limit": 1
+      },
+      {
+        "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-stop.mjs\"",
+        "timeout": 5,
+        "loop_limit": 3
       }
     ]
   }

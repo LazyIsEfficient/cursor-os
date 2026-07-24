@@ -37,7 +37,7 @@ If the design has more than three "core" verbs, some are actually:
 - **System interactions** (the player isn't doing them; they're picking what the system does)
 - **Meta-verbs** (between sessions — "build a deck" is meta-verb to "play a card" core verb)
 
-Refactor until you have three. If you can't, the concept has too many ideas in it (back to `game-concept-creator`).
+Refactor until you have three. If you can't, the concept has too many ideas in it (back to [game-concept-creator](../../game-concept-creator/SKILL.md)).
 
 ## Verbs vs features
 

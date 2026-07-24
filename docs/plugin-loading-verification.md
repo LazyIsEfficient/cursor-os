@@ -76,13 +76,23 @@ Concrete plugin consequences:
   returns invalid output, Cursor is configured to **deny** the shell command.
   Stacked on top of any user `beforeShellExecution` hooks, it therefore gates
   every shell command after install when it fails closed.
-- **`sessionStart`** — two injectors (session-state and memory-index). If the
-  user already injects session state at `sessionStart`, context can be injected
-  twice.
+- **`sessionStart`** — session-state, memory-index, and (when the dispatch
+  gate is enabled) dispatch-gate session init. If the user already injects
+  session state at `sessionStart`, context can be injected twice.
+- **`preToolUse` / `beforeReadFile`** — dispatch-gate research and impl gates
+  with `failClosed: true`. **Opt-in:** the shipped
+  `plugin/.cursor/dispatch-gate.json` has `"enabled": false`, so these hooks
+  no-op until an operator copies/enables a consumer
+  `.cursor/dispatch-gate.json`. See [dispatch-enforcement.md](dispatch-enforcement.md).
+- **`postToolUse` / `afterFileEdit` / `subagentStop`** — dispatch-gate
+  tracking; fail-open; no-op when the gate is disabled.
 - **`preCompact` / `stop`** — advisory and fail-open; still additive.
+  `stop` also registers the dispatch-gate stop follow-up (inactive until
+  enabled).
 
-This document does not redesign the guard or make hooks opt-in. It warns so
-operators can predict the post-install shell and session behavior.
+Enabling dispatch enforcement is an **operator choice**, not part of the
+default install surprise surface. The shell guard remains always-on and
+fail-closed; the dispatch gate is separate and defaults off.
 
 ### Local symlink discovery is on-disk only until attested
 

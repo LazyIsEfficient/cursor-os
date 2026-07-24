@@ -17,7 +17,7 @@ Attribution: Cursor Harness contributors
   `library-reviewer`, `adversarial-claims-reviewer`, `technical-pm`,
   `marketer`, `game-design-shaper`, and
   `capability-probe`.<!-- components:agent:end -->
-- **Skills:** <!-- components:skill:start -->thirty-seven skills.
+- **Skills:** <!-- components:skill:start -->forty-five skills.
   Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
   brief), `planning-and-task-breakdown` (brief to a dependency-aware task
   graph), `incremental-implementation` (small tested increments with
@@ -25,37 +25,43 @@ Attribution: Cursor Harness contributors
   compaction), `memory-extraction` (durable cross-session facts), and
   `findings-ledger` (recurrence-based triage of advisory findings).
   Review and audit: `code-review-and-quality` (multi-axis review method),
-  `security-engineering` (cross-stack security audit method),
-  `data-model-documentation` and `data-model-verification` (catalog and verify
-  boundary data shapes), `skill-library-review` (judgment audit of skill/agent
-  definitions), `library-investigator` (forensic, evidence-only audit of this
-  plugin's own component files), and `adversarial-claims-reviewer` (verifies
-  equations and quantitative claims in a document). Stack-specific:
+  `security-engineering` (cross-stack security audit method), `security`
+  (PII/secret scan and redaction), `data-model-documentation` and
+  `data-model-verification` (catalog and verify boundary data shapes),
+  `skill-library-review` (judgment audit of skill/agent definitions),
+  `library-investigator` (forensic, evidence-only audit of this plugin's own
+  component files), and `adversarial-claims-reviewer` (verifies equations and
+  quantitative claims in a document). Stack-specific:
   `typescript-testing-backend` (Jest and Supertest),
   `typescript-testing-frontend` (Jest and React Testing Library),
   `typescript-data-engineering` (pipelines, brokers, warehouses),
+  `typescript-analytics` (PostHog events, flags, error tracking),
   `browser-testing-with-devtools` (real-browser verification via Chrome
   DevTools MCP), `rust-engineer`, `godot-engineer` (Godot 4 with C#),
   `phaser-engineer` (Phaser 3 with TypeScript), `devops-engineer`
-  (Kubernetes, Helm, Pulumi), and `web3-smart-contract-engineering`
-  (Solidity/EVM). Delivery: `deployment-pipelines` (CI/CD workflow authoring)
-  and `release-manager` (CHANGELOG, version tags, release comms). Game and
-  marketing: `game-design-shaper`, `game-systems-designer`, `game-balancer`,
-  `iap-manager`, `marketing-shaper`, `content-ops`, `conversion-ops`,
+  (Kubernetes, Helm, Pulumi), `site-reliability-engineering` (SLOs, on-call,
+  incidents), and `web3-smart-contract-engineering` (Solidity/EVM). Delivery:
+  `deployment-pipelines` (CI/CD workflow authoring), `release-manager`
+  (CHANGELOG, version tags, release comms), and `codebase-cost-estimator`
+  (LOC-based build-cost estimates). Game and marketing: `game-design-shaper`,
+  `game-concept-creator`, `game-systems-designer`, `game-balancer`,
+  `game-monetization-strategist`, `iap-manager`, `game-marketer`,
+  `marketing-shaper`, `content-ops`, `content-pipeline`, `conversion-ops`,
   `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
   `autoresearch`, and `telemetry`.<!-- components:skill:end -->
-- **Commands:** <!-- components:command:start -->three commands —
-  `/review-gate`, `/triage-findings`, and
-  `/state`.<!-- components:command:end -->
+- **Commands:** <!-- components:command:start -->seven commands —
+  `/review-gate`, `/triage-findings`, `/state`, `/skill-new`,
+  `/agent-new`, `/audit-library`, and `/eval-harness`.<!-- components:command:end -->
 - **Rules:** factual correctness, grounding, communication, memory discipline,
-  orchestrator-first dispatch, deterministic diff verification, and evidence
-  review tiers.
-- **Hooks:** four events. A fail-closed `beforeShellExecution` default-deny
-  allowlist for safe local shell command forms, plus three advisory
-  fail-open hooks: `sessionStart` (injects `SESSION-STATE.md` and the
-  `.cursor/memory/` index), `preCompact` (notifies the user that state must be
-  re-read after compaction), and `stop` (nudges memory extraction once per
-  completed session).
+  orchestrator-first dispatch, deterministic diff verification, evidence
+  review tiers, anti-patterns, and briefing.
+- **Hooks:** nine events. A fail-closed `beforeShellExecution` default-deny
+  allowlist for safe local shell command forms; advisory fail-open
+  `sessionStart` (session-state + memory-index + opt-in dispatch-gate init),
+  `preCompact`, `postToolUse` / `afterFileEdit` / `subagentStop` /
+  `stop` (memory nudge + opt-in dispatch-gate follow-up); and fail-closed
+  opt-in `preToolUse` / `beforeReadFile` for dispatch enforcement (disabled
+  until `"enabled": true` — see [docs/dispatch-enforcement.md](../docs/dispatch-enforcement.md)).
 
 The workflow ranks correctness before speed, quality, security observations,
 and resource use. Deterministic failures and judgment backed by reproducible
@@ -69,10 +75,13 @@ Each hook runs a dependency-free Node.js script locally with the user's
 permissions, reading one hook event from standard input.
 
 The `beforeShellExecution` guard emits a permission decision and accesses no
-network, credentials, user configuration, or workspace files. The three
-advisory hooks read two workspace files — `SESSION-STATE.md` and
-`.cursor/memory/MEMORY.md` — and emit context or a message. No hook writes to
-disk, and no hook accesses the network, credentials, or user configuration.
+network, credentials, user configuration, or workspace files. The session-state
+and memory-index advisory hooks read two workspace files — `SESSION-STATE.md`
+and `.cursor/memory/MEMORY.md` — and emit context or a message. Those entry
+scripts do not write to disk. The opt-in dispatch-gate layer (disabled by
+default) writes a per-session ledger under `.cursor/` when enabled; see
+[docs/dispatch-enforcement.md](../docs/dispatch-enforcement.md). No hook
+accesses the network or credentials.
 
 Cursor has no per-prompt context-injection hook, so session state is injected
 once at `sessionStart` and is not restored after a compaction; the `preCompact`

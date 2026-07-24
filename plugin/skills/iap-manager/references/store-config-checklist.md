@@ -89,4 +89,4 @@ Storefront configuration is operational glue. The catalog is right; the model is
 - [ ] **Anti-fraud alerts** active (anomalous spend, repeated refunds)
 - [ ] **Per-platform revenue mix** dashboarded
 
-Hand alerts to `site-reliability-engineering`. Hand fraud to `security-engineering`.
+Hand alerts to [site-reliability-engineering](../../site-reliability-engineering/SKILL.md). Hand fraud to `security-engineering`.

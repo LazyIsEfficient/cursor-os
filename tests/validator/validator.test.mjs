@@ -327,7 +327,7 @@ test("validator accepts backticked non-component tokens inside a marker region",
 // in front of the name list is not verified in any form. Only the names are.
 test("validator does not verify the prose count in front of a component list", async () => {
   await withRepositoryCopy(async (repository) => {
-    await replace(join(repository, "README.md"), "thirty-seven skills:", "a dozen skills:");
+    await replace(join(repository, "README.md"), "forty-five skills:", "a dozen skills:");
 
     await validateRepository(repository);
   });

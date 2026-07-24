@@ -219,10 +219,15 @@ test("uses the official plugin-root, version 1 fail-closed contract", async () =
 
   assert.equal(config.version, 1);
   assert.deepEqual(Object.keys(config.hooks).sort(), [
+    "afterFileEdit",
+    "beforeReadFile",
     "beforeShellExecution",
+    "postToolUse",
     "preCompact",
+    "preToolUse",
     "sessionStart",
     "stop",
+    "subagentStop",
   ]);
   assert.deepEqual(config.hooks.beforeShellExecution, [
     {
@@ -241,9 +246,22 @@ test("advisory hooks are registered fail-open with plugin-root commands", async 
     sessionStart: [
       'node "${CURSOR_PLUGIN_ROOT}/scripts/session-state-inject.mjs"',
       'node "${CURSOR_PLUGIN_ROOT}/scripts/memory-index-inject.mjs"',
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-session-init.mjs"',
     ],
     preCompact: ['node "${CURSOR_PLUGIN_ROOT}/scripts/pre-compact-notice.mjs"'],
-    stop: ['node "${CURSOR_PLUGIN_ROOT}/scripts/memory-extract-nudge.mjs"'],
+    postToolUse: [
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-post-tool.mjs"',
+    ],
+    afterFileEdit: [
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-after-file-edit.mjs"',
+    ],
+    subagentStop: [
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-subagent-stop.mjs"',
+    ],
+    stop: [
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/memory-extract-nudge.mjs"',
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-stop.mjs"',
+    ],
   };
 
   for (const [event, commands] of Object.entries(advisoryCommands)) {
@@ -266,6 +284,19 @@ test("advisory hooks are registered fail-open with plugin-root commands", async 
 
   // Loop safety: replaces the on-disk turn counter of the Claude original.
   assert.equal(config.hooks.stop[0].loop_limit, 1);
+  assert.equal(config.hooks.stop[1].loop_limit, 3);
+});
+
+test("dispatch-gate failClosed hooks always declare failClosed", async () => {
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  for (const event of ["preToolUse", "beforeReadFile"]) {
+    assert.equal(config.hooks[event].length, 1);
+    assert.equal(config.hooks[event][0].failClosed, true);
+    assert.match(
+      config.hooks[event][0].command,
+      /^node "\$\{CURSOR_PLUGIN_ROOT\}\/scripts\/dispatch-gate-/u,
+    );
+  }
 });
 
 test("guard source has no execution, network, credential, or filesystem APIs", async () => {

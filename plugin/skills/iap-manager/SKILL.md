@@ -5,7 +5,7 @@ description: Use when designing and operating the in-app purchase catalog of a g
 
 # IAP Manager
 
-Your job is the **catalog and store operations**: design the actual SKUs, set their tiers and bundles, configure the storefronts, plan price tests, and operate the catalog as a live system. You do not pick the macro monetization model (`game-monetization-strategist` does), tune the in-game economy rates (`game-balancer` does), or design the systems the IAP plugs into (`game-systems-designer` does).
+Your job is the **catalog and store operations**: design the actual SKUs, set their tiers and bundles, configure the storefronts, plan price tests, and operate the catalog as a live system. You do not pick the macro monetization model ([game-monetization-strategist](../game-monetization-strategist/SKILL.md) does), tune the in-game economy rates (`game-balancer` does), or design the systems the IAP plugs into (`game-systems-designer` does).
 
 The two failure modes:
 
@@ -16,13 +16,13 @@ The right stance: **populate the price-tier ladder deliberately, design SKUs tha
 
 ## When this skill applies
 
-- A monetization strategy from `game-monetization-strategist` arrives with the catalog *shape* but not the per-SKU detail.
+- A monetization strategy from [game-monetization-strategist](../game-monetization-strategist/SKILL.md) arrives with the catalog *shape* but not the per-SKU detail.
 - The team needs to build the App Store / Google Play / Steam / web catalog for launch.
 - A live game needs catalog adjustments — new bundles, re-priced SKUs, new battle pass tiering, A/B price tests.
 - A new region is being added and needs price localization.
 - A platform policy change (Apple / Google / Steam) requires re-architecting the catalog.
 
-If the question is *which model to use*, route to `game-monetization-strategist`. If the question is *in-game economy rates*, route to `game-balancer`. If the question is *store-page conversion (icon, screenshots, description)*, route to `game-marketer`.
+If the question is *which model to use*, route to [game-monetization-strategist](../game-monetization-strategist/SKILL.md). If the question is *in-game economy rates*, route to `game-balancer`. If the question is *store-page conversion (icon, screenshots, description)*, route to [game-marketer](../game-marketer/SKILL.md).
 
 ## Procedure
 
@@ -57,8 +57,8 @@ If the question is *which model to use*, route to `game-monetization-strategist`
 - **Don't manipulate scarcity.** Real limited-time offers are fine. Fake countdowns that reset are dark patterns.
 - **Localize prices, don't translate.** Local price psychology differs (e.g. ¥120 in JP is a "small" price; $1.20 in US is "small"; converting one to the other doesn't preserve psychology).
 - **Do not change in-game economy rates.** If a SKU implies an in-game rate change, hand back to `game-balancer`.
-- **Do not change the macro model.** If the catalog implies a model change (e.g. "we need a sub tier"), hand back to `game-monetization-strategist`.
-- **Coordinate trust on monetized content changes.** Re-pricing or re-composing existing paid bundles requires comms (route to `game-marketer`) and often compensation (with `game-monetization-strategist`).
+- **Do not change the macro model.** If the catalog implies a model change (e.g. "we need a sub tier"), hand back to [game-monetization-strategist](../game-monetization-strategist/SKILL.md).
+- **Coordinate trust on monetized content changes.** Re-pricing or re-composing existing paid bundles requires comms (route to [game-marketer](../game-marketer/SKILL.md)) and often compensation (with [game-monetization-strategist](../game-monetization-strategist/SKILL.md)).
 
 ## References
 
@@ -83,10 +83,10 @@ If the question is *which model to use*, route to `game-monetization-strategist`
 
 ## Related skills
 
-- `game-monetization-strategist` — produces the catalog *shape* and price-tier ladder this skill populates
+- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — produces the catalog *shape* and price-tier ladder this skill populates
 - [game-balancer](../game-balancer/SKILL.md) — provides currency velocities and grind-time targets that size starter packs / bundles
 - [game-systems-designer](../game-systems-designer/SKILL.md) — the systems define what content is available to bundle
-- `game-marketer` — store-page conversion, paywall comms, sale comms, segment messaging
+- [game-marketer](../game-marketer/SKILL.md) — store-page conversion, paywall comms, sale comms, segment messaging
 - [godot-engineer](../godot-engineer/SKILL.md) — implements client-side IAP plumbing, store SDKs, restore-purchases, anti-fraud
 - [growth-engine](../growth-engine/SKILL.md) — runs A/B price tests once live with proper statistics
 - [conversion-ops](../conversion-ops/SKILL.md) — store-side funnel optimization (CRO patterns transfer)

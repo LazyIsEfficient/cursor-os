@@ -6,6 +6,9 @@
 /.cursor-local/
 /.cursor/session-state.checkpoints
 /.cursor/memory/
+/.cursor/dispatch-ledger.json
+/.cursor/dispatch-ledger.json.lock
+/.cursor/dispatch-gate-audit.jsonl
 /SESSION-STATE.md
 /.cursor-harness-installs/
 .DS_Store

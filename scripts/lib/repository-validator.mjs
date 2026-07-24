@@ -21,7 +21,7 @@ const DOCUMENTED_COMPONENT_DOCS = ["README.md", "plugin/README.md"];
 //
 // Hooks and rules are deliberately absent. The inventory models
 // plugin/hooks/hooks.json as one `hook` component, while the READMEs describe
-// the four events that single file registers. Neither is wrong -- they measure
+// the hook events that single file registers. Neither is wrong -- they measure
 // different things -- so fencing that prose would compare 4 against 1 forever.
 const DOCUMENTED_COMPONENT_KINDS = new Map([
   ["agent", "agents"],

@@ -14,31 +14,22 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
-### Changed
-
-- **Shell guard follow-up bypass closures** (`beforeShellExecution`): deny
-  `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that
-  family); peel Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime` like
-  their unprefixed forms; after wrapper/launcher peel, structurally re-check
-  any remaining argv word whose basename is a high-impact executable (`rm`,
-  `git`, `gh`, `npm`, `pnpm`, `busybox`) so unlisted launchers cannot hide
-  destructive shapes; deny `git --config-env` / `--config-env=*` (same control
-  family as `-c`, value is opaque in the command string). Residuals remain
-  pipe-into-interpreter and `find -delete`. See PR #39 / issue #35.
-
-- **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
-  inverted from a pure destructive-command denylist to positively recognized
-  safe forms (literal command words, no active `$()` / backtick / process /
-  ANSI-C `$'...'` substitutions, peeled wrappers/launchers, recursive shell
-  `-c` allowlisting), composed with a high-impact deny layer for recursive
-  force `rm`, destructive Git/`gh`/package-registry shapes, `git -c`
-  shell-escape config injection, and evaluator/canary path mutations. `eval`
-  is denied except the exact named forms `eval "$(direnv hook zsh)"` and
-  `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
-  pipe-into-interpreter remains an explicit residual risk. See issue #35.
-
 ### Added
 
+- **Agentic-OS parity Phase 1 — skills + rules:** additional portable skills
+  (including `codebase-cost-estimator`, `content-pipeline`, `security`,
+  `site-reliability-engineering`, `typescript-analytics`, and game design /
+  monetization packs) plus always-on rules `anti-patterns` and `briefing`.
+- **Agentic-OS parity Phase 2 — scaffolding commands:** `/skill-new` and
+  `/agent-new` scaffold conforming `plugin/skills/` and `plugin/agents/`
+  entries and hand off to `library-reviewer`.
+- **Agentic-OS parity Phase 3 — library audit + eval:** `/audit-library`
+  (sharded generate → verify audit over skills/agents) and `/eval-harness`
+  (drives existing `benchmark/` profiles; not Cloud Agent eval).
+- **Agentic-OS parity Phase 4 — opt-in dispatch-gate:** mechanical research /
+  impl / stop gates via additive hooks; ships **disabled**
+  (`plugin/.cursor/dispatch-gate.json` `"enabled": false`). Enable per project;
+  see [docs/dispatch-enforcement.md](docs/dispatch-enforcement.md).
 - **Plugin parity with `~/.cursor` globals:** agents `devops-engineer`,
   `web3-engineer`, `technical-pm`, `marketer`, and `game-design-shaper` plus
   their required skill packs (~15 skills including marketing, web3, devops,
@@ -123,6 +114,25 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Changed
 
+- **Shell guard follow-up bypass closures** (`beforeShellExecution`): deny
+  `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that
+  family); peel Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime` like
+  their unprefixed forms; after wrapper/launcher peel, structurally re-check
+  any remaining argv word whose basename is a high-impact executable (`rm`,
+  `git`, `gh`, `npm`, `pnpm`, `busybox`) so unlisted launchers cannot hide
+  destructive shapes; deny `git --config-env` / `--config-env=*` (same control
+  family as `-c`, value is opaque in the command string). Residuals remain
+  pipe-into-interpreter and `find -delete`. See PR #39 / issue #35.
+- **Shell guard default-deny allowlist** (`beforeShellExecution`): policy is
+  inverted from a pure destructive-command denylist to positively recognized
+  safe forms (literal command words, no active `$()` / backtick / process /
+  ANSI-C `$'...'` substitutions, peeled wrappers/launchers, recursive shell
+  `-c` allowlisting), composed with a high-impact deny layer for recursive
+  force `rm`, destructive Git/`gh`/package-registry shapes, `git -c`
+  shell-escape config injection, and evaluator/canary path mutations. `eval`
+  is denied except the exact named forms `eval "$(direnv hook zsh)"` and
+  `eval "$(ssh-agent -s)"`. Known expansion bypass classes fail closed;
+  pipe-into-interpreter remains an explicit residual risk. See issue #35.
 - **Release gates are now enforced on every pull request.** `aggregateReport`
   was never called on a real run in CI, so five of the seven non-compensable
   gates existed only as prose plus unit tests over synthetic inputs. The
@@ -241,6 +251,13 @@ here therefore corresponds to a single consistent version across the repository.
   `npm run plugin:cli:verify`. The document had no inbound references.
 - `README.md` credits **agentic-os** as the upstream project this was ported
   from.
+
+### Won't fix (platform)
+
+- **Per-prompt session reinjection** (Claude `UserPromptSubmit` digest): no
+  Cursor equivalent — `beforeSubmitPrompt` cannot inject context. Keep
+  `sessionStart` injection, `preCompact` notice, and manual `/state`. See
+  [capability matrix](docs/cursor-capability-matrix.md#wont-port-platform-limits).
 
 ## [0.1.0] - 2026-07-20
 

@@ -43,6 +43,9 @@ gate_plan_classify_paths() {
       SECURITY.md) GATE_IS_SENSITIVE=true ;;
       scripts/release.mjs) GATE_IS_SENSITIVE=true ;;
       .github/workflows/*) GATE_IS_SENSITIVE=true ;;
+      # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
+      .cursor/dispatch-gate.json|plugin/.cursor/dispatch-gate.json) GATE_IS_SENSITIVE=true ;;
+      scripts/lib/dispatch-gate*|plugin/scripts/lib/dispatch-gate*|plugin/scripts/dispatch-gate*|scripts/dispatch-gate*) GATE_IS_SENSITIVE=true ;;
     esac
     case "$f" in
       DATA_MODEL.md) GATE_IS_CODE_CHANGE=true; GATE_HAS_DATA_MODEL=true; continue ;;
@@ -50,7 +53,9 @@ gate_plan_classify_paths() {
       docs/*) continue ;;
       .claude/memory/*) continue ;;
       .claude/ledger/*) continue ;;
+      .cursor/dispatch-ledger.json) continue ;;
     esac
+    # eval/metrics/runs/** is NOT skipped — treated as code (aligned with JS twin).
     GATE_IS_CODE_CHANGE=true
   done <<< "$changed"
 
