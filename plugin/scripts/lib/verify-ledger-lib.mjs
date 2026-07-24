@@ -6,6 +6,9 @@
  * without embedding node:fs / child_process in the guard entry (static scan).
  *
  * Emergency: VERIFY_PR_GATE_DISABLED=1 skips the PR gate check only.
+ *
+ * Residual: Write-tool forging a full v2 ledger with spawned:true remains
+ * possible; this layer does not solve filesystem forgery.
  */
 
 import {
@@ -18,9 +21,14 @@ import {
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 
-export const VERIFY_LEDGER_VERSION = 1;
+export const VERIFY_LEDGER_VERSION = 2;
 export const VERIFY_LEDGER_RELATIVE_PATH = join(".cursor", "verify-ledger.json");
 export const VERIFY_PR_GATE_DISABLED_ENV = "VERIFY_PR_GATE_DISABLED";
+export const VERIFY_LEDGER_PROFILES = Object.freeze([
+  "node-harness",
+  "rust",
+  "custom",
+]);
 
 /** Max lock wait: 20 × 50ms = 1s — under beforeShellExecution 5s timeout. */
 const LOCK_MAX_TRIES = 20;
@@ -111,9 +119,133 @@ export function verifyLedgerLoad(root) {
   }
 }
 
+function commandBasename(token) {
+  const trimmed = token.trim();
+  if (trimmed.length === 0) {
+    return "";
+  }
+  const parts = trimmed.split(/[/\\]/u);
+  return parts[parts.length - 1] ?? "";
+}
+
 /**
- * Valid for PR: impl_verified===true, head_sha === HEAD, commands.length>=1,
- * every exit_code===0. version must be 1.
+ * True when a command is too weak to count as verification evidence.
+ * Rejected by record-verify --run and by verifyLedgerAppendCommand.
+ */
+export function verifyCommandIsTrivial(cmd) {
+  if (typeof cmd !== "string") {
+    return true;
+  }
+  const trimmed = cmd.trim();
+  if (trimmed.length === 0 || trimmed.length < 3) {
+    return true;
+  }
+  const normalized = trimmed.replace(/\s+/gu, " ");
+  const lower = normalized.toLowerCase();
+  if (
+    lower === "true" ||
+    lower === "false" ||
+    lower === ":" ||
+    lower === "exit" ||
+    lower === "exit 0"
+  ) {
+    return true;
+  }
+  const first = lower.split(" ")[0] ?? "";
+  const base = commandBasename(first);
+  if (base === "echo" || base === "printf") {
+    return true;
+  }
+  return false;
+}
+
+export function verifyLedgerProfileIsKnown(profile) {
+  return (
+    typeof profile === "string" &&
+    VERIFY_LEDGER_PROFILES.includes(profile)
+  );
+}
+
+/**
+ * Whether recorded commands satisfy the stack profile's required coverage.
+ * Any command string in the ledger may satisfy each requirement.
+ */
+export function verifyLedgerProfileCoverage(profile, commands) {
+  if (!Array.isArray(commands)) {
+    return false;
+  }
+  const cmds = commands
+    .filter(
+      (entry) =>
+        entry !== null &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        typeof entry.cmd === "string",
+    )
+    .map((entry) => entry.cmd.replace(/\s+/gu, " ").trim());
+
+  if (profile === "node-harness") {
+    const hasValidate = cmds.some(
+      (cmd) =>
+        /\bnpm\s+run\s+validate\b/u.test(cmd) ||
+        /\bnode\s+scripts\/validate\.mjs\b/u.test(cmd),
+    );
+    const hasTest = cmds.some(
+      (cmd) =>
+        /\bnpm\s+test\b/u.test(cmd) || /\bnpm\s+run\s+test\b/u.test(cmd),
+    );
+    return hasValidate && hasTest;
+  }
+
+  if (profile === "rust") {
+    const hasFmtCheck = cmds.some(
+      (cmd) =>
+        /\bcargo\s+fmt\b/u.test(cmd) && /(?:^|\s)--check(?:\s|$)/u.test(cmd),
+    );
+    const hasClippy = cmds.some((cmd) => /\bcargo\s+clippy\b/u.test(cmd));
+    const hasTest = cmds.some(
+      (cmd) =>
+        /\bcargo\s+test\b/u.test(cmd) || /\bcargo\s+nextest\b/u.test(cmd),
+    );
+    return hasFmtCheck && hasClippy && hasTest;
+  }
+
+  if (profile === "custom") {
+    const nonTrivialSpawned = commands.filter(
+      (entry) =>
+        entry !== null &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        entry.spawned === true &&
+        typeof entry.cmd === "string" &&
+        !verifyCommandIsTrivial(entry.cmd),
+    );
+    return nonTrivialSpawned.length >= 2;
+  }
+
+  return false;
+}
+
+function computeImplVerified(ledger) {
+  if (!Array.isArray(ledger.commands) || ledger.commands.length < 1) {
+    return false;
+  }
+  const allZero = ledger.commands.every(
+    (entry) =>
+      entry &&
+      typeof entry === "object" &&
+      typeof entry.exit_code === "number" &&
+      entry.exit_code === 0,
+  );
+  if (!allZero) {
+    return false;
+  }
+  return verifyLedgerProfileCoverage(ledger.profile, ledger.commands);
+}
+
+/**
+ * Valid for PR: version 2, known profile, impl_verified===true, head_sha === HEAD,
+ * commands.length>=1, every exit_code===0, every spawned===true, profile coverage.
  * @returns {{ ok: true, ledger: object } | { ok: false, reason: string }}
  */
 export function verifyLedgerValidateForHead(ledger, headSha) {
@@ -122,6 +254,9 @@ export function verifyLedgerValidateForHead(ledger, headSha) {
   }
   if (ledger.version !== VERIFY_LEDGER_VERSION) {
     return { ok: false, reason: "bad-version" };
+  }
+  if (!verifyLedgerProfileIsKnown(ledger.profile)) {
+    return { ok: false, reason: "missing-or-unknown-profile" };
   }
   if (ledger.impl_verified !== true) {
     return { ok: false, reason: "impl-not-verified" };
@@ -146,6 +281,12 @@ export function verifyLedgerValidateForHead(ledger, headSha) {
     ) {
       return { ok: false, reason: "nonzero-or-invalid-command" };
     }
+    if (entry.spawned !== true) {
+      return { ok: false, reason: "unspawned-command" };
+    }
+  }
+  if (!verifyLedgerProfileCoverage(ledger.profile, ledger.commands)) {
+    return { ok: false, reason: "profile-incomplete" };
   }
   return { ok: true, ledger };
 }
@@ -181,9 +322,15 @@ export function verifyLedgerAllowsGhPr(root) {
   return verifyLedgerIsValidForHead(root);
 }
 
-export function emptyVerifyLedger({ conversationId = "", headSha }) {
+export function emptyVerifyLedger({ conversationId = "", headSha, profile }) {
+  if (!verifyLedgerProfileIsKnown(profile)) {
+    throw new Error(
+      "verify-ledger: profile required (node-harness|rust|custom)",
+    );
+  }
   return {
     version: VERIFY_LEDGER_VERSION,
+    profile,
     conversation_id: conversationId,
     impl_verified: false,
     verified_at: null,
@@ -193,15 +340,25 @@ export function emptyVerifyLedger({ conversationId = "", headSha }) {
 }
 
 /**
- * Append one command result. Resets commands when head_sha changes.
- * Sets impl_verified when every recorded exit_code is 0 and length>=1.
+ * Append one spawned command result. Resets commands when head_sha / version changes.
+ * Requires profile on first write for a HEAD; subsequent appends may omit profile
+ * or must match. Sets impl_verified when all exits are 0 and profile coverage holds.
  */
-export function verifyLedgerAppendCommand(root, { cmd, exitCode, conversationId = "" }) {
+export function verifyLedgerAppendCommand(
+  root,
+  { cmd, exitCode, conversationId = "", profile, spawned },
+) {
   if (typeof cmd !== "string" || cmd.length === 0) {
     throw new Error("verify-ledger: cmd required");
   }
+  if (verifyCommandIsTrivial(cmd)) {
+    throw new Error("verify-ledger: trivial command rejected");
+  }
   if (typeof exitCode !== "number" || !Number.isInteger(exitCode)) {
     throw new Error("verify-ledger: exit_code must be an integer");
+  }
+  if (spawned !== true) {
+    throw new Error("verify-ledger: spawned must be true (use record-verify --run)");
   }
 
   const headSha = readHeadSha(root);
@@ -213,11 +370,17 @@ export function verifyLedgerAppendCommand(root, { cmd, exitCode, conversationId 
   verifyLedgerLock(root);
   try {
     let ledger = verifyLedgerLoad(root);
-    if (
+    const needsFresh =
       !ledger ||
       ledger.version !== VERIFY_LEDGER_VERSION ||
-      ledger.head_sha !== headSha
-    ) {
+      ledger.head_sha !== headSha;
+
+    if (needsFresh) {
+      if (!verifyLedgerProfileIsKnown(profile)) {
+        throw new Error(
+          "verify-ledger: --profile <node-harness|rust|custom> required on first write for this HEAD",
+        );
+      }
       ledger = emptyVerifyLedger({
         conversationId:
           conversationId ||
@@ -225,7 +388,27 @@ export function verifyLedgerAppendCommand(root, { cmd, exitCode, conversationId 
             ? ledger.conversation_id
             : ""),
         headSha,
+        profile,
       });
+    } else {
+      if (!verifyLedgerProfileIsKnown(ledger.profile)) {
+        if (!verifyLedgerProfileIsKnown(profile)) {
+          throw new Error(
+            "verify-ledger: --profile <node-harness|rust|custom> required",
+          );
+        }
+        ledger.profile = profile;
+      } else if (
+        profile !== undefined &&
+        profile !== null &&
+        profile !== ""
+      ) {
+        if (profile !== ledger.profile) {
+          throw new Error(
+            `verify-ledger: profile mismatch (ledger has ${ledger.profile})`,
+          );
+        }
+      }
     }
 
     if (conversationId) {
@@ -234,23 +417,21 @@ export function verifyLedgerAppendCommand(root, { cmd, exitCode, conversationId 
       ledger.conversation_id = "";
     }
 
+    ledger.version = VERIFY_LEDGER_VERSION;
     ledger.head_sha = headSha;
     if (!Array.isArray(ledger.commands)) {
       ledger.commands = [];
     }
-    ledger.commands.push({ cmd, exit_code: exitCode, at });
+    ledger.commands.push({
+      cmd,
+      exit_code: exitCode,
+      at,
+      spawned: true,
+    });
 
-    const allZero =
-      ledger.commands.length >= 1 &&
-      ledger.commands.every(
-        (entry) =>
-          entry &&
-          typeof entry === "object" &&
-          typeof entry.exit_code === "number" &&
-          entry.exit_code === 0,
-      );
-    ledger.impl_verified = allZero;
-    ledger.verified_at = allZero ? at : null;
+    const verified = computeImplVerified(ledger);
+    ledger.impl_verified = verified;
+    ledger.verified_at = verified ? at : null;
 
     mkdirSync(join(root, ".cursor"), { recursive: true });
     writeFileSync(verifyLedgerPath(root), `${JSON.stringify(ledger, null, 2)}\n`);
@@ -264,6 +445,8 @@ export const GH_PR_WITHOUT_VERIFY_RULE = "gh-pr-without-verify";
 
 export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Denied: .cursor/verify-ledger.json does not prove impl_verified for the current HEAD. " +
-  "Run stack verification (npm test, node scripts/validate.mjs / npm run validate, and brief floors), " +
-  "record each with `npm run verify:record -- --run -- <cmd>` (or `--cmd '…' --exit N`), then retry `gh pr create|ready`. " +
+  "Choose a stack profile and record only via spawn: " +
+  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
+  "node-harness needs validate + test; rust needs cargo fmt --check, clippy, and test/nextest; " +
+  "custom needs ≥2 non-trivial spawned commands. Fake `--cmd/--exit` recording is removed. " +
   "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check.";

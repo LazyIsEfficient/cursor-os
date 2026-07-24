@@ -23,6 +23,20 @@ here therefore corresponds to a single consistent version across the repository.
   non-docs PRs. Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips the
   shell-hook check.
 
+### Changed
+
+- **Verify ledger v2 + stack profiles:** `.cursor/verify-ledger.json` is
+  version `2` with a required `profile` (`node-harness` | `rust` |
+  `custom`). PR validity requires every command to have `spawned: true`
+  and profile coverage (node-harness: validate + test; rust: `cargo fmt
+  --check`, clippy, test/nextest; custom: ≥2 non-trivial spawned
+  commands). `record-verify` accepts only `--profile … --run -- <cmd>`;
+  `--cmd`/`--exit` fake recording is removed. Trivial commands (`true`,
+  `echo`, …) are rejected. Version 1 ledgers fail the PR gate
+  (`bad-version`).
+  **Residual:** Write-tool forging a full v2 ledger with `spawned: true`
+  remains possible — not claimed solved.
+
 ## [0.2.0] - 2026-07-24
 
 ### Added

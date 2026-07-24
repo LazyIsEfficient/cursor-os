@@ -37,7 +37,7 @@ Reach `checkpoint:impl-verified` before returning: compile, the affected unit
 and fuzz/invariant tests, Slither (or equivalent), every brief verification
 command to exit 0, and in this harness repository `npm run validate` on
 non-docs-only diffs. Skipped checks are not passes. After verification
-succeeds, record with `npm run verify:record -- --run -- <cmd>`.
+succeeds, record with `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
 relevant output, `verify_ledger` status, acceptance results, gas implications, storage-layout impact,

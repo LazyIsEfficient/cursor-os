@@ -48,12 +48,21 @@ function writeValidVerifyLedger(root, headSha) {
     verifyLedgerPath(root),
     `${JSON.stringify(
       {
-        version: 1,
+        version: 2,
+        profile: "node-harness",
         conversation_id: "test",
         impl_verified: true,
         verified_at: at,
         head_sha: headSha,
-        commands: [{ cmd: "npm test", exit_code: 0, at }],
+        commands: [
+          { cmd: "npm test", exit_code: 0, at, spawned: true },
+          {
+            cmd: "node scripts/validate.mjs",
+            exit_code: 0,
+            at,
+            spawned: true,
+          },
+        ],
       },
       null,
       2,

@@ -17,6 +17,6 @@ This rule is the evidence half of [gate-dag.md](../references/gate-dag.md)
 - Confirm the checks exercise the requested golden path and material edge cases.
 - Report commands and outcomes accurately; do not turn skipped or unavailable checks into passes. Skipped checks block `checkpoint:ship-ready` unless the human explicitly waives.
 - After local verification succeeds, **record the verify ledger** before `gh pr create` or `gh pr ready`:
-  - `npm run verify:record -- --run -- <cmd>` (or `--cmd '…' --exit N`) so `.cursor/verify-ledger.json` proves `impl_verified` for the current HEAD.
+  - `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>` so `.cursor/verify-ledger.json` proves `impl_verified` for the current HEAD (spawn only; profile coverage required).
   - The shell guard denies `gh pr create|ready` unless that ledger is valid (`gh-pr-without-verify`). Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips this check.
 - Do not declare work complete, open or ready a PR, merge, tag, or release until [gate-dag.md](../references/gate-dag.md) `checkpoint:ship-ready` clears.

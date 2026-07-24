@@ -70,7 +70,7 @@ If verification fails, do not dispatch gate agents. A skipped or unavailable che
 - **Node/TS:** project `test` / `typecheck` / `lint` / documented pre-PR scripts.
 - **This repo:** `npm run validate` plus relevant `npm test` (and lifecycle/corpus when those surfaces change).
 
-**Mechanical PR gate (local + CI):** after verification, record `.cursor/verify-ledger.json` via `npm run verify:record` so `impl_verified` matches the current HEAD. The `beforeShellExecution` guard denies `gh pr create` and `gh pr ready` unless that ledger is valid (rule `gh-pr-without-verify`). CI `check-pr-ship-gates` requires a checked **impl-verified** checkbox on non-docs PRs. Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check (not CI).
+**Mechanical PR gate (local + CI):** after verification, record `.cursor/verify-ledger.json` (v2 + `--profile` + `--run` only) via `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>` so `impl_verified` matches the current HEAD with profile coverage. The `beforeShellExecution` guard denies `gh pr create` and `gh pr ready` unless that ledger is valid (rule `gh-pr-without-verify`). CI `check-pr-ship-gates` requires a checked **impl-verified** checkbox on non-docs PRs. Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check (not CI).
 
 ### `checkpoint:ship-ready`
 

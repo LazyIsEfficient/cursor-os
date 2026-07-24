@@ -10,6 +10,7 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `feat/verify-ledger-profiles` | Bumped `VerifyLedger` to version 2 with required `profile`, `spawned` on commands, profile coverage rules, and `--run`-only `VerifyRecordCliResult` (removed `--cmd`/`--exit`; noted Write-tool forgery residual). |
 | 2026-07-24 | `feat/verify-before-pr` | Re-verified verify-before-PR catalog against sources; added `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE` to `BeforeShellExecutionHook` Source; confirmed `VerifyLedger` / `VerifyRecordCliResult` / `GatePlanResult` impl-verified notes match code. |
 | 2026-07-24 | `feat/verify-before-pr` | Corrected `VerifyLedger` PR-validity (`version === 1`, nullable `verified_at`); cataloged `VerifyRecordCliResult`; noted hard-coded CI `impl-verified` checkbox on `GatePlanResult` / ship-gates (not in planner `checkboxes`); clarified `gh-pr-without-verify` agent_message override on `BeforeShellExecutionHook`. |
 | 2026-07-24 | `release/0.2.0` | No data-contract changes in this run. |
@@ -94,19 +95,20 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 | Field | Value |
 |---|---|
 | **Kind** | `persistence` |
-| **Ingestion route** | Per-workspace JSON at `<project>/.cursor/verify-ledger.json` (gitignored); directory lock via `mkdir` at `.cursor/verify-ledger.json.lock` (max ~1s wait); written by `npm run verify:record` / `plugin/scripts/record-verify.mjs` (`verifyLedgerAppendCommand`); read by `beforeShellExecution` via `verifyLedgerAllowsGhPr` before allowing `gh pr create|ready` |
-| **Source** | `plugin/scripts/lib/verify-ledger-lib.mjs` (`VERIFY_LEDGER_VERSION`, `emptyVerifyLedger`, `verifyLedgerAppendCommand`, `verifyLedgerValidateForHead`, `verifyLedgerIsValidForHead`, `verifyLedgerAllowsGhPr`, `VERIFY_PR_GATE_DISABLED_ENV`, `GH_PR_WITHOUT_VERIFY_RULE`); `plugin/scripts/record-verify.mjs`; `scripts/lib/verify-ledger-lib.mjs` (re-export); `package.json` (`verify:record`); `.gitignore` (`/.cursor/verify-ledger.json`, `/.cursor/verify-ledger.json.lock`) |
+| **Ingestion route** | Per-workspace JSON at `<project>/.cursor/verify-ledger.json` (gitignored); directory lock via `mkdir` at `.cursor/verify-ledger.json.lock` (max ~1s wait); written by `npm run verify:record` / `plugin/scripts/record-verify.mjs` (`verifyLedgerAppendCommand` with `spawned: true` only via `--run`); read by `beforeShellExecution` via `verifyLedgerAllowsGhPr` before allowing `gh pr create|ready` |
+| **Source** | `plugin/scripts/lib/verify-ledger-lib.mjs` (`VERIFY_LEDGER_VERSION`, `VERIFY_LEDGER_PROFILES`, `verifyCommandIsTrivial`, `verifyLedgerProfileCoverage`, `emptyVerifyLedger`, `verifyLedgerAppendCommand`, `verifyLedgerValidateForHead`, `verifyLedgerIsValidForHead`, `verifyLedgerAllowsGhPr`, `VERIFY_PR_GATE_DISABLED_ENV`, `GH_PR_WITHOUT_VERIFY_RULE`); `plugin/scripts/record-verify.mjs`; `scripts/lib/verify-ledger-lib.mjs` (re-export); `package.json` (`verify:record`); `.gitignore` (`/.cursor/verify-ledger.json`, `/.cursor/verify-ledger.json.lock`) |
 
 #### Shape
 
 ```json
 {
-  "version": 1,
+  "version": 2,
+  "profile": "node-harness | rust | custom",
   "conversation_id": "string",
   "impl_verified": true,
   "verified_at": "ISO-8601 | null",
   "head_sha": "<full git sha>",
-  "commands": [{ "cmd": "string", "exit_code": 0, "at": "ISO-8601" }]
+  "commands": [{ "cmd": "string", "exit_code": 0, "at": "ISO-8601", "spawned": true }]
 }
 ```
 
@@ -114,9 +116,10 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 
 | Name | Type | Required | Notes |
 |---|---|---|---|
-| `version` | integer | yes | Must be `1` (`VERIFY_LEDGER_VERSION`); other versions fail PR validation (`bad-version`) |
+| `version` | integer | yes | Must be `2` (`VERIFY_LEDGER_VERSION`); version `1` and other versions fail PR validation (`bad-version`) |
+| `profile` | string | yes | One of `node-harness`, `rust`, `custom` (`VERIFY_LEDGER_PROFILES`); missing/unknown fails PR validation (`missing-or-unknown-profile`) |
 | `conversation_id` | string | yes | Session id from `--conversation-id` when provided; empty string when unset; preserved across HEAD resets when prior ledger had a string id |
-| `impl_verified` | boolean | yes | Set `true` on append when every recorded `exit_code` is `0` and `commands.length >= 1`; else `false` |
+| `impl_verified` | boolean | yes | Set `true` on append when every recorded `exit_code` is `0`, `commands.length >= 1`, and `verifyLedgerProfileCoverage(profile, commands)` holds; else `false` |
 | `verified_at` | string \| null | yes | ISO-8601 timestamp of the last append that left `impl_verified` true; `null` otherwise |
 | `head_sha` | string | yes | Full `git rev-parse HEAD` at record time; must equal current HEAD for PR validity |
 | `commands` | array<object> | yes | Append-only within a HEAD; reset (new empty ledger) when file missing, `version` mismatch, or `head_sha` changes |
@@ -125,25 +128,35 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 
 | Name | Type | Required | Notes |
 |---|---|---|---|
-| `cmd` | string | yes | Non-empty command text recorded |
+| `cmd` | string | yes | Non-empty non-trivial command text recorded (`verifyCommandIsTrivial` rejects `true`/`echo`/… before append) |
 | `exit_code` | integer | yes | Process exit code; every entry must be `0` for PR validity |
 | `at` | string | yes | ISO-8601 timestamp at append time (written always; not separately re-checked by `verifyLedgerValidateForHead`) |
+| `spawned` | boolean | yes | Must be `true` for PR validity (`unspawned-command` otherwise). Only `record-verify --run` sets this |
 
-Valid for PR (`verifyLedgerValidateForHead` / `verifyLedgerIsValidForHead`) when `version === 1`, `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, and every `exit_code === 0`. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox).
+Profile coverage (`verifyLedgerProfileCoverage` — any cmd may satisfy each requirement):
+
+| profile | Required matches |
+|---|---|
+| `node-harness` | (1) `npm run validate` OR `node scripts/validate.mjs` (2) `npm test` OR `npm run test` |
+| `rust` | (1) `cargo fmt` with `--check` (2) `cargo clippy` (3) `cargo test` OR `cargo nextest` |
+| `custom` | ≥2 non-trivial spawned commands |
+
+Valid for PR (`verifyLedgerValidateForHead` / `verifyLedgerIsValidForHead`) when `version === 2`, profile known, `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, every `exit_code === 0`, every `spawned === true`, and profile coverage holds. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox). **Residual:** Write-tool forging a full v2 ledger with `spawned: true` remains possible.
 
 ### VerifyRecordCliResult
 
 | Field | Value |
 |---|---|
 | **Kind** | `api` |
-| **Ingestion route** | `npm run verify:record -- --cmd '<command>' --exit <N>` or `npm run verify:record -- --run -- <command...>` (optional `--conversation-id`) prints one JSON object to standard output after appending to `VerifyLedger`; with `--run`, process exit code propagates the child command’s status |
-| **Source** | `plugin/scripts/record-verify.mjs` (`main` stdout payload); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAppendCommand`, `verifyLedgerIsValidForHead`); `package.json` (`verify:record`) |
+| **Ingestion route** | `npm run verify:record -- --profile <node-harness\|rust\|custom> --run -- <command...>` (optional `--conversation-id`; `--profile` required on first write for a HEAD, else omit or must match) prints one JSON object to standard output after appending to `VerifyLedger`; process exit code propagates the child command’s status. `--cmd`/`--exit` are rejected |
+| **Source** | `plugin/scripts/record-verify.mjs` (`main` stdout payload); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAppendCommand`, `verifyLedgerIsValidForHead`, `verifyCommandIsTrivial`); `package.json` (`verify:record`) |
 
 #### Shape
 
 ```json
 {
   "path": "<project>/.cursor/verify-ledger.json",
+  "profile": "node-harness | rust | custom",
   "impl_verified": "boolean",
   "head_sha": "<full git sha>",
   "commands": "non-negative integer",
@@ -157,11 +170,12 @@ Valid for PR (`verifyLedgerValidateForHead` / `verifyLedgerIsValidForHead`) when
 | Name | Type | Required | Notes |
 |---|---|---|---|
 | `path` | string | yes | Absolute path from `verifyLedgerPath(root)` |
+| `profile` | string | yes | Post-append `ledger.profile` |
 | `impl_verified` | boolean | yes | Post-append `ledger.impl_verified` |
 | `head_sha` | string | yes | Post-append `ledger.head_sha` |
 | `commands` | integer | yes | `ledger.commands.length` after append |
 | `valid_for_pr` | boolean | yes | `true` when `verifyLedgerIsValidForHead(root).ok === true` |
-| `last_exit_code` | integer | yes | Exit code just recorded (`--exit` or `--run` child status; spawn errors use `127`) |
+| `last_exit_code` | integer | yes | Exit code just recorded (`--run` child status; spawn errors use `127`) |
 
 ### BenchmarkArtifactExportCliResult
 

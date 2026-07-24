@@ -22,9 +22,9 @@ Use [incremental-implementation](../skills/incremental-implementation/SKILL.md):
    `npm run validate` on any non-docs-only diff. Additional depth beyond that
    floor may scale with risk (integration and failure paths for high risk) —
    never skip the floor. After those commands succeed, record them with
-   `npm run verify:record -- --run -- <cmd>` (or `--cmd` / `--exit`) so
+   `npm run verify:record -- --profile node-harness --run -- <cmd>` so
    `.cursor/verify-ledger.json` proves `impl_verified` for HEAD before any
-   `gh pr create|ready`.
+   `gh pr create|ready` (spawn only; profile coverage required).
 4. Do not commit, access the network, or widen scope unless the caller asks.
 
 Return exact evidence:
