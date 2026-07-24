@@ -4,6 +4,24 @@
 
 Closes #
 
+## Local verification (required — CI enforces)
+
+Fail-closed for non-docs PRs. Record `.cursor/verify-ledger.json` for this branch HEAD before `gh pr create|ready` (shell guard enforces locally). CI checks the checkbox below.
+
+- [ ] **impl-verified** — recorded `.cursor/verify-ledger.json` for this branch HEAD (`npm run verify:record` after validate/tests/stack floors). Paste command summary in details.
+
+<details>
+<summary>Verify ledger command summary</summary>
+
+```
+# example:
+# npm run verify:record -- --run -- npm test
+# npm run verify:record -- --run -- node scripts/validate.mjs
+paste command summary / ledger commands[] here
+```
+
+</details>
+
 ## Ship gates (required — CI enforces checkboxes)
 
 Run locally: `bash scripts/gate-plan.sh` (or set `SHIP_GATES_CHANGED_FILES` to your changed paths) — check every agent listed under `checkboxes=`.
@@ -23,9 +41,9 @@ Canonical DAG: [`plugin/references/gate-dag.md`](../plugin/references/gate-dag.m
 
 **No direct merge or tag** until this PR is open and `check-pr-ship-gates` is green. Release flow: merge PR → tag on `main` → `gh release create`.
 
-## Gates CI does not run
+## Advisory local gates (CI does not run these)
 
-CI runs `npm run validate`, `npm test`, install-lifecycle, plugin lifecycle, corpus smoke, and ship-gate checkbox enforcement. The gates below are local-only — please run them and paste or summarize the output. An unchecked box with an explanation is more useful than a checked one that was not run.
+CI runs `npm run validate`, `npm test`, install-lifecycle, plugin lifecycle, corpus smoke, and ship-gate checkbox enforcement (including **impl-verified**). The gates below are local-only — please run them and paste or summarize the output. An unchecked box with an explanation is more useful than a checked one that was not run.
 
 - [ ] `npm run plugin:lifecycle:verify` — clean install, idempotence/repair,
       and removal against a temporary Cursor root.

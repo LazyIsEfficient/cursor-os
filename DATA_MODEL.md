@@ -19,6 +19,7 @@
 | 2026-07-23 | `pattern3-ship-gates` | Cataloged `GatePlanResult` JSON from `gate-plan.sh --json`; corrected `RepositoryValidationResult.checks` to include `documented-components`. |
 | 2026-07-23 | `port-pattern3-data-model-agents` | No data-contract changes in this run. |
 | 2026-07-22 | `fix/35-shell-guard-bypass-followup` | Closed follow-up shell-guard bypasses: deny `GIT_CONFIG_*` env injection, peel Homebrew GNU `gtimeout`/`gnice`/`gstdbuf`/`gtime`, structurally re-check high-impact basenames after unknown launchers, and deny `git --config-env`. |
+| 2026-07-24 | `feat/verify-before-pr` | Added `VerifyLedger` persistence and `gh-pr-without-verify` deny on `BeforeShellExecutionHook` for `gh pr create|ready` unless ledger proves `impl_verified` for HEAD; CI ship-gates require **impl-verified** checkbox. |
 | 2026-07-22 | `fix/35-shell-guard-allowlist` | Inverted `BeforeShellExecutionHook` to default-deny allowlist with named `eval` exceptions first, expansion/ANSI-C denial, launcher peeling, high-impact deny shapes, and git `-c` shell-escape denial. |
 | 2026-07-22 | `fix/36-plugin-install-collision-docs` | Noted that the user-facing `plugins/local` symlink does not write `plugins.json`, unlike the temporary lifecycle adapter's `CursorPluginRegistry` path; pointed install-collision / hook-stacking docs at `docs/plugin-loading-verification.md`. |
 | 2026-07-20 | `main` | Updated local-install state to schema 2 and documented structural managed-registry restoration without whole-config digest ownership. |
@@ -45,7 +46,7 @@
 |---|---|
 | **Kind** | `api` |
 | **Ingestion route** | Cursor schema-v1 `beforeShellExecution`, running from the active workspace, invokes `node "${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs"` using Cursor's supplied plugin-root environment value, writes one JSON event to standard input, and reads one JSON permission decision from standard output |
-| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `readInput`, `main`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
+| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `readInput`, `main`); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAllowsGhPr`, `GH_PR_WITHOUT_VERIFY_RULE`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
 
 #### Shape
 
@@ -73,7 +74,8 @@ Input:
 | Name | Type | Required | Notes |
 |---|---|---|---|
 | `command` | string | yes | Untrusted shell command text; must be non-empty |
-| additional fields | unknown | no | Accepted without validation and ignored by the guard |
+| `cwd` | string | no | Workspace root for verify-ledger PR gate; falls back to `workspace_roots[0]`, `CURSOR_PROJECT_DIR`, then `process.cwd()` |
+| additional fields | unknown | no | Accepted without validation; used only for workspace-root resolution when present |
 
 Output:
 
@@ -83,7 +85,49 @@ Output:
 | `user_message` | string | deny only | Deterministic user-facing denial naming the matched rule |
 | `agent_message` | string | deny only | Deterministic instruction stating that the guard denied the command |
 
-Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: allow named `eval` exceptions → deny active expansions (including ANSI-C `$'...'` quoting, `$()`, backticks, and process substitutions) → peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime`) → deny any `GIT_CONFIG_*` assignment in the segment → structurally re-check remaining argv words whose basename is a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments (non-`GIT_CONFIG_*`), optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`), and optional command launchers (`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms) whose operands are re-inspected. Absolute paths are reduced to basenames for wrapper, launcher, and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) are denied anywhere they expand; ordinary single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), `git -c` assignments that bind shell-running values (`alias.*`, values containing `!`, `core.pager`, `diff.external`, and related keys), `git --config-env` / `--config-env=*` (fail-closed; value is opaque in the command string), `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that family), selected `gh` and `npm`/`pnpm` mutation forms, and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, `git-config-injection`, `git-config-env-injection`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`. Pipe-into-interpreter and `find -delete` remain explicit residual risks.
+Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: allow named `eval` exceptions → deny active expansions (including ANSI-C `$'...'` quoting, `$()`, backticks, and process substitutions) → peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime`) → deny any `GIT_CONFIG_*` assignment in the segment → structurally re-check remaining argv words whose basename is a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments (non-`GIT_CONFIG_*`), optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`), and optional command launchers (`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms) whose operands are re-inspected. Absolute paths are reduced to basenames for wrapper, launcher, and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) are denied anywhere they expand; ordinary single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), `git -c` assignments that bind shell-running values (`alias.*`, values containing `!`, `core.pager`, `diff.external`, and related keys), `git --config-env` / `--config-env=*` (fail-closed; value is opaque in the command string), `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that family), selected `gh` and `npm`/`pnpm` mutation forms, `gh pr create` / `gh pr ready` unless `VerifyLedger` proves `impl_verified` for the current HEAD (rule `gh-pr-without-verify`; emergency skip `VERIFY_PR_GATE_DISABLED=1`), and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, `git-config-injection`, `git-config-env-injection`, `gh-pr-without-verify`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`. Pipe-into-interpreter and `find -delete` remain explicit residual risks.
+
+### VerifyLedger
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Per-workspace JSON at `<project>/.cursor/verify-ledger.json` (gitignored); mkdir lock at `.cursor/verify-ledger.json.lock`; written by `npm run verify:record` / `plugin/scripts/record-verify.mjs`; read by `beforeShellExecution` via `verifyLedgerAllowsGhPr` before allowing `gh pr create|ready` |
+| **Source** | `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAppendCommand`, `verifyLedgerIsValidForHead`, `verifyLedgerAllowsGhPr`); `plugin/scripts/record-verify.mjs`; `scripts/lib/verify-ledger-lib.mjs` (re-export); `package.json` (`verify:record`); `.gitignore` (`/.cursor/verify-ledger.json`, `/.cursor/verify-ledger.json.lock`) |
+
+#### Shape
+
+```json
+{
+  "version": 1,
+  "conversation_id": "string",
+  "impl_verified": true,
+  "verified_at": "ISO-8601",
+  "head_sha": "<full git sha>",
+  "commands": [{ "cmd": "string", "exit_code": 0, "at": "ISO-8601" }]
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `version` | integer | yes | Always `1` |
+| `conversation_id` | string | yes | Optional session id; empty string when unset |
+| `impl_verified` | boolean | yes | `true` only when every recorded `exit_code` is `0` and `commands.length >= 1` |
+| `verified_at` | string \| null | yes | ISO-8601 timestamp of the last append that left `impl_verified` true; `null` otherwise |
+| `head_sha` | string | yes | Full `git rev-parse HEAD` at record time; must equal current HEAD for PR validity |
+| `commands` | array<object> | yes | Append-only within a HEAD; reset when HEAD changes |
+
+`commands[]` element:
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `cmd` | string | yes | Command text recorded |
+| `exit_code` | integer | yes | Process exit code; must be `0` for PR validity |
+| `at` | string | yes | ISO-8601 timestamp at append time |
+
+Valid for PR when `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, and every `exit_code === 0`. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox).
 
 ### BenchmarkArtifactExportCliResult
 

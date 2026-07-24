@@ -34,9 +34,10 @@ Reach `checkpoint:impl-verified` before returning: lint/diff/preview as
 appropriate (`helm lint`, `kubectl apply --dry-run=client`, `pulumi preview`),
 every brief verification command to exit 0, and in this harness repository
 `npm run validate` on non-docs-only diffs. Skipped checks are not passes.
+After verification succeeds, record with `npm run verify:record -- --run -- <cmd>`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
-relevant output, acceptance results, rollback plan, any cluster-scoped
+relevant output, `verify_ledger` status, acceptance results, rollback plan, any cluster-scoped
 permission introduced, and `G-data-document:` status.
 
 ## Session close — mandatory (`G-data-document`)

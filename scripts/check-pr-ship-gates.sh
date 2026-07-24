@@ -101,5 +101,9 @@ for agent in "${GATE_CHECKBOXES[@]}"; do
   fi
 done
 
+if ! body_check "impl-verified"; then
+  fail "check [x] impl-verified (Local verification — .cursor/verify-ledger.json recorded for branch HEAD via npm run verify:record)"
+fi
+
 echo "check-pr-ship-gates: OK (code=$GATE_IS_CODE_CHANGE sensitive=$GATE_IS_SENSITIVE library=$GATE_IS_LIBRARY data_model=$GATE_HAS_DATA_MODEL)"
 exit 0

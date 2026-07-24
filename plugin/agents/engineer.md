@@ -21,7 +21,10 @@ Use [incremental-implementation](../skills/incremental-implementation/SKILL.md):
    verification command to exit 0. In this harness repository, also run
    `npm run validate` on any non-docs-only diff. Additional depth beyond that
    floor may scale with risk (integration and failure paths for high risk) —
-   never skip the floor.
+   never skip the floor. After those commands succeed, record them with
+   `npm run verify:record -- --run -- <cmd>` (or `--cmd` / `--exit`) so
+   `.cursor/verify-ledger.json` proves `impl_verified` for HEAD before any
+   `gh pr create|ready`.
 4. Do not commit, access the network, or widen scope unless the caller asks.
 
 Return exact evidence:
@@ -34,6 +37,7 @@ verification:
   - command: <exact command>
     exit_code: <integer>
     result: <exact relevant output>
+verify_ledger: <path + impl_verified true|false for HEAD, or N/A docs-only>
 acceptance: [<criterion and observed result>]
 residual_risk: [<unverified item or empty>]
 G-data-document: <updated | no-op | skipped-docs-only>
