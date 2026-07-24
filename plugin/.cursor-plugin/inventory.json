@@ -3,9 +3,9 @@
   "plugin": {
     "id": "cursor-harness",
     "name": "cursor-harness",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "manifestPath": "plugin/.cursor-plugin/plugin.json",
-    "manifestSha256": "cab9c0ebe2654823eaec20749de0b59c167cbbe3bc02787cab7fdba6af630113"
+    "manifestSha256": "00097663dabe01429a74d42e0e3520e0f967e220819042ee0b0aafe384b47b42"
   },
   "components": [
     {

@@ -4,12 +4,13 @@
 > `data-model-documenter` agent after each implementation pass. Do not hand-edit unless
 > correcting agent error — prefer re-running the agent on the diff.
 
-**Last updated:** 2026-07-23
+**Last updated:** 2026-07-24
 
 ## Change log (recent)
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `release/0.2.0` | No data-contract changes in this run. |
 | 2026-07-23 | `feat/agentic-os-parity` | Cataloged `ContentPipelineEnvironment` process env vars from content-pipeline Python scripts and `.env.example`. |
 | 2026-07-23 | `feat/agentic-os-parity` | Cataloged opt-in dispatch-gate config, per-session ledger, audit NDJSON lines, and Cursor hook permission/followup/context response shapes. |
 | 2026-07-23 | `feat/plugin-global-parity` | No data-contract changes in this run. |

@@ -1,6 +1,6 @@
 {
   "name": "cursor-harness",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Correctness-first engineering workflows for Cursor",
   "author": {
     "name": "Cursor Harness contributors"
