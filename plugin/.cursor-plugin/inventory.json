@@ -276,7 +276,7 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "e71d451d9b33fb9e5656cc39d030741c2838fecb834477545f495f2da9d1db26"
+      "sha256": "d5c4437d35f641b569742f2a998af7a6222712e5dae6bd851c35ed4c43db429a"
     },
     {
       "id": "memory-extract-nudge",

@@ -133,7 +133,7 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 | `at` | string | yes | ISO-8601 timestamp at append time (written always; not separately re-checked by `verifyLedgerValidateForHead`) |
 | `spawned` | boolean | yes | Must be `true` for PR validity (`unspawned-command` otherwise). Only `record-verify --run` sets this |
 
-Profile coverage (`verifyLedgerProfileCoverage` — any cmd may satisfy each requirement):
+Profile coverage (`verifyLedgerProfileCoverage` — argv-shaped match after peeling `env`/`command`/`builtin`/`nohup`; substring embedding inside `node -e` payloads does not count):
 
 | profile | Required matches |
 |---|---|

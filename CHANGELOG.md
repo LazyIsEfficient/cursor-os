@@ -32,8 +32,10 @@ here therefore corresponds to a single consistent version across the repository.
   --check`, clippy, test/nextest; custom: ≥2 non-trivial spawned
   commands). `record-verify` accepts only `--profile … --run -- <cmd>`;
   `--cmd`/`--exit` fake recording is removed. Trivial commands (`true`,
-  `echo`, …) are rejected. Version 1 ledgers fail the PR gate
-  (`bad-version`).
+  `/bin/true`, `echo`, `env true`, …) are rejected. Profile coverage is
+  argv-shaped (not substring), so embedding tokens in `node -e` payloads
+  does not satisfy node-harness/rust requirements. Version 1 ledgers fail
+  the PR gate (`bad-version`).
   **Residual:** Write-tool forging a full v2 ledger with `spawned: true`
   remains possible — not claimed solved.
 

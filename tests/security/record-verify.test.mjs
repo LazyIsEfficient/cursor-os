@@ -150,6 +150,10 @@ test("verifyCommandIsTrivial detects weak commands", () => {
   assert.equal(verifyCommandIsTrivial("ab"), true);
   assert.equal(verifyCommandIsTrivial("true"), true);
   assert.equal(verifyCommandIsTrivial("false"), true);
+  assert.equal(verifyCommandIsTrivial("/bin/true"), true);
+  assert.equal(verifyCommandIsTrivial("/bin/false"), true);
+  assert.equal(verifyCommandIsTrivial("true x"), true);
+  assert.equal(verifyCommandIsTrivial("env true"), true);
   assert.equal(verifyCommandIsTrivial(":"), true);
   assert.equal(verifyCommandIsTrivial("echo"), true);
   assert.equal(verifyCommandIsTrivial("echo hello"), true);
@@ -160,6 +164,33 @@ test("verifyCommandIsTrivial detects weak commands", () => {
   assert.equal(verifyCommandIsTrivial("npm test"), false);
   assert.equal(verifyCommandIsTrivial("node scripts/validate.mjs"), false);
   assert.equal(verifyCommandIsTrivial("cargo fmt --check"), false);
+});
+
+test("custom profile rejects path-prefixed true/false no-ops", () => {
+  const at = new Date().toISOString();
+  const spawned = (cmd) => ({ cmd, exit_code: 0, at, spawned: true });
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("/bin/true"),
+      spawned("/bin/true"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerValidateForHead(
+      {
+        version: 2,
+        profile: "custom",
+        conversation_id: "",
+        impl_verified: true,
+        verified_at: at,
+        head_sha: "abc123",
+        commands: [spawned("/bin/true"), spawned("/usr/bin/false")],
+      },
+      "abc123",
+    ).ok,
+    false,
+  );
 });
 
 test("verifyLedgerProfileCoverage matches profile requirements", () => {
@@ -182,6 +213,21 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
   );
   assert.equal(
     verifyLedgerProfileCoverage("node-harness", [spawned("npm test")]),
+    false,
+  );
+  // Substring embedding in node -e must not satisfy coverage.
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned(`node -e "console.log('npm run validate')"`),
+      spawned(`node -e "console.log('npm test')"`),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("npm run validate-foo"),
+      spawned("npm test"),
+    ]),
     false,
   );
 

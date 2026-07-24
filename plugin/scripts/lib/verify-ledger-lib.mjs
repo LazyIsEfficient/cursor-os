@@ -129,6 +129,79 @@ function commandBasename(token) {
 }
 
 /**
+ * Tokenize a recorded command string (space-separated; JSON-quoted parts from
+ * record-verify when an argv element contained whitespace).
+ */
+export function tokenizeVerifyCommand(cmd) {
+  if (typeof cmd !== "string") {
+    return [];
+  }
+  const tokens = [];
+  const source = cmd.trim();
+  let index = 0;
+  while (index < source.length) {
+    while (index < source.length && /\s/u.test(source[index])) {
+      index += 1;
+    }
+    if (index >= source.length) {
+      break;
+    }
+    if (source[index] === '"') {
+      let value = "";
+      index += 1;
+      while (index < source.length) {
+        const ch = source[index];
+        if (ch === "\\" && index + 1 < source.length) {
+          value += source[index + 1];
+          index += 2;
+          continue;
+        }
+        if (ch === '"') {
+          index += 1;
+          break;
+        }
+        value += ch;
+        index += 1;
+      }
+      tokens.push(value);
+      continue;
+    }
+    const start = index;
+    while (index < source.length && !/\s/u.test(source[index])) {
+      index += 1;
+    }
+    tokens.push(source.slice(start, index));
+  }
+  return tokens;
+}
+
+/** Peel env/command/builtin/nohup (and env KEY=val) so argv matching sees the real binary. */
+function peelVerifyArgv(tokens) {
+  const peeled = [...tokens];
+  while (peeled.length > 0) {
+    const base = commandBasename(peeled[0]).toLowerCase();
+    if (
+      base !== "env" &&
+      base !== "command" &&
+      base !== "builtin" &&
+      base !== "nohup"
+    ) {
+      break;
+    }
+    peeled.shift();
+    if (base === "env") {
+      while (
+        peeled.length > 0 &&
+        /^[A-Za-z_][A-Za-z0-9_]*=/u.test(peeled[0])
+      ) {
+        peeled.shift();
+      }
+    }
+  }
+  return peeled;
+}
+
+/**
  * True when a command is too weak to count as verification evidence.
  * Rejected by record-verify --run and by verifyLedgerAppendCommand.
  */
@@ -142,18 +215,20 @@ export function verifyCommandIsTrivial(cmd) {
   }
   const normalized = trimmed.replace(/\s+/gu, " ");
   const lower = normalized.toLowerCase();
-  if (
-    lower === "true" ||
-    lower === "false" ||
-    lower === ":" ||
-    lower === "exit" ||
-    lower === "exit 0"
-  ) {
+  if (lower === ":" || lower === "exit" || lower === "exit 0") {
     return true;
   }
-  const first = lower.split(" ")[0] ?? "";
-  const base = commandBasename(first);
-  if (base === "echo" || base === "printf") {
+  const tokens = peelVerifyArgv(tokenizeVerifyCommand(lower));
+  if (tokens.length === 0) {
+    return true;
+  }
+  const base = commandBasename(tokens[0]);
+  if (
+    base === "echo" ||
+    base === "printf" ||
+    base === "true" ||
+    base === "false"
+  ) {
     return true;
   }
   return false;
@@ -166,47 +241,96 @@ export function verifyLedgerProfileIsKnown(profile) {
   );
 }
 
+function matchesNodeHarnessValidate(tokens) {
+  const bin = commandBasename(tokens[0] ?? "").toLowerCase();
+  if (
+    tokens.length >= 3 &&
+    bin === "npm" &&
+    tokens[1] === "run" &&
+    tokens[2] === "validate"
+  ) {
+    return true;
+  }
+  if (tokens.length >= 2 && bin === "node") {
+    const script = tokens[1].replace(/\\/gu, "/");
+    if (
+      script === "scripts/validate.mjs" ||
+      script.endsWith("/scripts/validate.mjs")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function matchesNodeHarnessTest(tokens) {
+  const bin = commandBasename(tokens[0] ?? "").toLowerCase();
+  if (tokens.length >= 2 && bin === "npm" && tokens[1] === "test") {
+    return true;
+  }
+  if (
+    tokens.length >= 3 &&
+    bin === "npm" &&
+    tokens[1] === "run" &&
+    tokens[2] === "test"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function matchesCargoFmtCheck(tokens) {
+  return (
+    commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
+    tokens[1] === "fmt" &&
+    tokens.includes("--check")
+  );
+}
+
+function matchesCargoClippy(tokens) {
+  return (
+    commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
+    tokens[1] === "clippy"
+  );
+}
+
+function matchesCargoTest(tokens) {
+  const bin = commandBasename(tokens[0] ?? "").toLowerCase();
+  return bin === "cargo" && (tokens[1] === "test" || tokens[1] === "nextest");
+}
+
 /**
  * Whether recorded commands satisfy the stack profile's required coverage.
- * Any command string in the ledger may satisfy each requirement.
+ * Matching is argv-shaped (not substring): embedding tokens inside `node -e`
+ * payloads does not count.
  */
 export function verifyLedgerProfileCoverage(profile, commands) {
   if (!Array.isArray(commands)) {
     return false;
   }
-  const cmds = commands
+  const argvLists = commands
     .filter(
       (entry) =>
         entry !== null &&
         typeof entry === "object" &&
         !Array.isArray(entry) &&
-        typeof entry.cmd === "string",
+        typeof entry.cmd === "string" &&
+        entry.spawned === true,
     )
-    .map((entry) => entry.cmd.replace(/\s+/gu, " ").trim());
+    .map((entry) => peelVerifyArgv(tokenizeVerifyCommand(entry.cmd)));
 
   if (profile === "node-harness") {
-    const hasValidate = cmds.some(
-      (cmd) =>
-        /\bnpm\s+run\s+validate\b/u.test(cmd) ||
-        /\bnode\s+scripts\/validate\.mjs\b/u.test(cmd),
+    const hasValidate = argvLists.some((tokens) =>
+      matchesNodeHarnessValidate(tokens),
     );
-    const hasTest = cmds.some(
-      (cmd) =>
-        /\bnpm\s+test\b/u.test(cmd) || /\bnpm\s+run\s+test\b/u.test(cmd),
-    );
+    const hasTest = argvLists.some((tokens) => matchesNodeHarnessTest(tokens));
     return hasValidate && hasTest;
   }
 
   if (profile === "rust") {
-    const hasFmtCheck = cmds.some(
-      (cmd) =>
-        /\bcargo\s+fmt\b/u.test(cmd) && /(?:^|\s)--check(?:\s|$)/u.test(cmd),
-    );
-    const hasClippy = cmds.some((cmd) => /\bcargo\s+clippy\b/u.test(cmd));
-    const hasTest = cmds.some(
-      (cmd) =>
-        /\bcargo\s+test\b/u.test(cmd) || /\bcargo\s+nextest\b/u.test(cmd),
-    );
+    const hasFmtCheck = argvLists.some((tokens) => matchesCargoFmtCheck(tokens));
+    const hasClippy = argvLists.some((tokens) => matchesCargoClippy(tokens));
+    const hasTest = argvLists.some((tokens) => matchesCargoTest(tokens));
     return hasFmtCheck && hasClippy && hasTest;
   }
 
