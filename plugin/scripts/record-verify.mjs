@@ -25,6 +25,18 @@ function printUsage() {
   );
 }
 
+/** Strict integer only — rejects "", whitespace, floats, and Number("")===0 traps. */
+function parseExitCodeRaw(raw) {
+  if (typeof raw !== "string" || !/^-?\d+$/u.test(raw)) {
+    return { error: "--exit <integer> is required with --cmd" };
+  }
+  const exitCode = Number(raw);
+  if (!Number.isInteger(exitCode)) {
+    return { error: "--exit <integer> is required with --cmd" };
+  }
+  return { exitCode };
+}
+
 function parseArgs(argv) {
   let cmd = null;
   let exitCode = null;
@@ -55,12 +67,20 @@ function parseArgs(argv) {
       continue;
     }
     if (arg === "--exit") {
-      exitCode = Number(argv[index + 1]);
+      const parsedExit = parseExitCodeRaw(argv[index + 1]);
+      if (parsedExit.error) {
+        return parsedExit;
+      }
+      exitCode = parsedExit.exitCode;
       index += 1;
       continue;
     }
     if (arg.startsWith("--exit=")) {
-      exitCode = Number(arg.slice("--exit=".length));
+      const parsedExit = parseExitCodeRaw(arg.slice("--exit=".length));
+      if (parsedExit.error) {
+        return parsedExit;
+      }
+      exitCode = parsedExit.exitCode;
       continue;
     }
     if (arg === "--conversation-id") {

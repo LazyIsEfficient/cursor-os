@@ -300,7 +300,7 @@
       "id": "record-verify",
       "kind": "script",
       "path": "plugin/scripts/record-verify.mjs",
-      "sha256": "696a17d5d5d07cc95434a2d7d93f04d980739b67d1e4455427430639f9dcb47a"
+      "sha256": "a957a0dbff4bcaac8560feeaa7dfbcb0769d3e0a10cdadd6820d2851f9f76e1e"
     },
     {
       "id": "session-state-inject",
