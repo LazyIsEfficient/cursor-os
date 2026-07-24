@@ -42,13 +42,13 @@
       "id": "devops-engineer",
       "kind": "agent",
       "path": "plugin/agents/devops-engineer.md",
-      "sha256": "e683764feca27a37186a23994f1238149d7f45078e5b9aebaf01abbe69abc0ad"
+      "sha256": "d83c9d436b53779fe84afa99daecc8fff2e1e888ec85da59ea5d45ad3a9cbcd9"
     },
     {
       "id": "engineer",
       "kind": "agent",
       "path": "plugin/agents/engineer.md",
-      "sha256": "cfa58260b075f009e7c12e333fe58bd9bb166e381fddc066658d2777a9fbce7f"
+      "sha256": "43c1ff960eb0562f1a2a2eb2e8583cba8cf774a677b4ee264bff82998fba3cad"
     },
     {
       "id": "game-design-shaper",
@@ -60,7 +60,7 @@
       "id": "godot-engineer",
       "kind": "agent",
       "path": "plugin/agents/godot-engineer.md",
-      "sha256": "017b76321fbf666bfc7c6209f77409a736a2e8b6a7e398f22fd3dc6301355da2"
+      "sha256": "b61f542e4e8f138f1dc55e772ed3297a31341f23efa68741553be10847c3d7bf"
     },
     {
       "id": "library-investigator",
@@ -84,13 +84,13 @@
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
-      "sha256": "da94372233daf59be2d4b951ddc27d9b5354d86ddffc6fb9142cf6cdb988b8ef"
+      "sha256": "67cee9a79cad82971ccd9d94c13dc5faee5f609075f67d350f5281d18ae5db47"
     },
     {
       "id": "rust-engineer",
       "kind": "agent",
       "path": "plugin/agents/rust-engineer.md",
-      "sha256": "86413924cb7be86e63cbb8265af5cadcb7f3d753d5ae5a4d737c7fd9b180caae"
+      "sha256": "03d6a8e8af279594a9486067e9c1ea75d63057cd186d471ba6c7e02e7dc17202"
     },
     {
       "id": "security-reviewer",
@@ -108,7 +108,7 @@
       "id": "web3-engineer",
       "kind": "agent",
       "path": "plugin/agents/web3-engineer.md",
-      "sha256": "18d4cf18a20812ecb03a6073ff7a9b63cf1aa629fba00928747aea6af82ffce8"
+      "sha256": "8b817ac9c61f9308442a9136567795273bc938cfe8de69f9c32fff643247dd21"
     },
     {
       "id": "agent-new",
@@ -162,7 +162,7 @@
       "id": "actual-diff-verification",
       "kind": "rule",
       "path": "plugin/rules/actual-diff-verification.mdc",
-      "sha256": "4abd39e64984b51c273280fd598d188b87fa6e21afca9c3a3d077d5d9d6b46d8"
+      "sha256": "c80aa8a2dde620f46ade150ddca6801c0836f7e684b0525ce5eb6780df4af63c"
     },
     {
       "id": "anti-patterns",
@@ -276,7 +276,7 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "c8f1a8f06c5c166ebcfe81c067afd8571c8e38980ef83c51b1226266b1775254"
+      "sha256": "2bbd3ddaa215db391096ebea1a4d18e29d12c45f4685162128d0d36aeeb3a948"
     },
     {
       "id": "memory-extract-nudge",
@@ -300,7 +300,7 @@
       "id": "record-verify",
       "kind": "script",
       "path": "plugin/scripts/record-verify.mjs",
-      "sha256": "a957a0dbff4bcaac8560feeaa7dfbcb0769d3e0a10cdadd6820d2851f9f76e1e"
+      "sha256": "72e42e44222759b998d361896c6b35afb0db41795be41f509ea65ce51837920e"
     },
     {
       "id": "session-state-inject",

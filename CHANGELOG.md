@@ -14,6 +14,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Telemetry probe / benchmark signal cleanup:** credential signal handlers
+  now SIGKILL in-flight `spawnCaptured` children (detached process groups)
+  before `rmSync`, with retries — closes a CI flake where SIGINT left a
+  `cursor-telemetry-probe-*` directory under the work root.
+
 ### Added
 
 - **Mechanical verify-before-PR:** `.cursor/verify-ledger.json` (via
@@ -22,6 +29,27 @@ here therefore corresponds to a single consistent version across the repository.
   `check-pr-ship-gates` requires a checked **impl-verified** checkbox on
   non-docs PRs. Emergency only: `VERIFY_PR_GATE_DISABLED=1` skips the
   shell-hook check.
+
+### Changed
+
+- **Verify ledger v2 + stack profiles:** `.cursor/verify-ledger.json` is
+  version `2` with a required `profile` (`node-harness` | `rust` |
+  `custom`). PR validity requires every command to have `spawned: true`
+  and profile coverage (node-harness: validate + test; rust: `cargo fmt
+  --check`, clippy, test/nextest; custom: ≥2 verification-shaped spawned
+  commands — test/lint/build runners, not identity probes like `pwd`/`date`).
+  `record-verify` accepts only `--profile … --run -- <cmd>`;
+  `--cmd`/`--exit` fake recording is removed. Trivial commands (`true`,
+  `/bin/true`, `echo`, `env true`, `busybox true`, `sh -c true`,
+  `bash -c ':'`, `pwd`, `nice true`, …) are rejected. Profile coverage is
+  argv-shaped (not substring), so embedding tokens in `node -e` payloads
+  does not satisfy node-harness/rust requirements; post-peel `--help`/`-h`
+  does not count; `node-harness` validate accepts only repo-relative
+  `scripts/validate.mjs` (not absolute `/tmp/.../scripts/validate.mjs`).
+  Version 1 ledgers fail the PR gate (`bad-version`).
+  **Residual:** Write-tool forging a full v2 ledger with `spawned: true`
+  remains possible — not claimed solved. CI still does not read ledger
+  contents (checkbox-only).
 
 ## [0.2.0] - 2026-07-24
 

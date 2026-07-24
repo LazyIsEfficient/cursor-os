@@ -38,7 +38,7 @@ Reach `checkpoint:impl-verified` before returning: `tsc`, the affected tests, a
 real browser run of the changed scene, and every brief verification command to
 exit 0. In this harness repository, also run `npm run validate` on
 non-docs-only diffs. Skipped checks are not passes. After verification
-succeeds, record with `npm run verify:record -- --run -- <cmd>`.
+succeeds, record with `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
 relevant output, `verify_ledger` status, acceptance results, measured frame-budget impact, any new

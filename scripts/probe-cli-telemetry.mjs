@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildCursorChildEnvironment } from "../benchmark/lib/adapters.mjs";
 import { runCursorAuthenticationPreflight } from "../benchmark/lib/auth-preflight.mjs";
-import { spawnCaptured } from "../benchmark/lib/process.mjs";
+import { spawnCaptured, terminateActiveCapturedChildrenSync } from "../benchmark/lib/process.mjs";
 import { normalizeCliNdjson } from "../benchmark/lib/telemetry.mjs";
 import { copyTree, hashTree, listFiles, sha256 } from "../benchmark/lib/util.mjs";
 import { validateCursorConfigTemplate, writeTrialSandboxPolicy } from "../benchmark/lib/workspace.mjs";
@@ -49,11 +49,15 @@ let installedSignalHandlers = null;
 let signalHandlerDepth = 0;
 
 function removeActiveProbeRootsSync() {
+  // Detached CLI children can keep cwd/open files under the probe root; kill them first so
+  // recursive rm is not racing a live process (observed as leftover probe dirs after SIGINT).
+  terminateActiveCapturedChildrenSync();
   for (const probeRoot of activeProbeRoots) {
     try {
       // Synchronous by necessity: the process is about to terminate, so an awaited rm would
-      // not finish before the default disposition kills us.
-      rmSync(probeRoot, { recursive: true, force: true });
+      // not finish before the default disposition kills us. maxRetries covers transient
+      // ENOTEMPTY/EBUSY while the just-killed child releases the tree.
+      rmSync(probeRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 10 });
     } catch (error) {
       process.stderr.write(`failed to remove probe root ${probeRoot}: ${error.message}\n`);
     }

@@ -1,46 +1,43 @@
 #!/usr/bin/env node
 /**
- * record-verify.mjs — append verification command results to `.cursor/verify-ledger.json`.
+ * record-verify.mjs — spawn a verification command and append the result to
+ * `.cursor/verify-ledger.json` (version 2 + stack profile).
  *
  * Usage:
- *   node plugin/scripts/record-verify.mjs --cmd 'npm test' --exit 0
- *   node plugin/scripts/record-verify.mjs --run -- npm test
- *   npm run verify:record -- --run -- node scripts/validate.mjs
+ *   node plugin/scripts/record-verify.mjs --profile node-harness --run -- npm test
+ *   npm run verify:record -- --profile node-harness --run -- node scripts/validate.mjs
+ *
+ * `--cmd` / `--exit` fake recording is removed — only `--run` (spawn) is allowed.
  */
 
 import { spawnSync } from "node:child_process";
 import {
+  VERIFY_LEDGER_VERSION,
+  readHeadSha,
+  verifyCommandIsTrivial,
   verifyLedgerAppendCommand,
   verifyLedgerIsValidForHead,
+  verifyLedgerLoad,
   verifyLedgerPath,
+  verifyLedgerProfileIsKnown,
   verifyLedgerProjectRoot,
 } from "./lib/verify-ledger-lib.mjs";
 
 function printUsage() {
   process.stderr.write(
     "usage:\n" +
-      "  node plugin/scripts/record-verify.mjs --cmd '<command>' --exit <N>\n" +
-      "  node plugin/scripts/record-verify.mjs --run -- <command...>\n" +
-      "  npm run verify:record -- --run -- <command...>\n",
+      "  node plugin/scripts/record-verify.mjs --profile <node-harness|rust|custom> --run -- <command...>\n" +
+      "  npm run verify:record -- --profile <node-harness|rust|custom> --run -- <command...>\n" +
+      "\n" +
+      "Notes:\n" +
+      "  --profile is required on first write for a HEAD (omit only when ledger already has matching profile).\n" +
+      "  --cmd / --exit are removed; only --run (spawn) records spawned:true.\n",
   );
 }
 
-/** Strict integer only — rejects "", whitespace, floats, and Number("")===0 traps. */
-function parseExitCodeRaw(raw) {
-  if (typeof raw !== "string" || !/^-?\d+$/u.test(raw)) {
-    return { error: "--exit <integer> is required with --cmd" };
-  }
-  const exitCode = Number(raw);
-  if (!Number.isInteger(exitCode)) {
-    return { error: "--exit <integer> is required with --cmd" };
-  }
-  return { exitCode };
-}
-
 function parseArgs(argv) {
-  let cmd = null;
-  let exitCode = null;
   let run = false;
+  let profile = undefined;
   let conversationId = "";
   const runArgs = [];
 
@@ -48,6 +45,17 @@ function parseArgs(argv) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") {
       return { help: true };
+    }
+    if (
+      arg === "--cmd" ||
+      arg.startsWith("--cmd=") ||
+      arg === "--exit" ||
+      arg.startsWith("--exit=")
+    ) {
+      return {
+        error:
+          "--cmd/--exit removed; use --profile <…> --run -- <command...>",
+      };
     }
     if (arg === "--run") {
       run = true;
@@ -57,30 +65,13 @@ function parseArgs(argv) {
       runArgs.push(...argv.slice(index + 1));
       break;
     }
-    if (arg === "--cmd") {
-      cmd = argv[index + 1];
+    if (arg === "--profile") {
+      profile = argv[index + 1];
       index += 1;
       continue;
     }
-    if (arg.startsWith("--cmd=")) {
-      cmd = arg.slice("--cmd=".length);
-      continue;
-    }
-    if (arg === "--exit") {
-      const parsedExit = parseExitCodeRaw(argv[index + 1]);
-      if (parsedExit.error) {
-        return parsedExit;
-      }
-      exitCode = parsedExit.exitCode;
-      index += 1;
-      continue;
-    }
-    if (arg.startsWith("--exit=")) {
-      const parsedExit = parseExitCodeRaw(arg.slice("--exit=".length));
-      if (parsedExit.error) {
-        return parsedExit;
-      }
-      exitCode = parsedExit.exitCode;
+    if (arg.startsWith("--profile=")) {
+      profile = arg.slice("--profile=".length);
       continue;
     }
     if (arg === "--conversation-id") {
@@ -99,7 +90,7 @@ function parseArgs(argv) {
     return { error: `unknown argument: ${arg}` };
   }
 
-  return { cmd, exitCode, run, runArgs, conversationId };
+  return { run, runArgs, profile, conversationId };
 }
 
 function main() {
@@ -114,49 +105,98 @@ function main() {
     process.exit(2);
   }
 
-  const root = verifyLedgerProjectRoot({});
-  let cmd = parsed.cmd;
-  let exitCode = parsed.exitCode;
-
-  if (parsed.run) {
-    if (parsed.runArgs.length === 0) {
-      process.stderr.write("--run requires a command after --\n");
-      printUsage();
-      process.exit(2);
-    }
-    cmd = parsed.runArgs
-      .map((part) => (/\s/u.test(part) ? JSON.stringify(part) : part))
-      .join(" ");
-    const result = spawnSync(parsed.runArgs[0], parsed.runArgs.slice(1), {
-      cwd: root,
-      stdio: "inherit",
-      env: process.env,
-      shell: false,
-    });
-    if (result.error) {
-      process.stderr.write(`${result.error.message}\n`);
-      exitCode = 127;
-    } else {
-      exitCode = typeof result.status === "number" ? result.status : 1;
-    }
-  } else {
-    if (typeof cmd !== "string" || cmd.length === 0) {
-      process.stderr.write("--cmd is required unless --run is used\n");
-      printUsage();
-      process.exit(2);
-    }
-    if (typeof exitCode !== "number" || !Number.isInteger(exitCode)) {
-      process.stderr.write("--exit <integer> is required with --cmd\n");
-      printUsage();
-      process.exit(2);
-    }
+  if (!parsed.run) {
+    process.stderr.write("--run -- <command...> is required\n");
+    printUsage();
+    process.exit(2);
+  }
+  if (parsed.runArgs.length === 0) {
+    process.stderr.write("--run requires a command after --\n");
+    printUsage();
+    process.exit(2);
   }
 
-  const ledger = verifyLedgerAppendCommand(root, {
-    cmd,
-    exitCode,
-    conversationId: parsed.conversationId,
+  if (
+    parsed.profile !== undefined &&
+    parsed.profile !== "" &&
+    !verifyLedgerProfileIsKnown(parsed.profile)
+  ) {
+    process.stderr.write(
+      "--profile must be node-harness, rust, or custom\n",
+    );
+    printUsage();
+    process.exit(2);
+  }
+
+  const root = verifyLedgerProjectRoot({});
+  const cmd = parsed.runArgs
+    .map((part) => (/\s/u.test(part) ? JSON.stringify(part) : part))
+    .join(" ");
+
+  if (verifyCommandIsTrivial(cmd)) {
+    process.stderr.write(`trivial command rejected: ${cmd}\n`);
+    process.exit(2);
+  }
+
+  const headSha = readHeadSha(root);
+  if (!headSha) {
+    process.stderr.write("verify-ledger: cannot resolve git HEAD\n");
+    process.exit(2);
+  }
+  const existing = verifyLedgerLoad(root);
+  const needsFresh =
+    !existing ||
+    existing.version !== VERIFY_LEDGER_VERSION ||
+    existing.head_sha !== headSha;
+  if (needsFresh && !verifyLedgerProfileIsKnown(parsed.profile)) {
+    process.stderr.write(
+      "verify-ledger: --profile <node-harness|rust|custom> required on first write for this HEAD\n",
+    );
+    printUsage();
+    process.exit(2);
+  }
+  if (
+    !needsFresh &&
+    verifyLedgerProfileIsKnown(existing.profile) &&
+    parsed.profile !== undefined &&
+    parsed.profile !== "" &&
+    parsed.profile !== existing.profile
+  ) {
+    process.stderr.write(
+      `verify-ledger: profile mismatch (ledger has ${existing.profile})\n`,
+    );
+    process.exit(2);
+  }
+
+  const result = spawnSync(parsed.runArgs[0], parsed.runArgs.slice(1), {
+    cwd: root,
+    stdio: "inherit",
+    env: process.env,
+    shell: false,
   });
+  let exitCode;
+  if (result.error) {
+    process.stderr.write(`${result.error.message}\n`);
+    exitCode = 127;
+  } else {
+    exitCode = typeof result.status === "number" ? result.status : 1;
+  }
+
+  let ledger;
+  try {
+    ledger = verifyLedgerAppendCommand(root, {
+      cmd,
+      exitCode,
+      conversationId: parsed.conversationId,
+      profile: parsed.profile,
+      spawned: true,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    printUsage();
+    process.exit(2);
+  }
 
   const path = verifyLedgerPath(root);
   const validity = verifyLedgerIsValidForHead(root);
@@ -164,6 +204,7 @@ function main() {
     JSON.stringify(
       {
         path,
+        profile: ledger.profile,
         impl_verified: ledger.impl_verified,
         head_sha: ledger.head_sha,
         commands: ledger.commands.length,
@@ -175,10 +216,7 @@ function main() {
     ) + "\n",
   );
 
-  // When --run, propagate the command's exit code so CI/scripts can chain.
-  if (parsed.run) {
-    process.exit(exitCode === 0 ? 0 : exitCode);
-  }
+  process.exit(exitCode === 0 ? 0 : exitCode);
 }
 
 main();

@@ -43,9 +43,10 @@ shape from [toolchain-and-conventions.md](../skills/rust-engineer/references/too
 Also run every verification command declared in the brief. In this harness
 repository, run `npm run validate` on non-docs-only diffs. Skipped or failed
 checks go in `residual_risk` and block claiming verified. After verification
-succeeds, record commands with `npm run verify:record -- --run -- <cmd>` so
+succeeds, record commands with
+`npm run verify:record -- --profile rust --run -- <cmd>` so
 `.cursor/verify-ledger.json` proves `impl_verified` for HEAD before
-`gh pr create|ready`.
+`gh pr create|ready` (spawn only; rust profile coverage required).
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
 relevant output, `verify_ledger` status, acceptance results, any `unsafe`

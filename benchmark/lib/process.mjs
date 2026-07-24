@@ -8,6 +8,42 @@ import { invariant } from "./util.mjs";
 
 const MAX_CAPTURE_BYTES = 16 * 1024 * 1024;
 
+// Live spawnCaptured children. Signal handlers that must rm credential copies cannot leave a
+// detached CLI holding cwd/open files under that tree — on some runners that races rmSync and
+// leaves the probe/trial root behind after the parent dies of the re-raised signal.
+const activeCapturedChildren = new Map();
+
+function trackCapturedChild(child, { detached }) {
+  if (!child?.pid) return () => {};
+  activeCapturedChildren.set(child.pid, { detached: Boolean(detached) });
+  return () => {
+    activeCapturedChildren.delete(child.pid);
+  };
+}
+
+/**
+ * Synchronously SIGKILL every in-flight spawnCaptured child (process group when detached).
+ * Intended for credential signal handlers that must unwind copies before re-raising.
+ */
+export function terminateActiveCapturedChildrenSync() {
+  for (const [pid, { detached }] of activeCapturedChildren) {
+    try {
+      if (detached) process.kill(-pid, "SIGKILL");
+      else process.kill(pid, "SIGKILL");
+    } catch (error) {
+      if (error?.code === "ESRCH") continue;
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch (fallbackError) {
+        if (fallbackError?.code !== "ESRCH") {
+          process.stderr.write(`failed to terminate captured child ${pid}: ${fallbackError.message}\n`);
+        }
+      }
+    }
+  }
+  activeCapturedChildren.clear();
+}
+
 export async function spawnCaptured({
   executable,
   arguments: argv,
@@ -50,6 +86,7 @@ export async function spawnCaptured({
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
+    const untrack = trackCapturedChild(child, { detached });
     const terminate = (signal) => {
       try {
         if (detached && child.pid) process.kill(-child.pid, signal);
@@ -84,6 +121,7 @@ export async function spawnCaptured({
     });
     child.once("close", async (exitCode, signal) => {
       clearTimeout(timer);
+      untrack();
       await Promise.all([
         new Promise((done) => stdoutFile.end(done)),
         new Promise((done) => stderrFile.end(done)),

@@ -8,15 +8,15 @@ Closes #
 
 Fail-closed for non-docs PRs. Record `.cursor/verify-ledger.json` for this branch HEAD before `gh pr create|ready` (shell guard enforces locally). CI checks the checkbox below.
 
-- [ ] **impl-verified** — recorded `.cursor/verify-ledger.json` for this branch HEAD (`npm run verify:record` after validate/tests/stack floors). Paste command summary in details.
+- [ ] **impl-verified** — recorded `.cursor/verify-ledger.json` (v2 + stack profile) for this branch HEAD via `npm run verify:record -- --profile … --run -- …` after validate/tests/stack floors. Paste command summary in details.
 
 <details>
 <summary>Verify ledger command summary</summary>
 
 ```
-# example:
-# npm run verify:record -- --run -- npm test
-# npm run verify:record -- --run -- node scripts/validate.mjs
+# example (node-harness):
+# npm run verify:record -- --profile node-harness --run -- node scripts/validate.mjs
+# npm run verify:record -- --profile node-harness --run -- npm test
 paste command summary / ledger commands[] here
 ```
 
