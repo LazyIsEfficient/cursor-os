@@ -346,7 +346,15 @@ test("denies gh pr create|ready without a valid verify ledger", () => {
     /* ignore */
   }
 
-  for (const command of ["gh pr create", "gh pr ready", "gh pr create --fill"]) {
+  for (const command of [
+    "gh pr create",
+    "gh pr ready",
+    "gh pr create --fill",
+    "gh -R owner/repo pr create",
+    "gh --repo owner/repo pr create",
+    "gh --repo=owner/repo pr create",
+    "gh -R owner/repo pr ready",
+  ]) {
     const response = commandDecision(command);
     assert.equal(response.permission, "deny", command);
     assert.match(
@@ -407,6 +415,7 @@ test("guard entry has no direct fs/network/credential APIs (ledger via lib)", as
   assert.doesNotMatch(source, /\b(?:homedir|readFile|readFileSync|fetch)\s*\(/u);
   assert.match(source, /verify-ledger-lib\.mjs/u);
   assert.match(source, /GH_PR_WITHOUT_VERIFY_RULE/u);
+  assert.match(source, /ghCommand/u);
   assert.match(source, /NAMED_EXCEPTIONS/u);
   assert.match(source, /MAX_INPUT_BYTES/u);
   assert.match(source, /isSafeCommandWord/u);

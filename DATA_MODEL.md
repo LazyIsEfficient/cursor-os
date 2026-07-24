@@ -10,6 +10,8 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `feat/verify-before-pr` | Re-verified verify-before-PR catalog against sources; added `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE` to `BeforeShellExecutionHook` Source; confirmed `VerifyLedger` / `VerifyRecordCliResult` / `GatePlanResult` impl-verified notes match code. |
+| 2026-07-24 | `feat/verify-before-pr` | Corrected `VerifyLedger` PR-validity (`version === 1`, nullable `verified_at`); cataloged `VerifyRecordCliResult`; noted hard-coded CI `impl-verified` checkbox on `GatePlanResult` / ship-gates (not in planner `checkboxes`); clarified `gh-pr-without-verify` agent_message override on `BeforeShellExecutionHook`. |
 | 2026-07-24 | `release/0.2.0` | No data-contract changes in this run. |
 | 2026-07-23 | `feat/agentic-os-parity` | Cataloged `ContentPipelineEnvironment` process env vars from content-pipeline Python scripts and `.env.example`. |
 | 2026-07-23 | `feat/agentic-os-parity` | Cataloged opt-in dispatch-gate config, per-session ledger, audit NDJSON lines, and Cursor hook permission/followup/context response shapes. |
@@ -46,7 +48,7 @@
 |---|---|
 | **Kind** | `api` |
 | **Ingestion route** | Cursor schema-v1 `beforeShellExecution`, running from the active workspace, invokes `node "${CURSOR_PLUGIN_ROOT}/scripts/before-shell-execution.mjs"` using Cursor's supplied plugin-root environment value, writes one JSON event to standard input, and reads one JSON permission decision from standard output |
-| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `readInput`, `main`); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAllowsGhPr`, `GH_PR_WITHOUT_VERIFY_RULE`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
+| **Source** | `plugin/hooks/hooks.json` (`hooks.beforeShellExecution`); `plugin/scripts/before-shell-execution.mjs` (`decision`, `inspectCommand`, `ghCommand`, `readInput`, `main`); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAllowsGhPr`, `verifyLedgerProjectRoot`, `GH_PR_WITHOUT_VERIFY_RULE`, `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE`); `tests/security/before-shell-execution.test.mjs` (`runHook`, contract assertions) |
 
 #### Shape
 
@@ -82,18 +84,18 @@ Output:
 | Name | Type | Required | Notes |
 |---|---|---|---|
 | `permission` | enum | yes | `allow` or `deny` |
-| `user_message` | string | deny only | Deterministic user-facing denial naming the matched rule |
-| `agent_message` | string | deny only | Deterministic instruction stating that the guard denied the command |
+| `user_message` | string | deny only | Deterministic user-facing denial naming the matched rule (`Command blocked by the local shell guard (<rule>).`) |
+| `agent_message` | string | deny only | Default: generic “guard denied this command” instruction; for rule `gh-pr-without-verify`, replaced by `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE` (ledger/record/`VERIFY_PR_GATE_DISABLED` guidance) |
 
-Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: allow named `eval` exceptions → deny active expansions (including ANSI-C `$'...'` quoting, `$()`, backticks, and process substitutions) → peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime`) → deny any `GIT_CONFIG_*` assignment in the segment → structurally re-check remaining argv words whose basename is a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments (non-`GIT_CONFIG_*`), optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`), and optional command launchers (`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms) whose operands are re-inspected. Absolute paths are reduced to basenames for wrapper, launcher, and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) are denied anywhere they expand; ordinary single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), `git -c` assignments that bind shell-running values (`alias.*`, values containing `!`, `core.pager`, `diff.external`, and related keys), `git --config-env` / `--config-env=*` (fail-closed; value is opaque in the command string), `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that family), selected `gh` and `npm`/`pnpm` mutation forms, `gh pr create` / `gh pr ready` unless `VerifyLedger` proves `impl_verified` for the current HEAD (rule `gh-pr-without-verify`; emergency skip `VERIFY_PR_GATE_DISABLED=1`), and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, `git-config-injection`, `git-config-env-injection`, `gh-pr-without-verify`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`. Pipe-into-interpreter and `find -delete` remain explicit residual risks.
+Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowlist composed as: allow named `eval` exceptions → deny active expansions (including ANSI-C `$'...'` quoting, `$()`, backticks, and process substitutions) → peel known wrappers/launchers (including Homebrew GNU `gtimeout` / `gnice` / `gstdbuf` / `gtime`) → deny any `GIT_CONFIG_*` assignment in the segment → structurally re-check remaining argv words whose basename is a high-impact executable (`rm`, `git`, `gh`, `npm`, `pnpm`, `busybox`) → deny high-impact resolved shapes → allow only safe literal command forms → else deny. Every pipeline segment must use a literal path-like command word (no glob, brace, tilde, or other expansion metacharacters in command position), optional leading safe assignments (non-`GIT_CONFIG_*`), optional wrappers (`env`, `sudo`, `command`, `builtin`, `nohup`), and optional command launchers (`timeout`, `nice`, `busybox`, `time`, `stdbuf` and their `g*` GNU forms) whose operands are re-inspected. Absolute paths are reduced to basenames for wrapper, launcher, and interpreter recognition. Shell interpreters (`sh`, `bash`, `zsh`, and related) with `-c` are allowlisted only when the script payload recursively satisfies the same policy (maximum depth three). Active command substitutions (`$()`, backticks), process substitutions (`<(...)`, `>(...)`), and ANSI-C quotes (`$'...'`) are denied anywhere they expand; ordinary single-quoted text is inert. `eval` is denied except the exact named forms `eval "$(direnv hook zsh)"` and `eval "$(ssh-agent -s)"` (trim-insensitive). `.` / `source` require a literal safe script path. High-impact shapes denied even as literals include recursive force `rm` (`-rf` / `-fr` / `--recursive --force` and equivalents on any target), destructive Git forms (`reset --hard`, forced `clean`, force-push, force branch delete), `git -c` assignments that bind shell-running values (`alias.*`, values containing `!`, `core.pager`, `diff.external`, and related keys), `git --config-env` / `--config-env=*` (fail-closed; value is opaque in the command string), `GIT_CONFIG_*` environment assignments (fail-closed on unknown names in that family), selected `gh` and `npm`/`pnpm` mutation forms (after peeling `gh` global options via `ghCommand`, including `-R`/`--repo`/`--hostname`), `gh pr create` / `gh pr ready` unless `verifyLedgerAllowsGhPr(workspaceRoot)` succeeds for the current HEAD (rule `gh-pr-without-verify`; emergency skip `VERIFY_PR_GATE_DISABLED=1` — skips the shell-hook check only, not CI), and mutations or redirects targeting evaluator/canary paths. Malformed JSON, null, arrays, absent or invalid `command` values, oversized input, malformed shell tokenization, and unterminated substitutions return the deterministic `deny` shape using rule `invalid-hook-input`. Other denials name a policy rule such as `command-expansion`, `unsafe-command-word`, `destructive-filesystem-delete`, `git-config-injection`, `git-config-env-injection`, `gh-pr-without-verify`, or `eval-not-allowlisted`. Allowed commands return only `{ "permission": "allow" }`. Pipe-into-interpreter and `find -delete` remain explicit residual risks.
 
 ### VerifyLedger
 
 | Field | Value |
 |---|---|
 | **Kind** | `persistence` |
-| **Ingestion route** | Per-workspace JSON at `<project>/.cursor/verify-ledger.json` (gitignored); mkdir lock at `.cursor/verify-ledger.json.lock`; written by `npm run verify:record` / `plugin/scripts/record-verify.mjs`; read by `beforeShellExecution` via `verifyLedgerAllowsGhPr` before allowing `gh pr create|ready` |
-| **Source** | `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAppendCommand`, `verifyLedgerIsValidForHead`, `verifyLedgerAllowsGhPr`); `plugin/scripts/record-verify.mjs`; `scripts/lib/verify-ledger-lib.mjs` (re-export); `package.json` (`verify:record`); `.gitignore` (`/.cursor/verify-ledger.json`, `/.cursor/verify-ledger.json.lock`) |
+| **Ingestion route** | Per-workspace JSON at `<project>/.cursor/verify-ledger.json` (gitignored); directory lock via `mkdir` at `.cursor/verify-ledger.json.lock` (max ~1s wait); written by `npm run verify:record` / `plugin/scripts/record-verify.mjs` (`verifyLedgerAppendCommand`); read by `beforeShellExecution` via `verifyLedgerAllowsGhPr` before allowing `gh pr create|ready` |
+| **Source** | `plugin/scripts/lib/verify-ledger-lib.mjs` (`VERIFY_LEDGER_VERSION`, `emptyVerifyLedger`, `verifyLedgerAppendCommand`, `verifyLedgerValidateForHead`, `verifyLedgerIsValidForHead`, `verifyLedgerAllowsGhPr`, `VERIFY_PR_GATE_DISABLED_ENV`, `GH_PR_WITHOUT_VERIFY_RULE`); `plugin/scripts/record-verify.mjs`; `scripts/lib/verify-ledger-lib.mjs` (re-export); `package.json` (`verify:record`); `.gitignore` (`/.cursor/verify-ledger.json`, `/.cursor/verify-ledger.json.lock`) |
 
 #### Shape
 
@@ -102,7 +104,7 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
   "version": 1,
   "conversation_id": "string",
   "impl_verified": true,
-  "verified_at": "ISO-8601",
+  "verified_at": "ISO-8601 | null",
   "head_sha": "<full git sha>",
   "commands": [{ "cmd": "string", "exit_code": 0, "at": "ISO-8601" }]
 }
@@ -112,22 +114,54 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 
 | Name | Type | Required | Notes |
 |---|---|---|---|
-| `version` | integer | yes | Always `1` |
-| `conversation_id` | string | yes | Optional session id; empty string when unset |
-| `impl_verified` | boolean | yes | `true` only when every recorded `exit_code` is `0` and `commands.length >= 1` |
+| `version` | integer | yes | Must be `1` (`VERIFY_LEDGER_VERSION`); other versions fail PR validation (`bad-version`) |
+| `conversation_id` | string | yes | Session id from `--conversation-id` when provided; empty string when unset; preserved across HEAD resets when prior ledger had a string id |
+| `impl_verified` | boolean | yes | Set `true` on append when every recorded `exit_code` is `0` and `commands.length >= 1`; else `false` |
 | `verified_at` | string \| null | yes | ISO-8601 timestamp of the last append that left `impl_verified` true; `null` otherwise |
 | `head_sha` | string | yes | Full `git rev-parse HEAD` at record time; must equal current HEAD for PR validity |
-| `commands` | array<object> | yes | Append-only within a HEAD; reset when HEAD changes |
+| `commands` | array<object> | yes | Append-only within a HEAD; reset (new empty ledger) when file missing, `version` mismatch, or `head_sha` changes |
 
 `commands[]` element:
 
 | Name | Type | Required | Notes |
 |---|---|---|---|
-| `cmd` | string | yes | Command text recorded |
-| `exit_code` | integer | yes | Process exit code; must be `0` for PR validity |
-| `at` | string | yes | ISO-8601 timestamp at append time |
+| `cmd` | string | yes | Non-empty command text recorded |
+| `exit_code` | integer | yes | Process exit code; every entry must be `0` for PR validity |
+| `at` | string | yes | ISO-8601 timestamp at append time (written always; not separately re-checked by `verifyLedgerValidateForHead`) |
 
-Valid for PR when `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, and every `exit_code === 0`. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox).
+Valid for PR (`verifyLedgerValidateForHead` / `verifyLedgerIsValidForHead`) when `version === 1`, `impl_verified === true`, `head_sha` equals current HEAD, `commands.length >= 1`, and every `exit_code === 0`. `VERIFY_PR_GATE_DISABLED=1` skips the shell-hook check only (not CI `impl-verified` checkbox).
+
+### VerifyRecordCliResult
+
+| Field | Value |
+|---|---|
+| **Kind** | `api` |
+| **Ingestion route** | `npm run verify:record -- --cmd '<command>' --exit <N>` or `npm run verify:record -- --run -- <command...>` (optional `--conversation-id`) prints one JSON object to standard output after appending to `VerifyLedger`; with `--run`, process exit code propagates the child command’s status |
+| **Source** | `plugin/scripts/record-verify.mjs` (`main` stdout payload); `plugin/scripts/lib/verify-ledger-lib.mjs` (`verifyLedgerAppendCommand`, `verifyLedgerIsValidForHead`); `package.json` (`verify:record`) |
+
+#### Shape
+
+```json
+{
+  "path": "<project>/.cursor/verify-ledger.json",
+  "impl_verified": "boolean",
+  "head_sha": "<full git sha>",
+  "commands": "non-negative integer",
+  "valid_for_pr": "boolean",
+  "last_exit_code": "integer"
+}
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `path` | string | yes | Absolute path from `verifyLedgerPath(root)` |
+| `impl_verified` | boolean | yes | Post-append `ledger.impl_verified` |
+| `head_sha` | string | yes | Post-append `ledger.head_sha` |
+| `commands` | integer | yes | `ledger.commands.length` after append |
+| `valid_for_pr` | boolean | yes | `true` when `verifyLedgerIsValidForHead(root).ok === true` |
+| `last_exit_code` | integer | yes | Exit code just recorded (`--exit` or `--run` child status; spawn errors use `127`) |
 
 ### BenchmarkArtifactExportCliResult
 
@@ -1006,8 +1040,8 @@ Malformed / oversized stdin: failClosed permission entries (`preToolUse`, `befor
 | Field | Value |
 |---|---|
 | **Kind** | `api` |
-| **Ingestion route** | `bash scripts/gate-plan.sh --json` (optional `--base` / `--head`, or `SHIP_GATES_CHANGED_FILES` newline- or space-separated paths) prints one JSON object to standard output; `bash scripts/check-pr-ship-gates.sh` consumes the same classification to require matching `- [x] <agent>` lines in `PR_BODY` / `--body-file` |
-| **Source** | `scripts/lib/gate-plan-lib.sh` (`gate_plan_classify_paths`, `gate_plan_build_waves`, `gate_plan_run`); `scripts/gate-plan.sh` (`--json` emitter); `scripts/check-pr-ship-gates.sh` (`body_check`); `plugin/references/gate-dag.md`; `.github/pull_request_template.md`; `scripts/gate-plan-test.sh`; `scripts/check-pr-ship-gates-test.sh` |
+| **Ingestion route** | `bash scripts/gate-plan.sh --json` (optional `--base` / `--head`, or `SHIP_GATES_CHANGED_FILES` newline- or space-separated paths) prints one JSON object to standard output; `bash scripts/check-pr-ship-gates.sh` consumes the same classification to require matching `- [x] <agent>` lines in `PR_BODY` / `--body-file`, then additionally requires a hard-coded `- [x] impl-verified` checkbox for every non-docs-only PR (not emitted in `checkboxes`) |
+| **Source** | `scripts/lib/gate-plan-lib.sh` (`gate_plan_classify_paths`, `gate_plan_build_waves`, `gate_plan_run`); `scripts/gate-plan.sh` (`--json` emitter); `scripts/check-pr-ship-gates.sh` (`body_check`, hard-coded `impl-verified`); `plugin/references/gate-dag.md`; `.github/pull_request_template.md`; `scripts/gate-plan-test.sh`; `scripts/check-pr-ship-gates-test.sh` |
 
 #### Shape
 
@@ -1035,7 +1069,7 @@ Malformed / oversized stdin: failClosed permission entries (`preToolUse`, `befor
 | `has_data_model` | boolean | yes | `true` when `DATA_MODEL.md` is in the changed-path set |
 | `wave_1` | array<string> | yes | Ordered Wave 1 agent labels; empty when `skip_docs_only` |
 | `wave_2` | array<string> | yes | Wave 2 labels; contains `data-model-verifier` only when `has_data_model` |
-| `checkboxes` | array<string> | yes | `wave_1` followed by `wave_2`; labels CI requires as checked boxes in the PR body |
+| `checkboxes` | array<string> | yes | `wave_1` followed by `wave_2`; reviewer/documenter labels CI requires as checked boxes in the PR body — does **not** include `impl-verified` |
 
 Wave 1 membership (when not docs-only):
 
@@ -1045,7 +1079,7 @@ Wave 1 membership (when not docs-only):
 | `is_code_change \|\| is_library \|\| is_sensitive` | `security-reviewer`, `data-model-documenter` |
 | `is_library` | `library-reviewer` |
 
-Docs-only path allowlist (skipped unless also library/sensitive): `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`. `DATA_MODEL.md` is never docs-only. Alternate formats: text `key=value` lines, `--checkboxes` (one label per line), `--skip-docs-only` (`true`\|`false` only). Checkbox matching is case-insensitive on the agent label with optional surrounding `**` after `- [x]` / `- [X]`.
+Docs-only path allowlist (skipped unless also library/sensitive): `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`. `DATA_MODEL.md` is never docs-only. Alternate formats: text `key=value` lines, `--checkboxes` (one label per line), `--skip-docs-only` (`true`\|`false` only). Checkbox matching is case-insensitive on the agent label with optional surrounding `**` after `- [x]` / `- [X]`. For non-docs-only PRs, `check-pr-ship-gates.sh` always requires an extra `- [x] impl-verified` line (template: local `.cursor/verify-ledger.json` recorded for branch HEAD via `npm run verify:record`); this label is outside `GatePlanResult.checkboxes`.
 
 ### LocalInstallState
 

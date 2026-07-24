@@ -618,6 +618,32 @@ function gitCommand(arguments_) {
   };
 }
 
+// Peel `gh` global options (`-R`/`--repo`, `--hostname`, …) so high-impact
+// matching sees `pr create|ready` / `repo delete` after flags.
+const GH_VALUE_TAKING_FLAGS = new Set(["-R", "--repo", "--hostname"]);
+
+function ghCommand(arguments_) {
+  let index = 0;
+
+  while (index < arguments_.length && arguments_[index].startsWith("-")) {
+    const argument = arguments_[index];
+    if (argument.includes("=")) {
+      index += 1;
+      continue;
+    }
+    if (GH_VALUE_TAKING_FLAGS.has(argument)) {
+      index += 2;
+      continue;
+    }
+    index += 1;
+  }
+
+  return {
+    subcommand: (arguments_[index] ?? "").toLowerCase(),
+    arguments: arguments_.slice(index + 1),
+  };
+}
+
 function isRecursiveForceDelete(arguments_) {
   const recursive =
     arguments_.includes("--recursive") ||
@@ -695,16 +721,18 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
   }
 
   if (executable === "gh") {
+    const parsed = ghCommand(arguments_);
+
     if (
-      (arguments_[0] === "repo" && arguments_[1] === "delete") ||
-      (arguments_[0] === "release" && arguments_[1] === "delete")
+      (parsed.subcommand === "repo" && parsed.arguments[0] === "delete") ||
+      (parsed.subcommand === "release" && parsed.arguments[0] === "delete")
     ) {
       return "remote-object-delete";
     }
 
     if (
-      arguments_[0] === "pr" &&
-      (arguments_[1] === "create" || arguments_[1] === "ready")
+      parsed.subcommand === "pr" &&
+      (parsed.arguments[0] === "create" || parsed.arguments[0] === "ready")
     ) {
       const allow = verifyLedgerAllowsGhPr(workspaceRoot);
       if (!allow.ok) {
