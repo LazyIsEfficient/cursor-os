@@ -33,12 +33,16 @@ here therefore corresponds to a single consistent version across the repository.
   commands — test/lint/build runners, not identity probes like `pwd`/`date`).
   `record-verify` accepts only `--profile … --run -- <cmd>`;
   `--cmd`/`--exit` fake recording is removed. Trivial commands (`true`,
-  `/bin/true`, `echo`, `env true`, `pwd`, `nice true`, …) are rejected.
-  Profile coverage is argv-shaped (not substring), so embedding tokens in
-  `node -e` payloads does not satisfy node-harness/rust requirements.
+  `/bin/true`, `echo`, `env true`, `busybox true`, `sh -c true`,
+  `bash -c ':'`, `pwd`, `nice true`, …) are rejected. Profile coverage is
+  argv-shaped (not substring), so embedding tokens in `node -e` payloads
+  does not satisfy node-harness/rust requirements; post-peel `--help`/`-h`
+  does not count; `node-harness` validate accepts only repo-relative
+  `scripts/validate.mjs` (not absolute `/tmp/.../scripts/validate.mjs`).
   Version 1 ledgers fail the PR gate (`bad-version`).
   **Residual:** Write-tool forging a full v2 ledger with `spawned: true`
-  remains possible — not claimed solved.
+  remains possible — not claimed solved. CI still does not read ledger
+  contents (checkbox-only).
 
 ## [0.2.0] - 2026-07-24
 

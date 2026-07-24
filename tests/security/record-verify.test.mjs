@@ -167,7 +167,13 @@ test("verifyCommandIsTrivial detects weak commands", () => {
   assert.equal(verifyCommandIsTrivial("/bin/false"), true);
   assert.equal(verifyCommandIsTrivial("true x"), true);
   assert.equal(verifyCommandIsTrivial("env true"), true);
+  assert.equal(verifyCommandIsTrivial("busybox true"), true);
   assert.equal(verifyCommandIsTrivial("nice true"), true);
+  assert.equal(verifyCommandIsTrivial("sh -c true"), true);
+  assert.equal(verifyCommandIsTrivial("bash -c true"), true);
+  assert.equal(verifyCommandIsTrivial("bash -c ':'"), true);
+  assert.equal(verifyCommandIsTrivial('bash -c ":"'), true);
+  assert.equal(verifyCommandIsTrivial("bash -c :"), true);
   assert.equal(verifyCommandIsTrivial("pwd"), true);
   assert.equal(verifyCommandIsTrivial("date"), true);
   assert.equal(verifyCommandIsTrivial("whoami"), true);
@@ -183,6 +189,7 @@ test("verifyCommandIsTrivial detects weak commands", () => {
   assert.equal(verifyCommandIsTrivial("npm test"), false);
   assert.equal(verifyCommandIsTrivial("node scripts/validate.mjs"), false);
   assert.equal(verifyCommandIsTrivial("cargo fmt --check"), false);
+  assert.equal(verifyCommandIsTrivial("bash -c 'npm test'"), false);
 });
 
 test("custom profile rejects path-prefixed true/false no-ops", () => {
@@ -278,6 +285,13 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
     true,
   );
   assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("node ./scripts/validate.mjs"),
+      spawned("npm test"),
+    ]),
+    true,
+  );
+  assert.equal(
     verifyLedgerProfileCoverage("node-harness", [spawned("npm test")]),
     false,
   );
@@ -292,6 +306,43 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
   assert.equal(
     verifyLedgerProfileCoverage("node-harness", [
       spawned("npm run validate-foo"),
+      spawned("npm test"),
+    ]),
+    false,
+  );
+  // Help / usage flags must not satisfy coverage (Tier 1).
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("npm run validate --help"),
+      spawned("npm test --help"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("npm run validate -h"),
+      spawned("npm test"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("npm run validate"),
+      spawned("npm test -h"),
+    ]),
+    false,
+  );
+  // Absolute paths ending in scripts/validate.mjs must not count.
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("node /tmp/x/scripts/validate.mjs"),
+      spawned("npm test"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("node-harness", [
+      spawned("node /Users/me/repo/scripts/validate.mjs"),
       spawned("npm test"),
     ]),
     false,
@@ -321,6 +372,14 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
     ]),
     false,
   );
+  assert.equal(
+    verifyLedgerProfileCoverage("rust", [
+      spawned("cargo fmt --check --help"),
+      spawned("cargo clippy -h"),
+      spawned("cargo test --help"),
+    ]),
+    false,
+  );
 
   assert.equal(
     verifyLedgerProfileCoverage("custom", [
@@ -331,6 +390,20 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
   );
   assert.equal(
     verifyLedgerProfileCoverage("custom", [spawned("npm test")]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("busybox true"),
+      spawned("sh -c true"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("bash -c ':'"),
+      spawned("env true"),
+    ]),
     false,
   );
 });

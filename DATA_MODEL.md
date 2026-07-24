@@ -10,6 +10,7 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `feat/verify-ledger-profiles` | Tier 1 hardening: profile coverage matchers reject post-peel `--help`/`-h`; `node-harness` validate accepts only repo-relative `scripts/validate.mjs` or `./scripts/validate.mjs` (not absolute paths ending in that suffix); `verifyCommandIsTrivial` treats `sh`/`bash`/… `-c SCRIPT` as trivial when unwrapped SCRIPT is trivial. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tightened `custom` profile coverage to a verification-shaped positive allowlist (closes `pwd`+`date` PR-gate bypass); expanded trivial/wrapper peeling; blanked `CURSOR_PROJECT_DIR` in record-verify test isolation. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Bumped `VerifyLedger` to version 2 with required `profile`, `spawned` on commands, profile coverage rules, and `--run`-only `VerifyRecordCliResult` (removed `--cmd`/`--exit`; noted Write-tool forgery residual). |
 | 2026-07-24 | `feat/verify-before-pr` | Re-verified verify-before-PR catalog against sources; added `GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE` to `BeforeShellExecutionHook` Source; confirmed `VerifyLedger` / `VerifyRecordCliResult` / `GatePlanResult` impl-verified notes match code. |
@@ -129,16 +130,16 @@ Input must be a JSON object no larger than 1 MiB. Policy is default-deny allowli
 
 | Name | Type | Required | Notes |
 |---|---|---|---|
-| `cmd` | string | yes | Non-empty non-trivial command text recorded (`verifyCommandIsTrivial` rejects `true`/`echo`/… before append) |
+| `cmd` | string | yes | Non-empty non-trivial command text recorded (`verifyCommandIsTrivial` rejects before append: identity binaries `true`/`echo`/`pwd`/… including `/bin/true`, version-only probes, `git status`/`rev-parse`/`--version`, wrappers peeled via `env`/`busybox`/`nice`/… around those, and shell `-c SCRIPT` forms for `sh`/`bash`/`dash`/`zsh`/`ksh`/`ash`/`csh`/`tcsh` when SCRIPT after one matching quote unwrap is itself trivial — e.g. `sh -c true`, `bash -c ':'`) |
 | `exit_code` | integer | yes | Process exit code; every entry must be `0` for PR validity |
 | `at` | string | yes | ISO-8601 timestamp at append time (written always; not separately re-checked by `verifyLedgerValidateForHead`) |
 | `spawned` | boolean | yes | Must be `true` for PR validity (`unspawned-command` otherwise). Only `record-verify --run` sets this |
 
-Profile coverage (`verifyLedgerProfileCoverage` — argv-shaped match after peeling wrappers (`env`/`command`/`builtin`/`nohup`/`sudo`/`nice`/`time`/`timeout`/`stdbuf`/`busybox` and GNU `g*` variants); substring embedding inside `node -e` payloads does not count):
+Profile coverage (`verifyLedgerProfileCoverage` — argv-shaped match after peeling wrappers (`env`/`command`/`builtin`/`nohup`/`sudo`/`nice`/`time`/`timeout`/`stdbuf`/`busybox` and GNU `g*` variants); substring embedding inside `node -e` payloads does not count). For `node-harness` validate/test and `rust` fmt/clippy/test matchers: after peel, any argv token `--help` or `-h` fails the match (help/usage shapes do not satisfy coverage):
 
 | profile | Required matches |
 |---|---|
-| `node-harness` | (1) `npm run validate` OR `node scripts/validate.mjs` (2) `npm test` OR `npm run test` |
+| `node-harness` | (1) `npm run validate` OR `node` with script exactly `scripts/validate.mjs` or `./scripts/validate.mjs` (absolute paths ending in `/scripts/validate.mjs`, e.g. `/tmp/.../scripts/validate.mjs`, do **not** count) (2) `npm test` OR `npm run test` |
 | `rust` | (1) `cargo fmt` with `--check` (2) `cargo clippy` (3) `cargo test` OR `cargo nextest` |
 | `custom` | ≥2 spawned non-trivial **verification-shaped** commands (positive allowlist: npm/pnpm/yarn/bun scripts, node `--test`/scripts, cargo runners, make/just/pytest/go/…, `scripts/`/`bin/` paths). Identity probes (`pwd`/`date`/`whoami`/`git status`/`node --version`) do not count |
 

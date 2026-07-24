@@ -217,6 +217,51 @@ const VERIFY_TRIVIAL_BINARIES = new Set([
   "tput",
 ]);
 
+/** Shells whose `-c SCRIPT` form is inspected for a trivial SCRIPT. */
+const VERIFY_TRIVIAL_SHELLS = new Set([
+  "sh",
+  "bash",
+  "dash",
+  "zsh",
+  "ksh",
+  "ash",
+  "csh",
+  "tcsh",
+]);
+
+/** Strip one layer of matching quotes from a shell `-c` script argument. */
+function unwrapShellScriptArg(script) {
+  if (typeof script !== "string" || script.length < 2) {
+    return script;
+  }
+  const first = script[0];
+  const last = script[script.length - 1];
+  if ((first === "'" && last === "'") || (first === '"' && last === '"')) {
+    return script.slice(1, -1);
+  }
+  return script;
+}
+
+/**
+ * Help / usage flags — after peel, these mean the command did not run the
+ * real validate/test/fmt/clippy workload.
+ */
+function argvHasHelpFlag(tokens) {
+  return tokens.includes("--help") || tokens.includes("-h");
+}
+
+/**
+ * Repo-relative validate entry only — reject absolute paths that merely end
+ * in `/scripts/validate.mjs` (e.g. `/tmp/.../scripts/validate.mjs`).
+ */
+function isRepoRelativeValidateScript(script) {
+  const normalized = script.replace(/\\/gu, "/");
+  return (
+    normalized === "scripts/validate.mjs" ||
+    normalized === "./scripts/validate.mjs"
+  );
+}
+
 /**
  * Peel wrappers (env/command/builtin/nohup/sudo/nice/time/timeout/stdbuf/…)
  * and env KEY=val so argv matching sees the real binary.
@@ -290,23 +335,9 @@ function peelVerifyArgv(tokens) {
 }
 
 /**
- * True when a command is too weak to count as verification evidence.
- * Rejected by record-verify --run and by verifyLedgerAppendCommand.
+ * True when peeled argv is too weak to count as verification evidence.
  */
-export function verifyCommandIsTrivial(cmd) {
-  if (typeof cmd !== "string") {
-    return true;
-  }
-  const trimmed = cmd.trim();
-  if (trimmed.length === 0 || trimmed.length < 3) {
-    return true;
-  }
-  const normalized = trimmed.replace(/\s+/gu, " ");
-  const lower = normalized.toLowerCase();
-  if (lower === ":" || lower === "exit" || lower === "exit 0") {
-    return true;
-  }
-  const tokens = peelVerifyArgv(tokenizeVerifyCommand(lower));
+function verifyPeeledArgvIsTrivial(tokens) {
   if (tokens.length === 0) {
     return true;
   }
@@ -331,7 +362,35 @@ export function verifyCommandIsTrivial(cmd) {
   ) {
     return true;
   }
+  // Shell wrappers around a trivial script: `sh -c true`, `bash -c ':'`, …
+  if (VERIFY_TRIVIAL_SHELLS.has(base)) {
+    const cIndex = tokens.indexOf("-c");
+    if (cIndex >= 0 && cIndex + 1 < tokens.length) {
+      return verifyCommandIsTrivial(unwrapShellScriptArg(tokens[cIndex + 1]));
+    }
+  }
   return false;
+}
+
+/**
+ * True when a command is too weak to count as verification evidence.
+ * Rejected by record-verify --run and by verifyLedgerAppendCommand.
+ */
+export function verifyCommandIsTrivial(cmd) {
+  if (typeof cmd !== "string") {
+    return true;
+  }
+  const trimmed = cmd.trim();
+  if (trimmed.length === 0 || trimmed.length < 3) {
+    return true;
+  }
+  const normalized = trimmed.replace(/\s+/gu, " ");
+  const lower = normalized.toLowerCase();
+  if (lower === ":" || lower === "exit" || lower === "exit 0") {
+    return true;
+  }
+  const tokens = peelVerifyArgv(tokenizeVerifyCommand(lower));
+  return verifyPeeledArgvIsTrivial(tokens);
 }
 
 export function verifyLedgerProfileIsKnown(profile) {
@@ -342,6 +401,9 @@ export function verifyLedgerProfileIsKnown(profile) {
 }
 
 function matchesNodeHarnessValidate(tokens) {
+  if (argvHasHelpFlag(tokens)) {
+    return false;
+  }
   const bin = commandBasename(tokens[0] ?? "").toLowerCase();
   if (
     tokens.length >= 3 &&
@@ -352,11 +414,8 @@ function matchesNodeHarnessValidate(tokens) {
     return true;
   }
   if (tokens.length >= 2 && bin === "node") {
-    const script = tokens[1].replace(/\\/gu, "/");
-    if (
-      script === "scripts/validate.mjs" ||
-      script.endsWith("/scripts/validate.mjs")
-    ) {
+    const script = typeof tokens[1] === "string" ? tokens[1] : "";
+    if (isRepoRelativeValidateScript(script)) {
       return true;
     }
   }
@@ -364,6 +423,9 @@ function matchesNodeHarnessValidate(tokens) {
 }
 
 function matchesNodeHarnessTest(tokens) {
+  if (argvHasHelpFlag(tokens)) {
+    return false;
+  }
   const bin = commandBasename(tokens[0] ?? "").toLowerCase();
   if (tokens.length >= 2 && bin === "npm" && tokens[1] === "test") {
     return true;
@@ -380,6 +442,9 @@ function matchesNodeHarnessTest(tokens) {
 }
 
 function matchesCargoFmtCheck(tokens) {
+  if (argvHasHelpFlag(tokens)) {
+    return false;
+  }
   return (
     commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
     tokens[1] === "fmt" &&
@@ -388,6 +453,9 @@ function matchesCargoFmtCheck(tokens) {
 }
 
 function matchesCargoClippy(tokens) {
+  if (argvHasHelpFlag(tokens)) {
+    return false;
+  }
   return (
     commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
     tokens[1] === "clippy"
@@ -395,6 +463,9 @@ function matchesCargoClippy(tokens) {
 }
 
 function matchesCargoTest(tokens) {
+  if (argvHasHelpFlag(tokens)) {
+    return false;
+  }
   const bin = commandBasename(tokens[0] ?? "").toLowerCase();
   return bin === "cargo" && (tokens[1] === "test" || tokens[1] === "nextest");
 }
