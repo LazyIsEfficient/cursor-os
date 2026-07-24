@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
@@ -76,6 +77,36 @@ function gitHeadSha(root) {
   });
   assert.equal(result.status, 0);
   return result.stdout.trim();
+}
+
+// The verify-ledger PR-gate tests below read/write `.cursor/verify-ledger.json`
+// via workspaceRoot. Using the real repositoryRoot for that file races with
+// tests/security/record-verify.test.mjs, which mutates the same path
+// concurrently under node:test's default cross-file parallelism (observed as
+// intermittent CI failures). Each such test gets its own throwaway git repo
+// instead so no state is shared across test files.
+function withTempWorkspace(fn) {
+  const root = mkdtempSync(join(tmpdir(), "before-shell-execution-test-"));
+  try {
+    const init = spawnSync("git", ["init", "-q"], { cwd: root });
+    assert.equal(init.status, 0);
+    spawnSync("git", ["-C", root, "config", "user.email", "test@example.com"]);
+    spawnSync("git", ["-C", root, "config", "user.name", "Test"]);
+    writeFileSync(join(root, ".gitkeep"), "");
+    spawnSync("git", ["-C", root, "add", "-A"]);
+    const commit = spawnSync("git", [
+      "-C",
+      root,
+      "commit",
+      "-q",
+      "-m",
+      "init",
+    ]);
+    assert.equal(commit.status, 0);
+    return fn(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 }
 
 test("allows benign everyday commands", () => {
@@ -348,68 +379,65 @@ test("dispatch-gate failClosed hooks always declare failClosed", async () => {
 });
 
 test("denies gh pr create|ready without a valid verify ledger", () => {
-  // Ensure no leftover ledger from other tests.
-  try {
-    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
-  } catch {
-    /* ignore */
-  }
-
-  for (const command of [
-    "gh pr create",
-    "gh pr ready",
-    "gh pr create --fill",
-    "gh -R owner/repo pr create",
-    "gh --repo owner/repo pr create",
-    "gh --repo=owner/repo pr create",
-    "gh -R owner/repo pr ready",
-  ]) {
-    const response = commandDecision(command);
-    assert.equal(response.permission, "deny", command);
-    assert.match(
-      response.user_message,
-      new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
-      command,
-    );
-    assert.equal(response.agent_message, GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE, command);
-  }
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    for (const command of [
+      "gh pr create",
+      "gh pr ready",
+      "gh pr create --fill",
+      "gh -R owner/repo pr create",
+      "gh --repo owner/repo pr create",
+      "gh --repo=owner/repo pr create",
+      "gh -R owner/repo pr ready",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+  });
 });
 
 test("allows gh pr create|ready with a valid verify ledger for HEAD", () => {
-  const headSha = gitHeadSha(repositoryRoot);
-  writeValidVerifyLedger(repositoryRoot, headSha);
-  try {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
     for (const command of ["gh pr create", "gh pr ready"]) {
       assert.deepEqual(
-        commandDecision(command),
+        commandDecision(command, { cwd: root }),
         { permission: "allow" },
         command,
       );
     }
-  } finally {
-    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
-  }
+  });
 });
 
 test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
-  try {
-    rmSync(verifyLedgerPath(repositoryRoot), { force: true });
-  } catch {
-    /* ignore */
-  }
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    assert.deepEqual(
+      commandDecision("gh pr create", {
+        cwd: root,
+        env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
+      }),
+      { permission: "allow" },
+    );
 
-  assert.deepEqual(
-    commandDecision("gh pr create", {
+    // Other high-impact gh forms remain denied even with the emergency env.
+    const denied = commandDecision("gh repo delete owner/repository", {
+      cwd: root,
       env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
-    }),
-    { permission: "allow" },
-  );
-
-  // Other high-impact gh forms remain denied even with the emergency env.
-  const denied = commandDecision("gh repo delete owner/repository", {
-    env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
+    });
+    assert.equal(denied.permission, "deny");
   });
-  assert.equal(denied.permission, "deny");
 });
 
 test("guard entry has no direct fs/network/credential APIs (ledger via lib)", async () => {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -15,76 +16,88 @@ import {
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = resolve(repositoryRoot, "plugin/scripts/record-verify.mjs");
 
-function runRecord(args) {
+function runRecord(args, { cwd = repositoryRoot } = {}) {
   return spawnSync(process.execPath, [scriptPath, ...args], {
-    cwd: repositoryRoot,
+    cwd,
     encoding: "utf8",
   });
 }
 
-function ledgerSnapshot() {
-  const path = verifyLedgerPath(repositoryRoot);
+function ledgerSnapshot(root = repositoryRoot) {
+  const path = verifyLedgerPath(root);
   if (!existsSync(path)) {
     return null;
   }
   return readFileSync(path, "utf8");
 }
 
-function withRestoredLedger(fn) {
-  const path = verifyLedgerPath(repositoryRoot);
-  const before = ledgerSnapshot();
+// Tests that append to the real ledger use their own throwaway git repo
+// instead of repositoryRoot: appending at the real path races with
+// tests/security/before-shell-execution.test.mjs, which reads/writes the same
+// file concurrently under node:test's default cross-file parallelism
+// (observed as intermittent CI failures).
+function withTempProjectRoot(fn) {
+  const root = mkdtempSync(join(tmpdir(), "record-verify-test-"));
   try {
-    rmSync(path, { force: true });
-  } catch {
-    /* ignore */
-  }
-  try {
-    return fn(path);
+    const init = spawnSync("git", ["init", "-q"], { cwd: root });
+    assert.equal(init.status, 0);
+    spawnSync("git", ["-C", root, "config", "user.email", "test@example.com"]);
+    spawnSync("git", ["-C", root, "config", "user.name", "Test"]);
+    const commit = spawnSync("git", [
+      "-C",
+      root,
+      "commit",
+      "-q",
+      "-m",
+      "init",
+      "--allow-empty",
+    ]);
+    assert.equal(commit.status, 0);
+    return fn(root);
   } finally {
-    if (before === null) {
-      rmSync(path, { force: true });
-    } else {
-      writeFileSync(path, before);
-    }
+    rmSync(root, { recursive: true, force: true });
   }
 }
 
 test("rejects --cmd/--exit fake recording path", () => {
-  const before = ledgerSnapshot();
-  for (const args of [
-    ["--cmd", "npm test", "--exit", "0"],
-    ["--cmd=npm test", "--exit=0"],
-    ["--exit", "0", "--cmd", "npm test"],
-  ]) {
-    const result = runRecord(args);
-    assert.equal(result.status, 2, args.join(" "));
-    assert.match(result.stderr, /--cmd\/--exit removed/u, args.join(" "));
-  }
-  assert.equal(ledgerSnapshot(), before);
+  withTempProjectRoot((root) => {
+    const before = ledgerSnapshot(root);
+    for (const args of [
+      ["--cmd", "npm test", "--exit", "0"],
+      ["--cmd=npm test", "--exit=0"],
+      ["--exit", "0", "--cmd", "npm test"],
+    ]) {
+      const result = runRecord(args, { cwd: root });
+      assert.equal(result.status, 2, args.join(" "));
+      assert.match(result.stderr, /--cmd\/--exit removed/u, args.join(" "));
+    }
+    assert.equal(ledgerSnapshot(root), before);
+  });
 });
 
 test("requires --run -- <command...>", () => {
-  const before = ledgerSnapshot();
-  const missingRun = runRecord(["--profile", "node-harness"]);
-  assert.equal(missingRun.status, 2);
-  assert.match(missingRun.stderr, /--run/u);
+  withTempProjectRoot((root) => {
+    const before = ledgerSnapshot(root);
+    const missingRun = runRecord(["--profile", "node-harness"], { cwd: root });
+    assert.equal(missingRun.status, 2);
+    assert.match(missingRun.stderr, /--run/u);
 
-  const emptyRun = runRecord(["--profile", "node-harness", "--run", "--"]);
-  assert.equal(emptyRun.status, 2);
-  assert.match(emptyRun.stderr, /--run requires a command/u);
-  assert.equal(ledgerSnapshot(), before);
+    const emptyRun = runRecord(["--profile", "node-harness", "--run", "--"], {
+      cwd: root,
+    });
+    assert.equal(emptyRun.status, 2);
+    assert.match(emptyRun.stderr, /--run requires a command/u);
+    assert.equal(ledgerSnapshot(root), before);
+  });
 });
 
 test("rejects trivial commands before spawn", () => {
-  withRestoredLedger(() => {
+  withTempProjectRoot((root) => {
     for (const trivial of ["true", "false", ":", "echo hi", "printf x", "exit", "exit 0", "ab"]) {
-      const result = runRecord([
-        "--profile",
-        "custom",
-        "--run",
-        "--",
-        ...trivial.split(" "),
-      ]);
+      const result = runRecord(
+        ["--profile", "custom", "--run", "--", ...trivial.split(" ")],
+        { cwd: root },
+      );
       assert.equal(result.status, 2, trivial);
       assert.match(result.stderr, /trivial command rejected/u, trivial);
     }
@@ -92,24 +105,22 @@ test("rejects trivial commands before spawn", () => {
 });
 
 test("requires --profile on first write for HEAD", () => {
-  withRestoredLedger(() => {
-    const result = runRecord(["--run", "--", "node", "--version"]);
+  withTempProjectRoot((root) => {
+    const result = runRecord(["--run", "--", "node", "--version"], {
+      cwd: root,
+    });
     assert.equal(result.status, 2);
     assert.match(result.stderr, /--profile/u);
   });
 });
 
 test("records spawned commands and sets impl_verified for node-harness coverage", () => {
-  withRestoredLedger((path) => {
-    const first = runRecord([
-      "--profile",
-      "node-harness",
-      "--run",
-      "--",
-      "node",
-      "-e",
-      "process.exit(0)",
-    ]);
+  withTempProjectRoot((root) => {
+    const path = verifyLedgerPath(root);
+    const first = runRecord(
+      ["--profile", "node-harness", "--run", "--", "node", "-e", "process.exit(0)"],
+      { cwd: root },
+    );
     assert.equal(first.status, 0, first.stderr);
     const afterFirst = JSON.parse(first.stdout);
     assert.equal(afterFirst.profile, "node-harness");
@@ -123,22 +134,19 @@ test("records spawned commands and sets impl_verified for node-harness coverage"
     assert.equal(ledger1.commands[0].cmd, 'node -e process.exit(0)');
 
     // Second append may omit profile when it already matches.
-    const second = runRecord(["--run", "--", "node", "-e", "process.exit(0)"]);
+    const second = runRecord(["--run", "--", "node", "-e", "process.exit(0)"], {
+      cwd: root,
+    });
     assert.equal(second.status, 0, second.stderr);
     const ledger2 = JSON.parse(readFileSync(path, "utf8"));
     assert.equal(ledger2.commands.length, 2);
     assert.equal(ledger2.impl_verified, false);
 
     // Mismatched profile is rejected.
-    const mismatch = runRecord([
-      "--profile",
-      "rust",
-      "--run",
-      "--",
-      "node",
-      "-e",
-      "process.exit(0)",
-    ]);
+    const mismatch = runRecord(
+      ["--profile", "rust", "--run", "--", "node", "-e", "process.exit(0)"],
+      { cwd: root },
+    );
     assert.equal(mismatch.status, 2);
     assert.match(mismatch.stderr, /profile mismatch/u);
   });
