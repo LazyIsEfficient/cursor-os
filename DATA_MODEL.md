@@ -10,6 +10,7 @@
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-24 | `feat/verify-ledger-profiles` | No data-contract changes in this run. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tier 1 hardening: profile coverage matchers reject post-peel `--help`/`-h`; `node-harness` validate accepts only repo-relative `scripts/validate.mjs` or `./scripts/validate.mjs` (not absolute paths ending in that suffix); `verifyCommandIsTrivial` treats `sh`/`bash`/… `-c SCRIPT` as trivial when unwrapped SCRIPT is trivial. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tightened `custom` profile coverage to a verification-shaped positive allowlist (closes `pwd`+`date` PR-gate bypass); expanded trivial/wrapper peeling; blanked `CURSOR_PROJECT_DIR` in record-verify test isolation. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Bumped `VerifyLedger` to version 2 with required `profile`, `spawned` on commands, profile coverage rules, and `--run`-only `VerifyRecordCliResult` (removed `--cmd`/`--exit`; noted Write-tool forgery residual). |
