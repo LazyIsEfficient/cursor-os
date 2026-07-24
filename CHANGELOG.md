@@ -14,6 +14,8 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-24
+
 ### Added
 
 - **Agentic-OS parity Phase 1 — skills + rules:** additional portable skills
@@ -314,9 +316,7 @@ backed by a live authenticated benchmark run.
 - **Zero third-party dependencies** — the lockfile contains no external
   packages; everything runs on the Node standard library.
 
-[Unreleased]: https://github.com/LazyIsEfficient/cursor-os/compare/9027bba...HEAD
-[0.1.0]: https://github.com/LazyIsEfficient/cursor-os/commit/9027bba
-
-<!-- 0.1.0 links reference the release commit: the repository carries no git
-     tags yet. Replace with tag links once v0.1.0 is tagged. -->
+[Unreleased]: https://github.com/LazyIsEfficient/cursor-os/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/LazyIsEfficient/cursor-os/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/LazyIsEfficient/cursor-os/releases/tag/v0.1.0
 

@@ -62,21 +62,21 @@ async function readSources(repository) {
 
 test("bumping rewrites every release version field and keeps release parity", async () => {
   await withRepositoryCopy("cursor-harness-bump-apply-", async (repository, directory) => {
-    const result = await bumpVersion({ repositoryRoot: repository, version: "0.2.0" });
+    const result = await bumpVersion({ repositoryRoot: repository, version: "0.3.0" });
 
-    assert.equal(result.previousVersion, "0.1.0");
-    assert.equal(result.version, "0.2.0");
+    assert.equal(result.previousVersion, "0.2.0");
+    assert.equal(result.version, "0.3.0");
     assert.equal(result.fields.length, VERSION_FIELDS.length);
     assert.deepEqual(result.drifted, []);
-    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.2.0"));
+    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.3.0"));
 
     // The parity check in release-package.mjs is the real acceptance gate.
     const release = await buildRelease({
       repositoryRoot: repository,
       outputDirectory: join(directory, "dist"),
     });
-    assert.equal(release.manifest.version, "0.2.0");
-    assert.equal(release.manifest.archiveRoot, "cursor-harness-0.2.0");
+    assert.equal(release.manifest.version, "0.3.0");
+    assert.equal(release.manifest.archiveRoot, "cursor-harness-0.3.0");
   });
 });
 
@@ -107,11 +107,11 @@ test("bumping forward and back restores byte-identical manifests", async () => {
     for (const file of VERSIONED_FILES) assert.notEqual(bumped[file], before[file]);
     // Only version tokens may move; the surrounding formatting must not.
     assert.equal(
-      bumped["package-lock.json"].replaceAll('"version": "0.9.0"', '"version": "0.1.0"'),
+      bumped["package-lock.json"].replaceAll('"version": "0.9.0"', '"version": "0.2.0"'),
       before["package-lock.json"],
     );
 
-    await bumpVersion({ repositoryRoot: repository, version: "0.1.0", force: true });
+    await bumpVersion({ repositoryRoot: repository, version: "0.2.0", force: true });
     assert.deepEqual(await readSources(repository), before);
   });
 });
@@ -129,7 +129,7 @@ test("bumping rejects malformed versions without touching the repository", async
     }
 
     assert.deepEqual(await readSources(repository), before);
-    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.1.0"));
+    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.2.0"));
   });
 });
 
@@ -138,16 +138,16 @@ test("bumping refuses a no-op or a downgrade unless forced", async () => {
     const before = await readSources(repository);
 
     await assert.rejects(
-      bumpVersion({ repositoryRoot: repository, version: "0.1.0" }),
-      /version 0\.1\.0 is already the current version; pass --force/u,
+      bumpVersion({ repositoryRoot: repository, version: "0.2.0" }),
+      /version 0\.2\.0 is already the current version; pass --force/u,
     );
     await assert.rejects(
       bumpVersion({ repositoryRoot: repository, version: "0.0.9" }),
-      /version 0\.0\.9 is lower than the current version 0\.1\.0; pass --force/u,
+      /version 0\.0\.9 is lower than the current version 0\.2\.0; pass --force/u,
     );
     await assert.rejects(
-      bumpVersion({ repositoryRoot: repository, version: "0.1.0-rc.1" }),
-      /version 0\.1\.0-rc\.1 is lower than the current version 0\.1\.0; pass --force/u,
+      bumpVersion({ repositoryRoot: repository, version: "0.2.0-rc.1" }),
+      /version 0\.2\.0-rc\.1 is lower than the current version 0\.2\.0; pass --force/u,
     );
     assert.deepEqual(await readSources(repository), before);
 
@@ -169,10 +169,10 @@ test("bumping repairs drift across the parity fields and reports it", async () =
       /release version mismatch: package-lock\.json root package=0\.0\.1/u,
     );
 
-    const result = await bumpVersion({ repositoryRoot: repository, version: "0.2.0" });
+    const result = await bumpVersion({ repositoryRoot: repository, version: "0.3.0" });
 
     assert.deepEqual(result.drifted, [{ label: "package-lock.json root package", version: "0.0.1" }]);
-    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.2.0"));
+    assert.deepEqual(await readVersions(repository), VERSION_FIELDS.map(() => "0.3.0"));
   });
 });
 
@@ -212,7 +212,7 @@ test("bumping refuses to reformat a non-canonical manifest", async () => {
     await writeFile(packagePath, `${JSON.stringify(packageJson, null, 4)}\n`);
 
     await assert.rejects(
-      bumpVersion({ repositoryRoot: repository, version: "0.2.0" }),
+      bumpVersion({ repositoryRoot: repository, version: "0.3.0" }),
       /package\.json is not canonically formatted/u,
     );
   });

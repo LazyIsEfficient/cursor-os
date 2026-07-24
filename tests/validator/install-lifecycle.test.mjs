@@ -90,7 +90,7 @@ test("reinstall repairs removed managed registration and preserves unrelated ent
     assert.deepEqual(repairedConfig.plugins.user, { path: "user-plugin", version: "9" });
     assert.deepEqual(repairedConfig.plugins["cursor-harness"], {
       path: "plugins/cursor-harness",
-      version: "0.1.0",
+      version: "0.2.0",
     });
     await uninstallLocalPlugin({ cursorRoot, pluginId: "cursor-harness" });
     assert.equal(await readFile(configPath, "utf8"), originalConfig);
@@ -166,7 +166,7 @@ test("reinstall repairs wrong managed registration path and version", async () =
     assert.equal(repaired.status, "repaired");
     assert.deepEqual(
       JSON.parse(await readFile(configPath, "utf8")).plugins["cursor-harness"],
-      { path: "plugins/cursor-harness", version: "0.1.0" },
+      { path: "plugins/cursor-harness", version: "0.2.0" },
     );
   });
 });
@@ -207,7 +207,7 @@ test("upgrade replaces the managed plugin tree", async () => {
 
     const manifestPath = join(upgradedSource, ".cursor-plugin/plugin.json");
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-    manifest.version = "0.2.0";
+    manifest.version = "0.3.0";
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     await writeFile(join(upgradedSource, "replacement.txt"), "replacement");
     const upgraded = await installLocalPlugin({ cursorRoot, sourcePlugin: upgradedSource });
@@ -230,7 +230,7 @@ test("uninstall after upgrade and repair preserves unrelated entries when no man
 
     const manifestPath = join(upgradedSource, ".cursor-plugin/plugin.json");
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-    manifest.version = "0.2.0";
+    manifest.version = "0.3.0";
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     assert.equal(
       (await installLocalPlugin({ cursorRoot, sourcePlugin: upgradedSource })).status,
@@ -266,7 +266,7 @@ test("uninstall after upgrade and repair restores an original managed entry and 
 
     const manifestPath = join(upgradedSource, ".cursor-plugin/plugin.json");
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-    manifest.version = "0.2.0";
+    manifest.version = "0.3.0";
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     assert.equal(
       (await installLocalPlugin({ cursorRoot, sourcePlugin: upgradedSource })).status,

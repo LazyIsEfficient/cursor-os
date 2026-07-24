@@ -156,12 +156,12 @@ test("release packaging fails when repository versions differ", async () => {
     });
     const packagePath = join(repository, "package.json");
     const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
-    packageJson.version = "0.1.1";
+    packageJson.version = "0.2.1";
     await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
     await assert.rejects(
       buildRelease({ repositoryRoot: repository, outputDirectory: join(temporaryRoot, "output") }),
-      /release version mismatch: package\.json=0\.1\.1; expected 0\.1\.0/u,
+      /release version mismatch: package\.json=0\.2\.1; expected 0\.2\.0/u,
     );
   });
 });
@@ -187,7 +187,7 @@ test("packaged payload installs and uninstalls in a temporary root with restorat
     assert.equal(await exists(join(destination, "user-content.txt")), false);
     assert.equal(
       JSON.parse(await readFile(join(destination, ".cursor-plugin/plugin.json"), "utf8")).version,
-      "0.1.0",
+      "0.2.0",
     );
     assert.equal(await exists(join(destination, "benchmark")), false);
 
