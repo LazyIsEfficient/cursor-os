@@ -44,7 +44,7 @@
 
 ## 6. Review / ship
 
-- [ ] 6.1 Dispatch library-reviewer across rewritten library; address Tier 0/1 findings
-- [ ] 6.2 Verify frontmatter `name`/`description` unchanged vs main (routing regression check)
-- [ ] 6.3 CHANGELOG.md finalize; full `npm test` + `node scripts/validate.mjs` green
-- [ ] 6.4 Open PR to main; archive change after merge
+- [x] 6.1 Dispatch library-reviewer across rewritten library; address Tier 0/1 findings
+- [x] 6.2 Verify frontmatter `name`/`description` unchanged vs main (routing regression check)
+- [x] 6.3 CHANGELOG.md finalize; full `npm test` + `node scripts/validate.mjs` green
+- [x] 6.4 Open PR to main; archive change after merge (PR #47 merged; pass-2 contract override shipped as follow-up PR)
