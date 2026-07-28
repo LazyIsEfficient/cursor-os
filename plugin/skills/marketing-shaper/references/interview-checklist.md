@@ -1,6 +1,6 @@
 # Interview checklist
 
-For each template, these are the questions to ask the user when the relevant section is missing or vague. Batch them into one AskUserQuestion call. Skip any whose answers are already obvious from the user's initial message or context.
+Per template: questions to ask user when relevant section missing or vague. Batch into one AskUserQuestion call. Skip any whose answers already obvious from user's initial message or context.
 
 ## Universal questions (any template)
 
@@ -53,7 +53,7 @@ For each template, these are the questions to ask the user when the relevant sec
 ## Question hygiene
 
 - Never ask more than ~6 questions in one batch.
-- Never ask a question whose answer is obvious from the user's message or context.
-- Prefer concrete questions ("which channels?") over open-ended ones ("tell me about your marketing").
-- If the user already volunteered something in prose, *distill it into the template* — don't ask them to repeat themselves.
-- Always include the quality gate question unless the user has already specified whether they want expert panel scoring.
+- Never ask question whose answer obvious from user's message or context.
+- Prefer concrete questions ("which channels?") over open-ended ("tell me about your marketing").
+- User already volunteered something in prose → *distill into template* — don't ask them to repeat.
+- Always include quality gate question unless user already specified whether they want expert panel scoring.

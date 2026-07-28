@@ -5,11 +5,11 @@ description: "Scan and redact PII and sensitive data (emails, phone numbers, SSN
 
 # Security Sanitizer
 
-Scans and redacts PII / sensitive data from files in this repo. Uses only Python standard library — no external dependencies.
+Scans + redacts PII / sensitive data from files in this repo. Python standard library only — no external dependencies.
 
 ## Tools
 
-Resolve scripts project-first, then the local Cursor plugin install:
+Resolve scripts project-first, then local Cursor plugin install:
 
 ```sh
 PROJ="${CURSOR_PROJECT_DIR:-.}"
@@ -24,7 +24,7 @@ SAN="$PROJ/plugin/skills/security/scripts/sanitizer.py"
 
 ## Configuration
 
-Edit `scripts/sanitizer-config.json` beside this skill (same directory as `$SAN`) to customize blocklists, custom regex patterns, skip paths, and placeholder format.
+Edit `scripts/sanitizer-config.json` beside this skill (same directory as `$SAN`) to customize blocklists, custom regex patterns, skip paths, placeholder format.
 
 ## Exit Codes
 

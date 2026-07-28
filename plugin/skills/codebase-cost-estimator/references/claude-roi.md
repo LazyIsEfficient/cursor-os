@@ -1,17 +1,17 @@
 # Claude ROI — Value Per Claude Hour
 
-The most important metric for AI-assisted development. Answers: "What did each hour of Claude's actual working time produce?"
+Most important metric for AI-assisted development. Answers: "What did each hour of Claude's actual working time produce?"
 
 ## Step 1: Determine Actual Claude Clock Time
 
 ### Method 1: Git History (preferred)
 
-Run `git log --format="%ai" | sort` to get all commit timestamps. Then:
+Run `git log --format="%ai" | sort` for all commit timestamps. Then:
 1. First commit = project start
 2. Last commit = current state
 3. Total calendar days = last - first
 4. Cluster commits into sessions: group commits within 4-hour windows as one session
-5. Estimate session duration using commit density:
+5. Estimate session duration by commit density:
 
 | Commits in Window | Estimated Session Duration |
 |-------------------|---------------------------|
@@ -29,7 +29,7 @@ Apply same session clustering logic.
 
 ### Method 3: Fallback Estimate (no timestamps)
 
-Assume Claude writes 200-500 lines of meaningful code per hour (much faster than humans).
+Assume Claude writes 200-500 lines meaningful code per hour (much faster than humans).
 
 `Claude active hours ≈ Total LOC ÷ 350`
 

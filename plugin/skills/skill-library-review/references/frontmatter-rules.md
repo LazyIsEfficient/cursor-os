@@ -1,21 +1,21 @@
 # Frontmatter Rules
 
-The frontmatter is the loader's primary input. Errors here cause silent misrouting.
+Frontmatter = loader's primary input. Errors here cause silent misrouting.
 
 ## Required fields
 
 ### `name`
 - Lowercase, hyphenated, no spaces or underscores
-- Must match the directory name (skills) or file basename (agents)
-- Mismatch is a **blocking** error — the loader uses the field, not the path
+- Must match directory name (skills) or file basename (agents)
+- Mismatch = **blocking** error — loader uses field, not path
 
 Valid: `release-manager`, `code-reviewer`, `web3-smart-contract-engineering`
 Invalid: `ReleaseManager`, `release_manager`, `release manager`, `Release-Manager`
 
 ### `description`
-- Third person, written for the loader — not the human reader
-- Under 1024 characters (some loaders enforce this hard)
-- States both **WHAT** the skill/agent does and **WHEN** to load it
+- Third person, written for loader — not human reader
+- Under 1024 characters (some loaders enforce hard)
+- States both **WHAT** skill/agent does + **WHEN** to load it
 - Ends with cross-references to adjacent skills/agents
 
 Pattern:
@@ -24,25 +24,25 @@ Pattern:
 Use when <situation>. Triggers on <file globs> or mentions of "<keyword>", "<keyword>". For <related concern> see <other-skill>.
 ```
 
-A description without trigger vocabulary forces the loader to match on WHAT only — too low-signal for accurate routing. See [description-and-routing.md](description-and-routing.md) for the full rubric.
+Description without trigger vocabulary forces loader to match on WHAT only — too low-signal for accurate routing. See [description-and-routing.md](description-and-routing.md) for full rubric.
 
 ## Optional fields (agents)
 
 ### `readonly` (Cursor)
-- `true` for read-only reviewers and auditors
+- `true` for read-only reviewers + auditors
 - Cursor Harness agents use this instead of Claude Code `tools:` lists
-- A declared read-only role without `readonly: true` is a should-fix;
-  contradiction with write language in the body is blocking
+- Declared read-only role without `readonly: true` = should-fix;
+  contradiction with write language in body = blocking
 
 ### `tools` (Claude Code)
 - Comma-separated allowlist of tool names
-- Omit to inherit all tools from the parent agent
-- Must match the declared role (read-only ↛ Edit; intake ↛ Agent)
-- See [tool-allowlists.md](tool-allowlists.md) for the role-to-allowlist map
+- Omit to inherit all tools from parent agent
+- Must match declared role (read-only ↛ Edit; intake ↛ Agent)
+- See [tool-allowlists.md](tool-allowlists.md) for role-to-allowlist map
 - Not used on Cursor Harness agents (unsupported frontmatter)
 
 ### `model`
-- Optional model hint where the platform supports it
+- Optional model hint where platform supports it
 - Omit to inherit from parent / default
 
 ## File structure (skills)
@@ -57,28 +57,28 @@ A description without trigger vocabulary forces the loader to match on WHAT only
 
 - Folder name must match `name` frontmatter exactly.
 - `SKILL.md` should stay under ~100 lines. Long content moves to `references/`.
-- Templates the agent **fills out and copies** belong in `assets/`, not `references/`.
+- Templates agent **fills out and copies** belong in `assets/`, not `references/`.
 - Runnable scripts go in `scripts/`, not inlined in `SKILL.md`.
 
-## Common frontmatter errors (in severity order)
+## Common frontmatter errors (severity order)
 
 **Blocking**
 - `name` doesn't match folder/file basename — silent misroute
-- `description` is missing or empty
-- `tools:` includes write tools (`Edit`, `Write`, `NotebookEdit`) on an agent that declares itself read-only
+- `description` missing or empty
+- `tools:` includes write tools (`Edit`, `Write`, `NotebookEdit`) on agent declaring itself read-only
 - `tools:` field present but malformed YAML
 
 **Should-fix**
-- Description starts with first-person ("I am a...", "I help with...") instead of third-person ("Use when...")
+- Description starts first-person ("I am a...", "I help with...") instead of third-person ("Use when...")
 - Description states only WHAT, no WHEN (no `Use when...` or trigger vocabulary)
-- Description ends without cross-references — leaves loader no fallback when a sibling is a better fit
+- Description ends without cross-references — leaves loader no fallback when sibling better fit
 - Description uses project-specific paths (`apps/foo/...`) that don't transfer
 - Description over 1024 chars
 
 **Nit**
 - Description over 800 chars (cuttable without losing routing signal)
 - Trailing whitespace, inconsistent quoting in YAML
-- Cross-references in narrative form ("you might also want...") instead of the conventional "For X see Y"
+- Cross-references in narrative form ("you might also want...") instead of conventional "For X see Y"
 
 ## Validation checklist
 
@@ -89,4 +89,4 @@ A description without trigger vocabulary forces the loader to match on WHAT only
 - [ ] `description` under 1024 chars
 - [ ] `tools` allowlist (if present) coherent with declared role
 - [ ] No company-specific or project-specific identifiers in description body
-- [ ] SKILL.md folder structure matches the convention (references/, assets/, scripts/)
+- [ ] SKILL.md folder structure matches convention (references/, assets/, scripts/)

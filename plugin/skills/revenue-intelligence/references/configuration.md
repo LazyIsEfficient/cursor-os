@@ -1,6 +1,6 @@
 # Configuration
 
-All scripts read from environment variables. Copy `.env.example` to `.env` and fill in your values.
+All scripts read environment variables. Copy `.env.example` to `.env`, fill in values.
 
 ## Required Environment Variables
 

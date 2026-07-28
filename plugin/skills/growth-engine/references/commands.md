@@ -29,7 +29,7 @@ python3 scripts/experiment-engine.py score --agent <agent_name> --experiment-id 
 
 Statuses: `running` → `trending` → `keep` (winner) or `discard` (loser)
 
-Winners auto-promote to the playbook. Requires p < 0.05 AND ≥ 15% lift.
+Winners auto-promote to playbook. Requires p < 0.05 AND ≥ 15% lift.
 
 ## List experiments
 ```bash
@@ -41,7 +41,7 @@ python3 scripts/experiment-engine.py list --agent <agent_name> [--status running
 python3 scripts/experiment-engine.py playbook --agent <agent_name>
 ```
 
-Always check the playbook before creating new content to apply proven best practices.
+Always check playbook before creating new content to apply proven best practices.
 
 ## Suggest next experiments
 ```bash
@@ -63,7 +63,7 @@ Exit code 0 = on pace, 1 = alerts present.
 ## Recommended Workflow
 
 1. Before creating content: `playbook` → apply proven rules
-2. When publishing: `log` → record which variant was used and its metrics
-3. Periodically: `score` → check if experiments have reached statistical significance
+2. When publishing: `log` → record which variant used + its metrics
+3. Periodically: `score` → check experiments reached statistical significance
 4. Weekly: `scripts/autogrowth-weekly-scorecard.py` → review all channels
-5. After completing experiments: `suggest` → pick the next variable to test
+5. After completing experiments: `suggest` → pick next variable to test

@@ -1,6 +1,6 @@
 # Description and Routing
 
-The loader matches user intent against descriptions. Routing quality lives or dies in this field.
+Loader matches user intent against descriptions. Routing quality lives or dies in this field.
 
 ## The structure
 
@@ -11,13 +11,13 @@ Use when <situation>. Triggers on <globs/keywords>. For <adjacent concern> see <
 Three jobs:
 1. **WHAT** — situation that calls for this skill/agent
 2. **WHEN** — concrete triggers (file patterns, user vocabulary, slash commands)
-3. **WHERE NOT** — cross-references to siblings that handle adjacent concerns
+3. **WHERE NOT** — cross-references to siblings handling adjacent concerns
 
-The third job is the most under-used. Without it, the loader has no way to deflect to a better match — it just picks the first description that fires.
+Third job most under-used. Without it, loader has no way to deflect to better match — picks first description that fires.
 
 ## Specificity for routing
 
-A description that could match anything matches nothing well.
+Description that could match anything matches nothing well.
 
 | Bad | Better |
 |---|---|
@@ -26,7 +26,7 @@ A description that could match anything matches nothing well.
 | "Use for any review" | "Use proactively after non-trivial code changes for multi-axis review (correctness, design, perf)" |
 | "Helps with marketing" | "Use when the deliverable is content, an experiment, or an outbound sequence" |
 
-The test: read the description aloud. If it could equally well describe three other skills in the library, it's not specific enough.
+Test: read description aloud. Could equally describe three other skills in library → not specific enough.
 
 ## Trigger vocabulary
 
@@ -38,27 +38,27 @@ Users say:
 - "review my PR" — not "audit the changeset"
 - "design a course" — not "produce instructional materials"
 
-If you're unsure what users say, scan recent conversation history for the actual phrasing.
+Unsure what users say → scan recent conversation history for actual phrasing.
 
 ### Keyword density
 
-- 5–12 keywords is healthy
-- 15+ keywords signals weak description — the loader can't discriminate
-- Single-word triggers ("design", "test") are too broad alone; pair with context ("system design", "test strategy")
-- File globs (`**/*.test.ts`) are concrete and discriminating — prefer them when the skill is file-scoped
+- 5–12 keywords healthy
+- 15+ keywords signals weak description — loader can't discriminate
+- Single-word triggers ("design", "test") too broad alone; pair with context ("system design", "test strategy")
+- File globs (`**/*.test.ts`) concrete + discriminating — prefer when skill file-scoped
 
 ## Proactive markers
 
-Phrases like "Use proactively after X" or "MUST BE USED before Y" tell the loader to fire the agent without an explicit user request.
+Phrases like "Use proactively after X" or "MUST BE USED before Y" tell loader to fire agent without explicit user request.
 
-When to use them:
+When to use:
 - **Reviewers**: yes — "Use proactively after non-trivial code changes"
 - **Security gates**: yes — "Use proactively before merging changes that touch auth, sessions, crypto"
-- **Performance / quality gates**: case by case — only if the cost of skipping is high
-- **Builders**: rarely — they fire on explicit work; auto-firing causes noise
-- **Intake / shapers**: never — they're explicitly user-invoked
+- **Performance / quality gates**: case by case — only if cost of skipping high
+- **Builders**: rarely — fire on explicit work; auto-firing causes noise
+- **Intake / shapers**: never — explicitly user-invoked
 
-A proactive marker without a precise trigger condition is worse than no marker — the agent fires every turn and either becomes noise or gets ignored.
+Proactive marker without precise trigger condition worse than no marker — agent fires every turn, becomes noise or gets ignored.
 
 ```
 Bad:  Use proactively when reviewing code.
@@ -69,7 +69,7 @@ Good: Use proactively before merging changes that touch auth, sessions, crypto, 
 
 ## Cross-references
 
-Every adjacent skill/agent should be named in the description so the loader can route correctly when the request lands closer to a sibling:
+Every adjacent skill/agent should be named in description so loader routes correctly when request lands closer to sibling:
 
 ```
 For Solidity contracts see web3-smart-contract-engineering. For Godot games see godot-engineer.
@@ -78,9 +78,9 @@ For read-only review verdicts see code-reviewer.
 
 ### Bidirectional refs
 
-If A says "see B for X", does B's description (or related-skills section) name A? Asymmetric refs leave dead ends.
+A says "see B for X" → does B's description (or related-skills section) name A? Asymmetric refs leave dead ends.
 
-To find inbound refs:
+Find inbound refs:
 
 ```bash
 grep -r "<skill-name>" .claude/skills/ .claude/agents/
@@ -90,28 +90,28 @@ Zero hits = orphan; investigate.
 
 ## Verifying a collision before you report it
 
-A shared trigger keyword between two skills is **not** automatically a routing collision. Deliberately shared keywords, disambiguated by reciprocal "not when" clauses, are the intended pattern — the loader reads the deflection and routes correctly.
+Shared trigger keyword between two skills is **not** automatically routing collision. Deliberately shared keywords, disambiguated by reciprocal "not when" clauses, are intended pattern — loader reads deflection, routes correctly.
 
-Before reporting a collision, run this check:
+Before reporting collision, run this check:
 
-0. **Confirm the two skills actually contend.** A collision requires a *real* overlap: a shared trigger keyword, or two file-globs that both match the same file/request. Two skills that don't compete for the same request are not colliding just because neither names the other — that is expected, not a finding. (A general code-review skill and a test-strategy skill don't contend merely because neither cites the other.) No genuine overlap → stop here, no finding.
-1. Read **both** skills' `description` and `when_to_use`, including every `Not when … use <other>` clause.
-2. Ask: does each side already deflect to the other on the shared trigger?
+0. **Confirm two skills actually contend.** Collision requires *real* overlap: shared trigger keyword, or two file-globs both matching same file/request. Two skills not competing for same request are not colliding just because neither names other — expected, not finding. (General code-review skill + test-strategy skill don't contend merely because neither cites other.) No genuine overlap → stop here, no finding.
+1. Read **both** skills' `description` + `when_to_use`, including every `Not when … use <other>` clause.
+2. Ask: does each side already deflect to other on shared trigger?
 
 | Both sides deflect (reciprocal "not when") | Only one side deflects | Neither side deflects |
 |---|---|---|
-| **Not a finding.** Resolved — do not report. | Should-fix: add the missing reverse tiebreaker. | Blocking/should-fix: real collision, no disambiguation. |
+| **Not a finding.** Resolved — do not report. | Should-fix: add missing reverse tiebreaker. | Blocking/should-fix: real collision, no disambiguation. |
 
-Quote the actual "not when" line from each side as evidence (or, for the "neither" column, paste the `grep` that shows the tiebreaker is absent). "These two share a keyword" *without* checking both tiebreakers is not a finding — it is half a check, and it is the single biggest source of false-positive collision reports.
+Quote actual "not when" line from each side as evidence (or, for "neither" column, paste `grep` showing tiebreaker absent). "These two share a keyword" *without* checking both tiebreakers is not finding — half a check, single biggest source of false-positive collision reports.
 
-Example: `marketing-shaper` and `outbound-engine` both trigger on "outbound campaign", but `marketing-shaper`'s description says "see outbound-engine" and the reverse says "see marketing-shaper". Reciprocal — resolved — not a finding.
+Example: `marketing-shaper` + `outbound-engine` both trigger on "outbound campaign", but `marketing-shaper`'s description says "see outbound-engine" + reverse says "see marketing-shaper". Reciprocal — resolved — not a finding.
 
 ## Description anti-patterns
 
 - Starts with "I" or "We" (first-person)
 - Doesn't include "Use when…" — pure WHAT, no WHEN
-- Lists 20+ keywords (signal of "I couldn't decide what this is")
-- Includes "etc." or "and more" (vague hedge that signals incomplete thinking)
+- Lists 20+ keywords (signal of "couldn't decide what this is")
+- Includes "etc." or "and more" (vague hedge, signals incomplete thinking)
 - Uses company or project names that won't transfer to other repos
 - "Use proactively" without specifying *when* — fires unconditionally
 - No trailing cross-references when adjacent skills clearly exist

@@ -5,14 +5,14 @@ description: Method and protocol for forensic audit of this plugin's own skill, 
 
 # Library Investigator
 
-You are a truthseeker, not a referee. You probe plugin component files against mechanically-checkable rules and report facts plus evidence. You never grade quality, never weigh routing, never emit pass / fail / hold or any overall verdict. The headline is COUNTS.
+Truthseeker, not referee. Probe plugin component files against mechanically-checkable rules; report facts + evidence. Never grade quality, never weigh routing, never emit pass / fail / hold or any overall verdict. Headline is COUNTS.
 
 ## Core rules
 
-1. **No judgment.** Quality, routing, and single-responsibility are out of jurisdiction — they are `N-A`. Never guess at a judgment rule.
+1. **No judgment.** Quality, routing, single-responsibility out of jurisdiction — they are `N-A`. Never guess at judgment rule.
 2. **No softening.** Well-written prose that breaks a rule is still VIOLATES. Polish is non-evidence.
-3. **Costume check.** Self-describing phrases ("comprehensive", "follows best practices") trigger mandatory verification of the rule they imply.
-4. **Probe, don't infer.** A claim of CONFORMS or VIOLATES rests on probe output, not on reading "how the file feels." When a probe cannot complete, the verdict is UNVERIFIABLE.
+3. **Costume check.** Self-describing phrases ("comprehensive", "follows best practices") trigger mandatory verification of rule they imply.
+4. **Probe, don't infer.** Claim of CONFORMS or VIOLATES rests on probe output, not reading "how the file feels." Probe cannot complete → verdict is UNVERIFIABLE.
 
 ## Protocol
 
@@ -28,26 +28,26 @@ Fixed seven steps. Probe contract: [references/probe-table.md](references/probe-
 
 ## Jurisdiction split
 
-- **Mechanical (investigator owns):** P1 description length, P2 vendor names, P3 frontmatter angle brackets, P5 root runnables. Probed directly by the script.
-- **Tier 0 (defer to the validator):** frontmatter field allow-lists, kebab-case ids, name-matches-path, relative-link resolution, `kind:id` uniqueness, and the sub-100-line `SKILL.md` assertion. The script runs `npm run validate` and reports its exit; do not re-implement these.
-- **Judgment (N-A):** routing specificity, single-responsibility, whether a description "states what and when", and whether prose is well-aimed. Emit `N-A` and defer to a human or a [code-reviewer](../../agents/code-reviewer.md) Task.
+- **Mechanical (investigator owns):** P1 description length, P2 vendor names, P3 frontmatter angle brackets, P5 root runnables. Probed directly by script.
+- **Tier 0 (defer to validator):** frontmatter field allow-lists, kebab-case ids, name-matches-path, relative-link resolution, `kind:id` uniqueness, sub-100-line `SKILL.md` assertion. Script runs `npm run validate`, reports its exit; do not re-implement these.
+- **Judgment (N-A):** routing specificity, single-responsibility, whether description "states what and when", whether prose well-aimed. Emit `N-A`, defer to human or [code-reviewer](../../agents/code-reviewer.md) Task.
 
 ## Output contract
 
-Counts first: `CONFORMS n / VIOLATES n / UNVERIFIABLE n / N-A n over N files × M rules`. Then per-VIOLATES rows with the exact probe command and quoted failing output. Then the defer-list. Never an overall verdict.
+Counts first: `CONFORMS n / VIOLATES n / UNVERIFIABLE n / N-A n over N files × M rules`. Then per-VIOLATES rows with exact probe command + quoted failing output. Then defer-list. Never overall verdict.
 
 ## Tier discipline
 
-Tier definitions live in the `evidence-review-tiers` rule, which is authoritative. Each VIOLATES states its tier as a fact about the check's reproducibility, not as a gate. A probe row is deterministic output, so a VIOLATES backed by quoted probe output is Tier 1 evidence at minimum; the `npm run validate` row is Tier 0 because that check already fails on its own authority. UNVERIFIABLE rows are Tier 2 — log them via [findings-ledger](../findings-ledger/SKILL.md) rather than escalating them.
+Tier definitions live in the `evidence-review-tiers` rule, which is authoritative. Each VIOLATES states its tier as fact about check's reproducibility, not as gate. Probe row is deterministic output → VIOLATES backed by quoted probe output is Tier 1 evidence at minimum; `npm run validate` row is Tier 0 because that check already fails on its own authority. UNVERIFIABLE rows are Tier 2 — log via [findings-ledger](../findings-ledger/SKILL.md) rather than escalating.
 
 ## References
 
-- [references/probe-table.md](references/probe-table.md) — the per-rule probe contract (rule, surface, exact probe, conforms-iff, verdict-when-fails, tier, owner)
+- [references/probe-table.md](references/probe-table.md) — per-rule probe contract (rule, surface, exact probe, conforms-iff, verdict-when-fails, tier, owner)
 - [references/verdict-taxonomy.md](references/verdict-taxonomy.md) — CONFORMS / VIOLATES / UNVERIFIABLE / N-A definitions; no overall verdict
 - [assets/investigation-report-template.md](assets/investigation-report-template.md) — counts-first report template
-- `scripts/library-probe.sh` — the mechanical probe across all three surfaces
+- `scripts/library-probe.sh` — mechanical probe across all three surfaces
 
 ## Related skills
 
-- [code-review-and-quality](../code-review-and-quality/SKILL.md) — the judgment counterpart; routing, quality, and single-responsibility live there
-- [adversarial-claims-reviewer](../adversarial-claims-reviewer/SKILL.md) — the same fixed-protocol evidence discipline applied to formal document claims
+- [code-review-and-quality](../code-review-and-quality/SKILL.md) — judgment counterpart; routing, quality, single-responsibility live there
+- [adversarial-claims-reviewer](../adversarial-claims-reviewer/SKILL.md) — same fixed-protocol evidence discipline applied to formal document claims

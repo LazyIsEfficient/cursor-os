@@ -30,18 +30,18 @@ python scripts/gong_insight_pipeline.py --file transcript.txt --follow-ups
 **What it extracts:**
 - Objections (categorized: pricing, timing, competition, authority, need)
 - Buying signals (budget confirmed, timeline mentioned, decision maker engaged, champion identified)
-- Competitive mentions (who was mentioned, context: positive/negative/neutral)
+- Competitive mentions (who mentioned, context: positive/negative/neutral)
 - Pricing discussions (anchors, pushback, willingness indicators)
 - Content topic suggestions from recurring objection patterns
 - Personalized follow-up drafts based on call context
 
-**Output:** Structured JSON to stdout or file. Each call produces an `insights` object with `objections`, `buying_signals`, `competitive_mentions`, `pricing_discussions`, `content_topics`, and `follow_ups` arrays.
+**Output:** Structured JSON to stdout or file. Each call produces `insights` object with `objections`, `buying_signals`, `competitive_mentions`, `pricing_discussions`, `content_topics`, `follow_ups` arrays.
 
 ---
 
 ## Revenue Attribution Mapper (`scripts/revenue_attribution.py`)
 
-Maps content pieces to pipeline and closed revenue. Proves content ROI with first-touch and multi-touch attribution.
+Maps content pieces to pipeline + closed revenue. Proves content ROI with first-touch + multi-touch attribution.
 
 ```bash
 # Run full attribution report (GA4 + HubSpot)
@@ -71,7 +71,7 @@ python scripts/revenue_attribution.py --report --json --output attribution.json
 
 **What it produces:**
 - Content-to-revenue mapping (which blog posts, videos, podcasts drove deals)
-- First-touch, linear, and time-decay attribution models
+- First-touch, linear, time-decay attribution models
 - Cost-per-acquisition by content type (blog, video, podcast, webinar)
 - Content ROI report with revenue per piece
 - Content gap analysis (funnel stages with no attribution)
@@ -83,7 +83,7 @@ python scripts/revenue_attribution.py --report --json --output attribution.json
 
 ## Multi-Source Client Report Generator (`scripts/client_report_generator.py`)
 
-Generates unified client-ready BI reports from GA4, HubSpot, Ahrefs, and Gong.
+Generates unified client-ready BI reports from GA4, HubSpot, Ahrefs, Gong.
 
 ```bash
 # Generate full client report
@@ -110,10 +110,10 @@ python scripts/client_report_generator.py --client "Acme Corp" --compare previou
 ```
 
 **What it produces:**
-- Executive summary with key metrics and period-over-period changes
+- Executive summary with key metrics + period-over-period changes
 - Traffic section: sessions, users, top pages, channel breakdown (GA4)
 - Pipeline section: deals created, moved, closed, revenue (HubSpot)
 - SEO section: keyword rankings, backlinks, domain rating changes (Ahrefs)
 - Call quality section: talk ratios, objection frequency, win rates (Gong)
-- Anomaly flags: unusual spikes/drops with severity and context
+- Anomaly flags: unusual spikes/drops with severity + context
 - Output as structured markdown or JSON

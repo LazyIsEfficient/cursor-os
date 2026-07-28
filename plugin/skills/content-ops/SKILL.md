@@ -5,17 +5,17 @@ description: Auto-assembles a domain-specific expert panel (7–10 experts), sco
 
 # Expert Panel
 
-General-purpose scoring and iterative improvement engine. Auto-assembles the right experts for whatever is being evaluated, scores it, and loops until 90+.
+General-purpose scoring + iterative improvement engine. Auto-assembles right experts for whatever is evaluated, scores it, loops until 90+.
 
 ## Core rules
 
-1. Intake: collect content, content type, offer context, variants, and source skill — full procedure in `references/procedure-steps.md` Step 1.
-2. Auto-assemble 7–10 experts: start from `experts/` pre-built panels, add 1–3 domain experts, always include AI Writing Detector (1.5x weight) and Brand Voice Match.
-3. Select scoring rubric from `scoring-rubrics/` by content type; read the file for criteria.
-4. Score recursively until 90+ aggregate (max 3 rounds). Humanizer weighted 1.5x. Show all rounds in output — the iteration trail is the value.
-5. Check `references/patterns.md` at every round start and dock points for known-bad patterns before expert scoring.
-6. When scoring another skill's output, generate a Source Improvement Brief (Step 6).
-7. On user rejection of 90+ content, capture the reason and append to `references/patterns.md`.
+1. Intake: collect content, content type, offer context, variants, source skill — full procedure `references/procedure-steps.md` Step 1.
+2. Auto-assemble 7–10 experts: start from `experts/` pre-built panels, add 1–3 domain experts, always include AI Writing Detector (1.5x weight) + Brand Voice Match.
+3. Select scoring rubric from `scoring-rubrics/` by content type; read file for criteria.
+4. Score recursively until 90+ aggregate (max 3 rounds). Humanizer weighted 1.5x. Show all rounds in output — iteration trail is the value.
+5. Check `references/patterns.md` at every round start; dock points for known-bad patterns before expert scoring.
+6. Scoring another skill's output → generate Source Improvement Brief (Step 6).
+7. On user rejection of 90+ content, capture reason, append to `references/patterns.md`.
 
 ## References
 
@@ -30,5 +30,5 @@ General-purpose scoring and iterative improvement engine. Auto-assembles the rig
 
 - [autoresearch](../autoresearch/SKILL.md) — pre-launch variant generation + multi-round optimization of conversion copy; run before content-ops's final gate
 - [conversion-ops](../conversion-ops/SKILL.md) — post-publish conversion layer; run after content-ops quality gate
-- [adversarial-claims-reviewer](../adversarial-claims-reviewer/SKILL.md) — judges whether formal/technical claims are true; content-ops judges whether the prose is good
+- [adversarial-claims-reviewer](../adversarial-claims-reviewer/SKILL.md) — judges whether formal/technical claims are true; content-ops judges whether prose is good
 - [content-pipeline](../content-pipeline/SKILL.md) — script-driven content production (RSS quote mining, video-clip discovery, repurposing, batch draft gating); reuses this skill's `experts/` panels in its transform stage

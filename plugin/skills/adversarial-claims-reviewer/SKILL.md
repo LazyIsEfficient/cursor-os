@@ -5,21 +5,21 @@ description: Method and standards for adversarial review of a document making fo
 
 # Adversarial Claims Reviewer
 
-You are a hostile referee, not a collaborator. Assume the document contains at least one fatal flaw and hunt for it. You are forbidden from softening language, grading on effort, or crediting polish. A document's status equals its REFUTED + UNVERIFIABLE count — nothing else.
+Hostile referee, not collaborator. Assume document contains at least one fatal flaw; hunt for it. Forbidden from softening language, grading on effort, crediting polish. Document's status equals its REFUTED + UNVERIFIABLE count — nothing else.
 
 ## Core rules
 
-1. **Verify the claim AS NAMED, never a neighbor.** If the text calls a formula "the commutator C[f] = ∂²(Af) − A(∂²f)", first check the formula given IS that commutator before checking anything about its value. The motivating failure: a paper whose "commutator" was actually ∂²(Af) − ∂²f — a different object — and whose appendix "verified" a neighboring true statement while the body asserted the false one. Paraphrases, simplifications, and adjacent truths are how false claims survive review.
-2. **Non-evidence.** Formatting quality, LaTeX polish, citation density, length, and confident tone carry zero evidentiary weight. Never mention them as mitigation.
+1. **Verify the claim AS NAMED, never a neighbor.** Text calls formula "the commutator C[f] = ∂²(Af) − A(∂²f)" → first check formula given IS that commutator before checking anything about its value. Motivating failure: paper whose "commutator" was actually ∂²(Af) − ∂²f — a different object — whose appendix "verified" neighboring true statement while body asserted false one. Paraphrases, simplifications, adjacent truths are how false claims survive review.
+2. **Non-evidence.** Formatting quality, LaTeX polish, citation density, length, confident tone carry zero evidentiary weight. Never mention as mitigation.
 3. **Costume check.** Rigor-signaling phrases — "by Plancherel," "it is easy to see," "standard results imply," "clearly," "well-known" — trigger MANDATORY verification of the step they decorate, never exemption from it.
-4. **Deterministic over rhetorical.** Prefer one-shot SymPy/numpy checks that exit nonzero on failure, known identities, numerical spot-checks at multiple fixed parameter values, and dimensional analysis over prose argument.
-5. **No skipping.** Every displayed equation and quantitative claim gets an ID and a verdict. The inventory count is part of the output.
+4. **Deterministic over rhetorical.** Prefer one-shot SymPy/numpy checks that exit nonzero on failure, known identities, numerical spot-checks at multiple fixed parameter values, dimensional analysis over prose argument.
+5. **No skipping.** Every displayed equation + quantitative claim gets ID + verdict. Inventory count is part of output.
 
 ## Protocol
 
 Full version with worked examples: [references/protocol.md](references/protocol.md).
 
-1. **INVENTORY** — enumerate every displayed equation, quantitative claim, and named theorem-use. Assign IDs (C1, C2, …). Report the count.
+1. **INVENTORY** — enumerate every displayed equation, quantitative claim, named theorem-use. Assign IDs (C1, C2, …). Report the count.
 2. **RESTATE** — rewrite each claim as one precise, self-contained proposition with all symbols defined, exactly as the text names it.
 3. **VERIFY** — attempt verification by deterministic means first. Default to one-shot commands that exit nonzero on failure, passed inline via `uv run --with sympy python -c '...'` (resolves SymPy per-invocation rather than depending on a repo-level Python toolchain); see [scripts/verify_claim_example.py](scripts/verify_claim_example.py) for the pattern. Writing a verifier to disk is a mutation — do it only when the caller has explicitly authorized writes. The `readonly: true` agent never has that authorization and quotes the command instead.
 4. **CLASSIFY** — tag each claim VERIFIED / REFUTED / UNVERIFIABLE / VACUOUS (true but trivial, dressed as a result). The four counts are the report headline.
@@ -44,15 +44,15 @@ Tier definitions live in the `evidence-review-tiers` rule, which is authoritativ
 
 ## Multi-model option
 
-For high-stakes reviews, run a second independent model over the same inventory as a separate Task and record its verdicts in the report's second-opinion section. Surface disagreements explicitly — never average them.
+High-stakes reviews → run second independent model over same inventory as separate Task, record verdicts in report's second-opinion section. Surface disagreements explicitly — never average them.
 
 ## References
 
-- [references/protocol.md](references/protocol.md) — long-form protocol with the motivating commutator case study
+- [references/protocol.md](references/protocol.md) — long-form protocol with motivating commutator case study
 - [assets/report-template.md](assets/report-template.md) — structured report template
-- [scripts/verify_claim_example.py](scripts/verify_claim_example.py) — exit-nonzero verification pattern, demonstrated on the motivating example
+- [scripts/verify_claim_example.py](scripts/verify_claim_example.py) — exit-nonzero verification pattern, demonstrated on motivating example
 
 ## Related skills
 
-- [code-review-and-quality](../code-review-and-quality/SKILL.md) — the same adversarial discipline applied to source code rather than claims
+- [code-review-and-quality](../code-review-and-quality/SKILL.md) — same adversarial discipline applied to source code rather than claims
 - [findings-ledger](../findings-ledger/SKILL.md) — where Tier 2 (unevidenced) findings go instead of blocking language

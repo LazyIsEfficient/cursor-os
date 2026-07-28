@@ -4,29 +4,29 @@
 
 Collect or infer from context:
 
-1. **Content/artifact** — The thing(s) to score (paste, file path, or URL)
-2. **Content type** — Copy, sequence, landing page, strategy, title, chart, candidate eval, etc.
-3. **Offer context** — What's being sold/promoted? To whom? What domain/industry?
-4. **Variants** — Are there multiple versions to compare? (A/B/C)
-5. **Source skill** — Is this output from another skill? (e.g., cold-outbound-optimizer)
-   If yes, note the source for feedback-to-source routing in Step 6.
+1. **Content/artifact** — thing(s) to score (paste, file path, or URL)
+2. **Content type** — copy, sequence, landing page, strategy, title, chart, candidate eval, etc.
+3. **Offer context** — what's sold/promoted? To whom? What domain/industry?
+4. **Variants** — multiple versions to compare? (A/B/C)
+5. **Source skill** — output from another skill? (e.g., cold-outbound-optimizer)
+   If yes, note source for feedback-to-source routing in Step 6.
 
-If context is obvious from the conversation, don't ask — just proceed.
+Context obvious from conversation → don't ask, proceed.
 
 ---
 
 ## Step 2: Auto-Assemble the Expert Panel
 
-Build a panel of **7–10 experts** tailored to the content type and domain.
+Build panel of **7–10 experts** tailored to content type + domain.
 
 ### Assembly rules
 
 1. **Start with content-type experts.** Read `experts/` directory for pre-built panels matching
-   the content type. If an exact match exists (e.g., `experts/linkedin.md` for a LinkedIn post),
-   use it as the base.
+   content type. Exact match exists (e.g., `experts/linkedin.md` for LinkedIn post) →
+   use it as base.
 
-2. **Add domain/offer experts.** Based on the offer context, add 1–3 experts who understand
-   the specific industry or domain. Examples:
+2. **Add domain/offer experts.** Based on offer context, add 1–3 experts who understand
+   specific industry or domain. Examples:
    - Scoring bakery marketing → add Food & Beverage Marketing Expert
    - Scoring SaaS landing page → add SaaS Conversion Expert
    - Scoring recruiting outreach → add Agency Recruiter + Talent Market Expert
@@ -34,13 +34,13 @@ Build a panel of **7–10 experts** tailored to the content type and domain.
 
 3. **Always include these two:**
    - **AI Writing Detector** — See `experts/humanizer.md`. Weight: 1.5x. Non-negotiable.
-   - **Brand Voice Match** — Checks alignment with the configured brand voice and
+   - **Brand Voice Match** — Checks alignment with configured brand voice +
      known rejection patterns from `references/patterns.md` (if present).
 
-4. **Check learned patterns.** If `references/patterns.md` exists, read it. If any patterns
-   apply to this content type, brief the panel on them. Dock points for known-bad patterns.
+4. **Check learned patterns.** If `references/patterns.md` exists, read it. Any patterns
+   apply to this content type → brief panel on them. Dock points for known-bad patterns.
 
-5. **Cap at 10 experts.** If you have more than 10, merge overlapping roles.
+5. **Cap at 10 experts.** More than 10 → merge overlapping roles.
 
 ### Panel output format
 List each expert with: Name, lens/focus, what they check.
@@ -49,7 +49,7 @@ List each expert with: Name, lens/focus, what they check.
 
 ## Step 3: Select Scoring Rubric
 
-Choose the appropriate rubric from `scoring-rubrics/`:
+Choose rubric from `scoring-rubrics/`:
 
 | Content type | Rubric file |
 |---|---|
@@ -58,9 +58,9 @@ Choose the appropriate rubric from `scoring-rubrics/`:
 | Landing pages, ads, CTAs | `scoring-rubrics/conversion-quality.md` |
 | Charts, data viz, infographics | `scoring-rubrics/visual-quality.md` |
 | Candidate evaluations | `scoring-rubrics/evaluation-quality.md` |
-| Other | Synthesize a rubric from the two closest matches |
+| Other | Synthesize rubric from two closest matches |
 
-Read the selected rubric file for detailed criteria and point allocation.
+Read selected rubric file for detailed criteria + point allocation.
 
 ---
 
@@ -83,24 +83,23 @@ Read the selected rubric file for detailed criteria and point allocation.
 **Changes made:** [specific edits addressing each weakness]
 ```
 
-Then the revised content/artifact.
+Then revised content/artifact.
 
 ### Rules
 
 - Scores must be brutally honest. No padding to 90.
-- Humanizer score weighted 1.5x in the aggregate.
-- If aggregate < 90: identify top 3 weaknesses → revise → next round.
-- If aggregate ≥ 90: finalize and proceed to output.
-- After 3 rounds, if still < 90: return best version with honest score + note on what's
-  holding it back.
-- Show ALL rounds in output — the iteration trail is part of the value.
+- Humanizer score weighted 1.5x in aggregate.
+- Aggregate < 90 → identify top 3 weaknesses → revise → next round.
+- Aggregate ≥ 90 → finalize, proceed to output.
+- After 3 rounds, still < 90 → return best version with honest score + note on what's holding it back.
+- Show ALL rounds in output — iteration trail is part of value.
 
 ### Variant comparison mode
 
-When scoring multiple variants (A/B/C):
-- Score each variant independently through the full panel.
+Scoring multiple variants (A/B/C):
+- Score each variant independently through full panel.
 - After scoring, rank variants by aggregate score.
-- If top variant is < 90, iterate on the best one (don't iterate all of them).
+- Top variant < 90 → iterate on best one (don't iterate all).
 
 ---
 
@@ -117,7 +116,7 @@ When scoring multiple variants (A/B/C):
 **Panel:** [Expert names, comma-separated]
 ```
 
-If variants: show winner first, then runner-up scores.
+Variants: show winner first, then runner-up scores.
 
 ```
 ## 🏆 Winner: Variant [X] — [SCORE]/100
@@ -130,7 +129,7 @@ If variants: show winner first, then runner-up scores.
 - Variant C: 91/100 ← Winner
 ```
 
-### Feedback History (below the result)
+### Feedback History (below result)
 
 Show full scoring rounds.
 
@@ -148,7 +147,7 @@ Show full scoring rounds.
 
 ## Step 6: Feedback-to-Source (When Scoring Another Skill's Output)
 
-When the scored content came from another skill, generate a **Source Improvement Brief**:
+Scored content came from another skill → generate **Source Improvement Brief**:
 
 ```
 ## 🔁 Feedback for [Source Skill]
@@ -163,20 +162,20 @@ When the scored content came from another skill, generate a **Source Improvement
 - [Any recurring weakness that should become a rule]
 ```
 
-This brief can be used to update the source skill's SKILL.md or rubrics.
+Brief can update source skill's SKILL.md or rubrics.
 
 ---
 
 ## Step 7: Memory — Learn from Approvals and Rejections
 
-After the user approves or rejects panel output:
+After user approves or rejects panel output:
 
 ### On approval (score ≥ 90, user accepts)
-Note what worked. No action needed unless a new positive pattern emerges.
+Note what worked. No action unless new positive pattern emerges.
 
-### On rejection (user overrides the panel or rejects 90+ content)
+### On rejection (user overrides panel or rejects 90+ content)
 1. Ask why (or infer from context).
-2. Add a new pattern to `references/patterns.md` using this format:
+2. Add new pattern to `references/patterns.md` using this format:
 
 ```markdown
 ## [Pattern Name]
@@ -191,6 +190,5 @@ Note what worked. No action needed unless a new positive pattern emerges.
 3. Confirm: "Added pattern: [one-line summary]. Panel will dock [N] points for this going forward."
 
 ### Pattern enforcement
-Every scoring round, check `references/patterns.md` against the content. Apply point docks
-before expert scoring begins. This means known-bad patterns are penalized even if individual
-experts miss them.
+Every scoring round, check `references/patterns.md` against content. Apply point docks
+before expert scoring begins. Known-bad patterns penalized even if individual experts miss them.

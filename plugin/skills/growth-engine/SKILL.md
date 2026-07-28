@@ -5,12 +5,12 @@ description: Autonomous growth experimentation framework: creates experiments wi
 
 # Growth Engine
 
-Autonomous growth experimentation framework based on Karpathy's autoresearch pattern applied to marketing. Creates experiments with hypotheses, logs data points, runs statistical analysis (bootstrap CI + Mann-Whitney U), auto-promotes winners to a living playbook, and suggests next experiments. Supports batch mode (up to 10 variants simultaneously).
+Autonomous growth experimentation framework based on Karpathy's autoresearch pattern applied to marketing. Creates experiments with hypotheses, logs data points, runs statistical analysis (bootstrap CI + Mann-Whitney U), auto-promotes winners to living playbook, suggests next experiments. Supports batch mode (up to 10 variants simultaneously).
 
 ## Core Rules
 
-1. Always check the playbook before creating new content — apply proven best practices first.
-2. Winner threshold: p < 0.05 AND ≥ 15% lift. Winners auto-promote to the playbook.
+1. Always check playbook before creating new content — apply proven best practices first.
+2. Winner threshold: p < 0.05 AND ≥ 15% lift. Winners auto-promote to playbook.
 3. Use batch mode (`--batch-mode`) for 3-10 variant tests.
 4. Run `scripts/pacing-alert.py` to monitor campaign health; exit code 1 = alerts present.
 5. Do not run this engine for one-off content creation — apply playbook output directly instead.
@@ -18,4 +18,4 @@ Autonomous growth experimentation framework based on Karpathy's autoresearch pat
 ## References
 
 - [references/commands.md](references/commands.md) — full CLI reference for all commands with recommended workflow
-- [references/configuration.md](references/configuration.md) — required and optional environment variables, pacing alert vars, dependencies
+- [references/configuration.md](references/configuration.md) — required + optional environment variables, pacing alert vars, dependencies
