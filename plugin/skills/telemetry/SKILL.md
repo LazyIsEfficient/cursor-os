@@ -5,11 +5,11 @@ description: Internal utility for the skills library itself — opt-in, local-fi
 
 # Telemetry
 
-Internal, opt-in, local-first telemetry for the skills in this repository. It answers two questions: *which skills get used (and how reliably)?* and *is a newer version of the library available?* Every run is logged to a local file regardless of opt-in; data only leaves the machine if the user has explicitly opted in. No PII is ever collected — see [readme.md](readme.md) for the full field list and privacy commitment.
+Internal, opt-in, local-first telemetry for skills in this repository. Answers two questions: *which skills get used (and how reliably)?* and *is newer library version available?* Every run logged to local file regardless of opt-in; data leaves machine only if user explicitly opted in. No PII ever collected — see [readme.md](readme.md) for full field list and privacy commitment.
 
 ## Where data lives
 
-All state lives under the telemetry data directory — by default `~/.ai-marketing-skills/`, the upstream location, which can differ per install:
+All state under telemetry data directory — default `~/.ai-marketing-skills/`, upstream location, can differ per install:
 
 | Path | Written by | Contents |
 |------|-----------|----------|
@@ -17,7 +17,7 @@ All state lives under the telemetry data directory — by default `~/.ai-marketi
 | `analytics/skill-usage.jsonl` | `telemetry_log.py` | one JSON object per skill run (append-only) |
 | `version-cache.json` | `version_check.py` | last GitHub release seen + check timestamp (24h TTL) |
 
-Each line in `skill-usage.jsonl` records only anonymous fields: skill name, duration (ms), success, version, OS, arch, Python version, UTC timestamp, and the random `device_id`. Never code, paths, repo names, or content.
+Each line in `skill-usage.jsonl` records only anonymous fields: skill name, duration (ms), success, version, OS, arch, Python version, UTC timestamp, random `device_id`. Never code, paths, repo names, or content.
 
 ## Tools
 
@@ -30,7 +30,7 @@ Each line in `skill-usage.jsonl` records only anonymous fields: skill name, dura
 
 ## Logging a skill's runs
 
-A skill opts into telemetry by calling `telemetry_log.py` once at the end of its run. The script always appends to the local JSONL log, and additionally POSTs to the analytics endpoint only if the user opted in. It fails silently and never blocks execution. All four flags are required:
+Skill opts into telemetry by calling `telemetry_log.py` once at end of run. Script always appends to local JSONL log, additionally POSTs to analytics endpoint only if user opted in. Fails silently, never blocks execution. All four flags required:
 
 ```bash
 python3 telemetry/scripts/telemetry_log.py \
@@ -40,7 +40,7 @@ python3 telemetry/scripts/telemetry_log.py \
   --version 1.0.0
 ```
 
-Capture a start time before the work, compute `--duration` in milliseconds after, and pass `--success false` if the run errored. The endpoint in `telemetry_log.py` is a stub (`ANALYTICS_ENDPOINT`) — replace it with a real URL before remote send does anything.
+Capture start time before work, compute `--duration` in milliseconds after, pass `--success false` if run errored. Endpoint in `telemetry_log.py` is stub (`ANALYTICS_ENDPOINT`) — replace with real URL before remote send does anything.
 
 ## Reading the stats
 
@@ -50,7 +50,7 @@ python3 telemetry/scripts/telemetry_report.py --json      # machine-readable
 python3 telemetry/scripts/telemetry_report.py --skill seo-ops   # filter to one skill
 ```
 
-Reports total runs, runs in the last 7/30 days, per-skill success rates and average durations, and the most-used skill. Reads only the local log — works the same whether or not you opted in.
+Reports total runs, runs last 7/30 days, per-skill success rates and average durations, most-used skill. Reads only local log — same whether or not opted in.
 
 ## Checking for updates
 
@@ -58,11 +58,11 @@ Reports total runs, runs in the last 7/30 days, per-skill success rates and aver
 python3 telemetry/scripts/version_check.py
 ```
 
-Compares a local `VERSION` file against the latest GitHub release, caches the result for 24h, and stays silent unless a newer version exists. **It needs a `VERSION` file at the repo's skills root (`plugin/skills/VERSION`) containing the current version** (e.g. `1.0.0`). If that file is absent the script has no baseline and stays silent rather than reporting a false update — create the file to enable update notices.
+Compares local `VERSION` file against latest GitHub release, caches result 24h, stays silent unless newer version exists. **Needs `VERSION` file at repo's skills root (`plugin/skills/VERSION`) containing current version** (e.g. `1.0.0`). Absent file → no baseline, stays silent rather than reporting false update — create file to enable update notices.
 
 ## Privacy
 
-- **Opt-in only** — nothing is sent without explicit consent.
-- **Local-first** — usage is always stored locally for your own inspection.
+- **Opt-in only** — nothing sent without explicit consent.
+- **Local-first** — usage always stored locally for own inspection.
 - **No PII** — no names, emails, paths, repo names, or content.
-- **Revocable** — delete `telemetry-config.json` from the telemetry data directory (by default `~/.ai-marketing-skills/`) and re-run `telemetry_init.py`.
+- **Revocable** — delete `telemetry-config.json` from telemetry data directory (default `~/.ai-marketing-skills/`) and re-run `telemetry_init.py`.

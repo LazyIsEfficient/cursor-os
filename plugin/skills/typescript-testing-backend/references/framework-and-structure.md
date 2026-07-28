@@ -4,7 +4,7 @@
 
 - **Jest 29.7.0**: Primary test runner (not Vitest)
 - **@swc/jest**: TypeScript transpiler (fast SWC-based compilation)
-- **Supertest**: For HTTP endpoint testing via custom `TestServer`
+- **Supertest**: HTTP endpoint testing via custom `TestServer`
 - **Test environment**: `jsdom`
 - **Config**: `apps/platform-app/config/jest/jest.config.js`
 - **Test scripts**:
@@ -12,11 +12,11 @@
   "test": "jest --config ./config/jest/jest.config.js --setupFiles ./config/jest/env.setup.js"
   "test:ci": "jest --config ./config/jest/jest.config.js --setupFiles ./config/jest/env.setup.js --maxWorkers=2 --ci"
   ```
-- **Mocks**: Use `jest.mock()` and `jest.fn()` — not `vi.mock()` / `vi.fn()`
+- **Mocks**: `jest.mock()` and `jest.fn()` — not `vi.mock()` / `vi.fn()`
 
 ## Directory Structure
 
-Tests live in co-located `__tests__/` folders next to source files:
+Tests in co-located `__tests__/` folders next to source files:
 
 ```
 apps/platform-app/
@@ -28,9 +28,9 @@ apps/platform-app/
 │   │       ├── faq.service.test.ts
 │   │       └── faq.controller.test.ts
 │   ├── points/
-│   │   └── __tests__/
-│   │       ├── get-points.integration.test.ts
-│   │       └── shared-test-setup.ts
+│   └── __tests__/
+│       ├── get-points.integration.test.ts
+│       └── shared-test-setup.ts
 │   └── shared/test-utils/        ← Shared backend test utilities
 │       ├── test-database.ts
 │       ├── server-mock.ts
@@ -52,4 +52,4 @@ apps/platform-app/
 
 ## Coverage Configuration
 
-Coverage is **enabled by default** (`collectCoverage: true`). CI outputs JUnit XML to `test-results/jest/results.xml`. No explicit thresholds are configured — rely on code review and PR process.
+Coverage **enabled by default** (`collectCoverage: true`). CI outputs JUnit XML to `test-results/jest/results.xml`. No explicit thresholds configured — rely on code review and PR process.

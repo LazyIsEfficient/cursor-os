@@ -1,10 +1,9 @@
 # Migrations and Local Dev Infrastructure
 
-> **Scope:** database migrations and the **local development** stack (Docker Compose) only.
-> Cloud provisioning — GCP/AWS/Cloudflare resources, Pulumi/IaC, secrets management — is
-> out of scope for this skill and is not authored here. This file
-> covers how migrations run and how to stand up the stores on your machine, not how the
-> production stores are provisioned.
+> **Scope:** database migrations and **local development** stack (Docker Compose) only.
+> Cloud provisioning — GCP/AWS/Cloudflare resources, Pulumi/IaC, secrets management —
+> out of scope for this skill, not authored here. This file covers how migrations run
+> and how to stand up stores on your machine, not how production stores are provisioned.
 
 ## Database Migration Rules
 
@@ -32,10 +31,10 @@ npx drizzle-kit migrate
 
 ### Migration Rules
 
-- **Never** modify a deployed migration — create a new one
-- Migrations must be backwards-compatible: add columns as nullable, backfill, then add constraints
+- **Never** modify deployed migration — create new one
+- Migrations must be backwards-compatible: add columns nullable, backfill, then add constraints
 - Name migrations descriptively: `add_user_wallet_address`, `create_point_categories_table`
-- Test migrations against a copy of production data before deploying
+- Test migrations against copy of production data before deploying
 - Include both `up` and `down` logic where possible
 
 ## Infrastructure
@@ -52,22 +51,15 @@ services:
     # password-protected
 ```
 
-### Cloud (provisioning is out of scope for this skill)
+### Cloud (provisioning out of scope for this skill)
 
-The production data stores this pipeline targets — Cloud Storage buckets, the BigQuery
-warehouse, managed Postgres/Redis, secrets, DNS/CDN — are **provisioned by infrastructure-as-code
-practice (Pulumi/Terraform), which is outside this skill's boundary**. Do not author
-provisioning here. From this skill's side, treat those stores as given and connect to them
-via environment config.
+Production data stores this pipeline targets — Cloud Storage buckets, BigQuery warehouse, managed Postgres/Redis, secrets, DNS/CDN — **provisioned by infrastructure-as-code practice (Pulumi/Terraform), outside this skill's boundary**. Do not author provisioning here. Treat those stores as given; connect via environment config.
 
-The one cloud touchpoint that *is* data-engineering's concern is **where migrations run** in
-CI/CD: `npx prisma migrate deploy` is invoked from the deployment pipeline (see the Cloud Build
-config referenced above). The pipeline wiring itself is out of scope for this skill.
+One cloud touchpoint that *is* data-engineering's concern: **where migrations run** in CI/CD — `npx prisma migrate deploy` invoked from deployment pipeline (see Cloud Build config above). Pipeline wiring itself out of scope.
 
 ### Monorepo Structure
 
-> The layout below is orientation for where pipeline/migration code lives. The repo's
-> build/deploy tooling and cloud wiring are out of scope for this skill.
+> Layout below is orientation for where pipeline/migration code lives. Repo build/deploy tooling and cloud wiring out of scope.
 
 ```
 platform-monorepo/

@@ -1,19 +1,19 @@
 # Application Caching (Redis + In-Process)
 
-Implementation patterns for caching at the application tier in TypeScript services. For caching strategy and trade-offs see the [`engineer`](../../../agents/engineer.md) agent.
+Implementation patterns for caching at application tier in TypeScript services. For caching strategy and trade-offs see [`engineer`](../../../agents/engineer.md) agent.
 
 ## Universal Rules
 
-1. **Always set a TTL.** No exceptions. A cache without a TTL is a memory leak.
+1. **Always set TTL.** No exceptions. Cache without TTL is memory leak.
 2. **Namespace every key** by entity type and schema version: `user:v2:42`. Never bare IDs.
 3. **Idempotent reads, atomic writes.** Use `SET key value EX ttl NX` (or library equivalent) to avoid lost updates.
-4. **Serialize once at the boundary** — JSON for shared state, MessagePack if you measure and care.
+4. **Serialize once at boundary** — JSON for shared state, MessagePack if you measure and care.
 5. **Validate cached values with Zod on read.** Stale schemas creep in; fail loudly, fall through to source.
-6. **Wrap, don't sprinkle.** Caching belongs in a thin repository layer, not littered across services.
-7. **Never cache auth/permission decisions** beyond a few seconds. Stale auth is a security incident.
-8. **Never cache error responses.** A transient 500 becomes a 5-minute outage.
-9. **Singleflight on hot keys.** Coalesce concurrent misses; don't stampede the source.
-10. **Observe hit ratio per namespace.** Below ~80% is usually a misuse, not a cache.
+6. **Wrap, don't sprinkle.** Caching belongs in thin repository layer, not littered across services.
+7. **Never cache auth/permission decisions** beyond a few seconds. Stale auth is security incident.
+8. **Never cache error responses.** Transient 500 becomes 5-minute outage.
+9. **Singleflight on hot keys.** Coalesce concurrent misses; don't stampede source.
+10. **Observe hit ratio per namespace.** Below ~80% usually misuse, not cache.
 
 ## Cache-Aside with `ioredis`
 
@@ -47,7 +47,7 @@ async function getUser(id: string): Promise<User> {
 
 ## Singleflight (Stampede Protection)
 
-When N concurrent requests miss the same key, only one should hit the source. Pattern using a short-lived lock key:
+N concurrent requests miss same key → only one hits source. Pattern using short-lived lock key:
 
 ```typescript
 async function getWithSingleflight<T>(
@@ -83,11 +83,11 @@ async function getWithSingleflight<T>(
 }
 ```
 
-For higher-traffic systems, prefer a library that implements XFetch or stale-while-revalidate (`async-cache-dedupe`, `cachified`).
+Higher-traffic systems → prefer library implementing XFetch or stale-while-revalidate (`async-cache-dedupe`, `cachified`).
 
 ## Stale-While-Revalidate
 
-Serve a stale value past TTL while one background request refreshes it:
+Serve stale value past TTL while one background request refreshes:
 
 ```typescript
 type Cached<T> = { value: T; freshUntil: number; staleUntil: number }
@@ -130,10 +130,10 @@ async function refresh<T>(key: string, freshSec: number, staleSec: number, loade
 ## Invalidation Patterns
 
 ### TTL only
-Simplest. Accept the staleness window. Default choice unless something else is needed.
+Simplest. Accept staleness window. Default choice unless something else needed.
 
 ### Event-driven eviction
-On write, publish an invalidation message; consumers `DEL` the affected keys. Pairs with the [outbox pattern](event-sourcing.md):
+On write, publish invalidation message; consumers `DEL` affected keys. Pairs with [outbox pattern](event-sourcing.md):
 
 ```typescript
 await prisma.$transaction(async (tx) => {
@@ -143,7 +143,7 @@ await prisma.$transaction(async (tx) => {
 ```
 
 ### Versioned keys (cache-busting)
-Embed a version in the key; bump the version to invalidate everything matching that prefix atomically:
+Embed version in key; bump version to invalidate everything matching prefix atomically:
 
 ```typescript
 const version = await redis.get('user:version') ?? '1'
@@ -154,7 +154,7 @@ const key = `user:v${version}:${id}`
 No `KEYS *` or `SCAN`-then-delete. Versioning is O(1).
 
 ### Tag-based invalidation
-Maintain a set of keys per tag; invalidate the tag, then delete all keys in the set. Useful for "invalidate everything for user 42":
+Set of keys per tag; invalidate tag, delete all keys in set. Useful for "invalidate everything for user 42":
 
 ```typescript
 await redis.sadd(`tag:user:42`, key)
@@ -188,12 +188,12 @@ async function isEnabled(flag: string, userId: string): Promise<boolean> {
 
 Rules:
 - **Cap by `max`**, not just `ttl` — unbounded LRUs OOM.
-- **Don't share LRU across instances' assumptions** — each pod has its own copy. Eventual consistency only.
-- **Invalidate on deploy** by giving the cache a process-scoped version key.
+- **Don't share LRU across instances' assumptions** — each pod has own copy. Eventual consistency only.
+- **Invalidate on deploy** via process-scoped version key.
 
 ## Hot Key Mitigation
 
-A single key receiving thousands of QPS will saturate one Redis shard. Replicate across N suffixes and pick at random:
+Single key receiving thousands QPS saturates one Redis shard. Replicate across N suffixes, pick at random:
 
 ```typescript
 const SHARDS = 10
@@ -205,7 +205,7 @@ async function getLeaderboard(): Promise<Entry[]> {
 }
 ```
 
-On write, update all shards (or accept slightly stale shards if you can).
+On write, update all shards (or accept slightly stale shards if tolerable).
 
 ## Observability
 
@@ -227,20 +227,20 @@ const cacheLatency = new Histogram({
 })
 ```
 
-Alert on hit-ratio drops in a namespace, not on absolute miss count.
+Alert on hit-ratio drops in namespace, not absolute miss count.
 
 ## Anti-Patterns
 
 - **No TTL** — leak.
-- **`KEYS *`** — blocks Redis. Use `SCAN` only for ops, never request path. Prefer versioned keys.
+- **`KEYS *`** — blocks Redis. `SCAN` only for ops, never request path. Prefer versioned keys.
 - **Caching writes** — cache derived reads, not state changes.
-- **One huge JSON blob** that callers all parse — split by access pattern.
+- **One huge JSON blob** all callers parse — split by access pattern.
 - **Caching at every layer** without measuring — multi-tier amplifies invalidation bugs.
-- **Using Redis as the source of truth** without persistence + backup — that's a database, not a cache.
+- **Redis as source of truth** without persistence + backup — that's database, not cache.
 - **Sharing one Redis across unrelated services** — noisy neighbors evict each other.
 
 ## Related
 
-- the [`engineer`](../../../agents/engineer.md) agent — strategy patterns, TTL design, multi-tier
+- [`engineer`](../../../agents/engineer.md) agent — strategy patterns, TTL design, multi-tier
 - [event-sourcing.md](event-sourcing.md) — outbox-driven cache invalidation
 - infrastructure provisioning practice — standing up Redis itself, out of scope for this skill

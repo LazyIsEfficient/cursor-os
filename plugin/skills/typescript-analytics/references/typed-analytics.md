@@ -1,6 +1,6 @@
 # Typed Analytics System
 
-A second analytics layer provides fully type-safe events with typed property maps.
+Second analytics layer: fully type-safe events with typed property maps.
 
 ## Event Schema
 

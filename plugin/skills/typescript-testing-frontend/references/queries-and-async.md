@@ -7,9 +7,9 @@ Prefer queries in this order (accessibility-first):
 1. `getByRole()` — semantic, best for accessibility (`getByRole('button', { name: /submit/i })`)
 2. `getByText()` — visible text content
 3. `getByLabelText()` — form controls
-4. `getByTestId()` — last resort when semantic queries are insufficient
+4. `getByTestId()` — last resort when semantic queries insufficient
 
-Use `queryBy*` variants when asserting an element does **not** exist:
+Use `queryBy*` variants when asserting element does **not** exist:
 
 ```typescript
 expect(screen.queryByText('Error')).not.toBeInTheDocument()
@@ -17,7 +17,7 @@ expect(screen.queryByText('Error')).not.toBeInTheDocument()
 
 ## Async Testing
 
-Use `waitFor()` for assertions that depend on async state updates:
+Use `waitFor()` for assertions depending on async state updates:
 
 ```typescript
 await waitFor(() => {

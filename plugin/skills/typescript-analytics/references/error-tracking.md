@@ -49,7 +49,7 @@ export enum ERROR_TYPES {
 
 ## Automatic API Error Tracking
 
-The API client automatically captures errors based on HTTP status:
+API client auto-captures errors by HTTP status:
 
 ```typescript
 // libs/api-client/api-error-handler.ts
@@ -62,4 +62,4 @@ export const shouldTrackHttpError = (status: number) => {
 }
 ```
 
-The API client wraps all requests and captures IN_PROGRESS → SUCCESS/ERROR with full context (status, method, domain, response body, stack trace).
+API client wraps all requests, captures IN_PROGRESS → SUCCESS/ERROR with full context (status, method, domain, response body, stack trace).

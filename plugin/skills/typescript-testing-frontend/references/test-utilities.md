@@ -1,6 +1,6 @@
 # Test Utilities — Provider Wrapper
 
-All component and hook tests import from `@/test-utils/render` instead of `@testing-library/react` directly. This wraps renders with the required providers:
+All component and hook tests import from `@/test-utils/render`, never `@testing-library/react` directly. Wraps renders with required providers:
 
 ```typescript
 // test-utils/render.tsx
@@ -30,4 +30,4 @@ export * from '@testing-library/react'
 export { customRender as render }
 ```
 
-**Important**: React Query retries are **disabled** in tests to avoid flaky async behavior.
+**Important**: React Query retries **disabled** in tests — avoids flaky async behavior.

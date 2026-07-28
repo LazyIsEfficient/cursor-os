@@ -2,7 +2,7 @@
 
 ## Event Naming Convention
 
-Events use a `domain:action` pattern with an enum:
+Events use `domain:action` pattern with enum:
 
 ```typescript
 // libs/posthog/constants.ts
@@ -58,8 +58,8 @@ export enum EVENT_STATUS {
 **Naming rules**:
 - Format: `{domain}:{action}` — always lowercase, colon-separated
 - User interactions: `{domain}:cta_clicked` (not just "clicked")
-- Async operations: Track the full lifecycle — `cta_clicked` → `success` / `error`
-- New events must be added to the `EVENTS` enum, never use raw strings
+- Async operations: track full lifecycle — `cta_clicked` → `success` / `error`
+- New events must be added to `EVENTS` enum, never raw strings
 
 ## Capture Functions
 

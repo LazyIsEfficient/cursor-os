@@ -1,8 +1,8 @@
 # Component Testing
 
-Follow **Tests-only default and refactor callouts** in [SKILL.md](../SKILL.md). Default: **tests only** — no production refactors and no component API or prop-surface changes unless the user asked. Still write the best tests you can; when the right assertions are unnecessarily hard, say why in **Refactor opportunities (not in scope)** (bulleted), do not “fix” the component in the same pass.
+Follow **Tests-only default and refactor callouts** in [SKILL.md](../SKILL.md). Default: **tests only** — no production refactors, no component API or prop-surface changes unless user asked. Still write best tests possible; when right assertions unnecessarily hard, say why in **Refactor opportunities (not in scope)** (bulleted), do not "fix" component in same pass.
 
-**Signals to flag there (examples):** heavy or deep mocking for a single behavior; brittle setup or duplicate provider wiring; missing roles, labels, or names so you must lean on `getByTestId` or unstable text; logic or I/O inside the component that blocks focused, observable assertions.
+**Signals to flag there (examples):** heavy or deep mocking for single behavior; brittle setup or duplicate provider wiring; missing roles, labels, or names forcing `getByTestId` or unstable text; logic or I/O inside component blocking focused, observable assertions.
 
 ## Basic Component Test
 

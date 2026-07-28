@@ -23,15 +23,15 @@ const validated = EventPayloadSchema.parse(rawEvent)
 ### Validation Rules
 
 - Validate **at service boundaries** — not between internal modules
-- Use Zod for API inputs, event payloads, config files, and ETL row schemas
-- Use Prisma types for database query results (already type-safe)
-- Fail fast on invalid data — do not silently coerce or drop fields
+- Zod for API inputs, event payloads, config files, ETL row schemas
+- Prisma types for database query results (already type-safe)
+- Fail fast on invalid data — never silently coerce or drop fields
 
 ## Cron and Scheduling
 
 ### Cron Configuration
 
-Jobs are configured in `settings.json` with environment-specific intervals:
+Jobs configured in `settings.json` with environment-specific intervals:
 
 ```json
 {
@@ -45,7 +45,7 @@ Jobs are configured in `settings.json` with environment-specific intervals:
 
 ### Persistent Cron Manager
 
-- Tracks job execution state in the database for crash recovery
+- Tracks job execution state in database for crash recovery
 - On service restart, resumes from last known state
 - Health endpoint: `GET /api/status`
 - Manual trigger: `POST /api/distribution/trigger`
@@ -54,5 +54,5 @@ Jobs are configured in `settings.json` with environment-specific intervals:
 
 - Every cron job must be **idempotent** — safe to re-run if interrupted
 - Log start/end timestamps and row counts for observability
-- Use database-level locking or a lease mechanism to prevent concurrent runs
-- Keep job duration well under the schedule interval
+- Database-level locking or lease mechanism to prevent concurrent runs
+- Keep job duration well under schedule interval

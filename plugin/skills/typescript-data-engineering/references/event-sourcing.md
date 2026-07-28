@@ -1,6 +1,6 @@
 # Event Sourcing Infrastructure
 
-The platform implements event sourcing with inbox/outbox for exactly-once processing. These models live in `indexer-infra.prisma`.
+Platform implements event sourcing with inbox/outbox for exactly-once processing. Models live in `indexer-infra.prisma`.
 
 ## Core Tables
 
@@ -49,11 +49,11 @@ Blockchain → Block Watcher (5s poll)
 
 ## Outbox Pattern Rules
 
-- Every event write must also write an outbox row in the **same transaction**
+- Every event write must also write outbox row in **same transaction**
 - Publishers poll outbox for `publishedAt IS NULL`, deliver, then mark published
 - Inbox handlers must be **idempotent** — use `ProcessedEvent` for deduplication
 - Each handler processes events **in partition order** by `blockNumber`
-- Failed handlers go to DLQ after max attempts — never block the pipeline
+- Failed handlers go to DLQ after max attempts — never block pipeline
 
 ## Domain Commands (CQRS)
 

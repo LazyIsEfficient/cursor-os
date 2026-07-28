@@ -2,12 +2,12 @@
 
 ## Setup and Teardown
 
-The `TestDatabase` class creates an isolated PostgreSQL database per test run:
+`TestDatabase` class creates isolated PostgreSQL database per test run:
 
-- Creates a unique database: `test_{randomUUID}`
+- Creates unique database: `test_{randomUUID}`
 - Runs `npx prisma migrate reset --force`
 - Seeds from `scripts/run-seed.ts`
-- Drops the database on teardown
+- Drops database on teardown
 
 ```typescript
 import { setupTestDatabase } from '@/app/api/v1/shared/test-utils/test-database'
@@ -26,7 +26,7 @@ afterAll(async () => {
 
 ## Data Cleanup Between Tests
 
-Clean only the records your tests create — don't truncate seed data:
+Clean only records your tests create — never truncate seed data:
 
 ```typescript
 beforeEach(async () => {

@@ -2,7 +2,7 @@
 
 ## Prisma (Primary)
 
-Used in platform-monorepo with a modular schema split across 17 files in `packages/prisma/schema/`:
+Used in platform-monorepo with modular schema split across 17 files in `packages/prisma/schema/`:
 
 ```
 packages/prisma/schema/
@@ -21,7 +21,7 @@ packages/prisma/schema/
 └── ...
 ```
 
-Import the shared client:
+Import shared client:
 
 ```typescript
 import { prisma } from '@repo/prisma'

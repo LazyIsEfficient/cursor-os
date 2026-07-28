@@ -2,7 +2,7 @@
 
 ## EVM Indexer Pipeline
 
-The primary data pipeline ingests blockchain events:
+Primary data pipeline ingesting blockchain events:
 
 ```typescript
 // Pseudostructure of the indexer pipeline
@@ -38,7 +38,7 @@ class BlockWatcher {
 
 ## Points Distribution (Scheduled ETL)
 
-Runs on a cron schedule (5m dev, 24h prod):
+Runs on cron schedule (5m dev, 24h prod):
 
 ```typescript
 // Daily job: finalize pending point transactions
@@ -63,7 +63,7 @@ async function resetActivities(frequency: 'daily' | 'weekly') {
 
 ## Merkle Tree Generation
 
-Processes allocation data and publishes to GCS:
+Processes allocation data, publishes to GCS:
 
 ```
 Input:  Allocation records (address, points, baseToken, tokensCommitted)

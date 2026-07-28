@@ -9,7 +9,7 @@
 
 ### PostHog Proxy (Ad Blocker Bypass)
 
-PostHog API calls are proxied through the app's domain via Next.js rewrites:
+PostHog API calls proxied through app domain via Next.js rewrites:
 
 ```typescript
 // next.config.ts
@@ -75,7 +75,7 @@ apps/platform-app/
 
 ## Unified Client/Server Pattern
 
-A single `getPostHog()` function returns the same interface on both client and server:
+Single `getPostHog()` returns same interface on client and server:
 
 ```typescript
 // libs/posthog/posthog.ts
@@ -107,13 +107,13 @@ export async function getServerPostHog(): Promise<UnifiedPostHogInstance> {
 ```
 
 **Rules**:
-- Always use `flushAt: 1` and `flushInterval: 0` for serverless environments
+- Always `flushAt: 1` and `flushInterval: 0` for serverless environments
 - Always call `posthog.shutdown()` in `finally` blocks for server-side usage
-- Retrieve user session and inject metadata before capturing
+- Retrieve user session, inject metadata before capturing
 
 ## Automatic Metadata Injection
 
-Every event automatically includes app metadata via the `applyMetaData` wrapper:
+Every event auto-includes app metadata via `applyMetaData` wrapper:
 
 ```typescript
 // libs/posthog/applyMetaData.ts
@@ -128,4 +128,4 @@ function mergeEventProperties(properties?: Properties): Properties {
 }
 ```
 
-Feature flags auto-reload when `$set` or `$set_once` properties are present in a capture call.
+Feature flags auto-reload when `$set` or `$set_once` properties present in capture call.

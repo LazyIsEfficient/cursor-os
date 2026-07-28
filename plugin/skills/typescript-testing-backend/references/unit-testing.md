@@ -2,7 +2,7 @@
 
 ## Unit Testing Services
 
-Mock Prisma at the module boundary using `jest.mock()`:
+Mock Prisma at module boundary using `jest.mock()`:
 
 ```typescript
 jest.mock('@repo/prisma', () => ({
@@ -39,7 +39,7 @@ describe('FaqService', () => {
 
 ## Unit Testing Controllers
 
-Inject a typed mock of the service:
+Inject typed mock of service:
 
 ```typescript
 import { FaqController } from '../controllers/faq.controller'
