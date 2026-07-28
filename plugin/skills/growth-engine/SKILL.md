@@ -1,6 +1,6 @@
 ---
 name: growth-engine
-description: Autonomous growth experimentation framework: creates experiments with hypotheses, logs data points, runs statistical analysis (bootstrap CI + Mann-Whitney U), auto-promotes winners to a living playbook, and suggests next experiments. Use when asked to run growth experiments, analyze A/B tests, build experiment scorecards, or generate pacing alerts. For SEO-specific experiments see seo-ops; for outbound experiments see outbound-engine.
+description: Autonomous growth experimentation framework: creates experiments with hypotheses, logs data points, runs statistical analysis (bootstrap CI + Mann-Whitney U), auto-promotes winners to living playbook, suggests next experiments. Use when asked to run growth experiments, analyze A/B tests, build experiment scorecards, or generate pacing alerts. For SEO-specific experiments see seo-ops; for outbound experiments see outbound-engine.
 ---
 
 # Growth Engine

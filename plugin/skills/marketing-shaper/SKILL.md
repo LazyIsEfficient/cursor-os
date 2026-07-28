@@ -1,6 +1,6 @@
 ---
 name: marketing-shaper
-description: Use to structure a vague marketing request into a well-scoped brief before any real work begins. Triggers on "shape this campaign", "plan this launch", "scope this content", "marketing plan", "growth plan", "content strategy", "outbound plan", or when invoked as the /mshape slash command. Produces a filled brief (campaign, content, optimization, research, or pipeline) that downstream marketing skills can act on. Do not use for work already well-defined — go straight to execution. For engineering task shaping see prompt-shaping; for game-design intake see game-design-shaper.
+description: Use to structure vague marketing request into well-scoped brief before real work begins. Triggers on "shape this campaign", "plan this launch", "scope this content", "marketing plan", "growth plan", "content strategy", "outbound plan", or /mshape slash command. Produces filled brief (campaign, content, optimization, research, or pipeline) downstream marketing skills act on. Do not use for already well-defined work — go straight to execution. For engineering task shaping see prompt-shaping; for game-design intake see game-design-shaper.
 ---
 
 # Marketing Shaper

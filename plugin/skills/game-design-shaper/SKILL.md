@@ -1,6 +1,6 @@
 ---
 name: game-design-shaper
-description: Use to structure a vague game idea into a well-scoped game design brief before any concept, systems, balance, monetization, or marketing work begins. Triggers on "design a game", "game on X", "game idea", "prototype this", "game jam", "live game update", "game design plan", or when invoked as the /game-shape slash command. Produces a filled brief (full game, prototype, jam, or live-game update) that game-concept-creator and game-systems-designer consume. Do not use for briefs that are already well-scoped — go straight to the right execution skill. For engineering intake see prompt-shaping; for marketing intake see marketing-shaper; for course intake see course-shaper.
+description: Use to structure vague game idea into well-scoped game design brief before concept, systems, balance, monetization, or marketing work begins. Triggers on "design a game", "game on X", "game idea", "prototype this", "game jam", "live game update", "game design plan", or /game-shape slash command. Produces filled brief (full game, prototype, jam, or live-game update) consumed by game-concept-creator and game-systems-designer. Do not use for already well-scoped briefs — go straight to right execution skill. For engineering intake see prompt-shaping; for marketing intake see marketing-shaper; for course intake see course-shaper.
 ---
 
 # Game Design Shaper

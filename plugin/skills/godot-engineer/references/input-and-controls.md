@@ -26,22 +26,18 @@ Godot supports both styles; know when to use each.
 ```csharp
 public override void _PhysicsProcess(double delta)
 {
-    // Held key check
     var direction = Input.GetAxis("move_left", "move_right");
 
-    // Just-pressed (one-shot) check
     if (Input.IsActionJustPressed("jump") && IsOnFloor())
     {
         Velocity = new Vector2(Velocity.X, JumpVelocity);
     }
 
-    // Released this frame check
     if (Input.IsActionJustReleased("jump") && Velocity.Y < 0)
     {
         Velocity = new Vector2(Velocity.X, Velocity.Y * 0.5f); // Variable jump height
     }
 
-    // Currently held check
     if (Input.IsActionPressed("crouch"))
     {
         // Crouching
@@ -194,7 +190,6 @@ public override void _UnhandledInput(InputEvent @event)
         RotateY(-motion.Relative.X * MouseSensitivity);
         camera.RotateX(-motion.Relative.Y * MouseSensitivity);
 
-        // Clamp pitch
         var rot = camera.Rotation;
         rot.X = Mathf.Clamp(rot.X, -Mathf.Pi / 2, Mathf.Pi / 2);
         camera.Rotation = rot;

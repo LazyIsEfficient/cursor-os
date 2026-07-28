@@ -63,10 +63,10 @@ Tweens chain steps:
 
 ```csharp
 var tween = CreateTween();
-tween.TweenProperty(panel, "position:x", 100, 0.5f);  // Move right
-tween.TweenInterval(0.2f);                             // Wait 0.2s
-tween.TweenProperty(panel, "modulate:a", 0, 0.3f);     // Fade out
-tween.TweenCallback(Callable.From(() => panel.QueueFree())); // Cleanup
+tween.TweenProperty(panel, "position:x", 100, 0.5f);
+tween.TweenInterval(0.2f);
+tween.TweenProperty(panel, "modulate:a", 0, 0.3f);
+tween.TweenCallback(Callable.From(() => panel.QueueFree()));
 ```
 
 Default: steps run sequentially. Parallel: mark tween as parallel or use `Parallel()`:
@@ -77,7 +77,6 @@ tween.SetParallel(true);
 tween.TweenProperty(node, "position:x", 100, 1.0f);
 tween.TweenProperty(node, "modulate:a", 0.5f, 1.0f);
 tween.TweenProperty(node, "rotation", Mathf.Pi, 1.0f);
-// All three run simultaneously
 ```
 
 Or, mix parallel and sequential:
@@ -94,9 +93,9 @@ tween.TweenProperty(node, "scale", new Vector2(2, 2), 0.5f); // Sequential after
 Tween sub-property of property using colon:
 
 ```csharp
-tween.TweenProperty(sprite, "modulate:a", 0.0f, 1.0f); // Fade alpha to 0
-tween.TweenProperty(sprite, "position:x", 100, 0.5f);  // Move only X
-tween.TweenProperty(sprite, "scale:y", 2.0f, 0.3f);    // Scale only Y
+tween.TweenProperty(sprite, "modulate:a", 0.0f, 1.0f);
+tween.TweenProperty(sprite, "position:x", 100, 0.5f);
+tween.TweenProperty(sprite, "scale:y", 2.0f, 0.3f);
 ```
 
 ### Awaiting tweens
