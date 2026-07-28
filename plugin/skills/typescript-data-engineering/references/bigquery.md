@@ -17,13 +17,11 @@ const bigquery = new BigQuery({
 Move data PostgreSQL → BigQuery for analytics workloads:
 
 ```typescript
-// Extract from PostgreSQL
 const transactions = await prisma.pointTransaction.findMany({
   where: { distributedAt: { gte: lastSyncTimestamp } },
   include: { user: true, activity: true },
 })
 
-// Transform to BigQuery schema
 const rows = transactions.map((tx) => ({
   transaction_id: tx.id,
   user_id: tx.userId,
@@ -33,7 +31,6 @@ const rows = transactions.map((tx) => ({
   distributed_at: tx.distributedAt?.toISOString(),
 }))
 
-// Load to BigQuery
 await bigquery.dataset('platform').table('point_transactions').insert(rows)
 ```
 

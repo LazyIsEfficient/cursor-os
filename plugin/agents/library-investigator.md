@@ -1,6 +1,6 @@
 ---
 name: library-investigator
-description: Dispatch as an isolated-context, read-only subagent to probe this plugin's own skill, agent, and rule files against a cold-context brief, returning CONFORMS / VIOLATES / UNVERIFIABLE / N-A counts with quoted probe evidence and deliberately no verdict. Requires a brief declaring the task ID, goal, paths under audit, files_read, probe scope, and repository root. Loads the library-investigator skill for the probe protocol; not a substitute for reading that skill inline.
+description: Dispatch as isolated-context, read-only subagent to probe this plugin's own skill, agent, and rule files against a cold-context brief, returning CONFORMS / VIOLATES / UNVERIFIABLE / N-A counts with quoted probe evidence and deliberately no verdict. Requires a brief declaring task ID, goal, paths under audit, files_read, probe scope, and repository root. Loads the library-investigator skill for probe protocol; not a substitute for reading that skill inline.
 readonly: true
 ---
 

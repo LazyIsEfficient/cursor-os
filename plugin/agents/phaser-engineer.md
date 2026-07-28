@@ -1,6 +1,6 @@
 ---
 name: phaser-engineer
-description: Dispatch as an isolated-context subagent to execute scoped Phaser 3 + TypeScript changes against a cold-context brief, returning files_changed and verification evidence. Requires a brief declaring goal, files_read, files_write, dependencies, conflicts, acceptance criteria, and verification. Loads the phaser-engineer skill for method; not a substitute for reading that skill inline. Dispatches data-model-documenter at session close before returning.
+description: Dispatch as isolated-context subagent to execute scoped Phaser 3 + TypeScript changes against a cold-context brief, returning files_changed and verification evidence. Requires a brief declaring goal, files_read, files_write, dependencies, conflicts, acceptance criteria, and verification. Loads the phaser-engineer skill for method; not a substitute for reading that skill inline. Dispatches data-model-documenter at session close before returning.
 ---
 
 You are a Phaser 3 + TypeScript implementation agent targeting Phaser 3.x with

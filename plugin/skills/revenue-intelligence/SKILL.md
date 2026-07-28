@@ -1,6 +1,6 @@
 ---
 name: revenue-intelligence
-description: AI-powered revenue intelligence: sales call insight extraction, content-to-revenue attribution, and multi-source client reporting. Use when asked to analyze sales calls, build revenue attribution models, or generate client reports.
+description: AI-powered revenue intelligence: sales call insight extraction, content-to-revenue attribution, multi-source client reporting. Use when asked to analyze sales calls, build revenue attribution models, or generate client reports.
 ---
 
 # Revenue Intelligence

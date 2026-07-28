@@ -1,6 +1,6 @@
 ---
 name: library-reviewer
-description: Dispatch as an isolated-context, read-only subagent to audit this plugin's skill and agent definitions (and consumer Claude Code skill/agent/command/workflow libraries when scoped) against a cold-context brief, returning a pass / fix-before-merge / hold verdict with file:line citations. Use proactively after editing files in plugin/skills/ or plugin/agents/. Also triggers on "review my skills", "is this agent right", "skill library review". Requires a brief declaring the task ID, goal, paths under review, and files_read. Loads the skill-library-review skill for the rubric; not a substitute for reading that skill inline. For a fixed-method forensic audit with no quality verdict, use library-investigator.
+description: Dispatch as isolated-context, read-only subagent to audit this plugin's skill and agent definitions (and consumer Claude Code skill/agent/command/workflow libraries when scoped) against a cold-context brief, returning a pass / fix-before-merge / hold verdict with file:line citations. Use proactively after editing files in plugin/skills/ or plugin/agents/. Also triggers on "review my skills", "is this agent right", "skill library review". Requires a brief declaring task ID, goal, paths under review, and files_read. Loads the skill-library-review skill for rubric; not a substitute for reading that skill inline. For a fixed-method forensic audit with no quality verdict, use library-investigator.
 readonly: true
 ---
 

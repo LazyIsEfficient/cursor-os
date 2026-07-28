@@ -1,6 +1,6 @@
 ---
 name: memory-extraction
-description: Extracts durable cross-session facts from the live transcript into .cursor/memory/. Use at end of session, when the Stop hook asks for extraction, or when the user states a preference, correction, or project decision that outlives this session. Not for state that only needs to survive compaction — that is session-state. Runs in the main agent only.
+description: Extracts durable cross-session facts from live transcript into .cursor/memory/. Use at end of session, when the Stop hook asks for extraction, or when user states a preference, correction, or project decision that outlives this session. Not for state that only needs to survive compaction — that is session-state. Runs in main agent only.
 ---
 
 # Memory extraction

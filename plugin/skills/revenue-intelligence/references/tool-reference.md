@@ -5,25 +5,18 @@
 Extracts structured intelligence from sales call transcripts. Works with Gong API or plain transcript files.
 
 ```bash
-# Analyze a single transcript file
 python scripts/gong_insight_pipeline.py --file transcript.txt
 
-# Analyze multiple transcript files
 python scripts/gong_insight_pipeline.py --dir ./transcripts/
 
-# Pull recent calls from Gong API (last 7 days)
 python scripts/gong_insight_pipeline.py --gong --days 7
 
-# Pull specific call by ID
 python scripts/gong_insight_pipeline.py --gong --call-id abc123
 
-# Output as JSON file
 python scripts/gong_insight_pipeline.py --file transcript.txt --output insights.json
 
-# Generate content topics from recurring objections
 python scripts/gong_insight_pipeline.py --dir ./transcripts/ --content-topics
 
-# Generate follow-up suggestions for outbound sequences
 python scripts/gong_insight_pipeline.py --file transcript.txt --follow-ups
 ```
 
@@ -44,19 +37,14 @@ python scripts/gong_insight_pipeline.py --file transcript.txt --follow-ups
 Maps content pieces to pipeline + closed revenue. Proves content ROI with first-touch + multi-touch attribution.
 
 ```bash
-# Run full attribution report (GA4 + HubSpot)
 python scripts/revenue_attribution.py --report
 
-# First-touch attribution only
 python scripts/revenue_attribution.py --report --model first-touch
 
-# Multi-touch (linear) attribution
 python scripts/revenue_attribution.py --report --model linear
 
-# Time-decay attribution
 python scripts/revenue_attribution.py --report --model time-decay
 
-# Filter by date range
 python scripts/revenue_attribution.py --report --start 2025-01-01 --end 2025-03-31
 
 # Calculate cost-per-acquisition by content type
@@ -65,7 +53,6 @@ python scripts/revenue_attribution.py --cpa --costs content_costs.json
 # Identify content gaps in the buyer journey
 python scripts/revenue_attribution.py --gaps
 
-# Output as JSON
 python scripts/revenue_attribution.py --report --json --output attribution.json
 ```
 
@@ -86,26 +73,20 @@ python scripts/revenue_attribution.py --report --json --output attribution.json
 Generates unified client-ready BI reports from GA4, HubSpot, Ahrefs, Gong.
 
 ```bash
-# Generate full client report
 python scripts/client_report_generator.py --client "Acme Corp"
 
-# Specify date range
 python scripts/client_report_generator.py --client "Acme Corp" --start 2025-03-01 --end 2025-03-31
 
-# Output as markdown
 python scripts/client_report_generator.py --client "Acme Corp" --format markdown --output report.md
 
 # Output as JSON (for rendering in slides/dashboards)
 python scripts/client_report_generator.py --client "Acme Corp" --format json --output report.json
 
-# Skip specific data sources
 python scripts/client_report_generator.py --client "Acme Corp" --skip gong
 python scripts/client_report_generator.py --client "Acme Corp" --skip ahrefs,gong
 
-# Enable anomaly detection
 python scripts/client_report_generator.py --client "Acme Corp" --anomalies
 
-# Compare to previous period
 python scripts/client_report_generator.py --client "Acme Corp" --compare previous-month
 ```
 

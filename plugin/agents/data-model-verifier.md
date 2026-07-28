@@ -1,6 +1,6 @@
 ---
 name: data-model-verifier
-description: Dispatch as an isolated-context, read-only subagent to adversarially verify DATA_MODEL.md property rows against cited Source files against a cold-context brief, returning VERIFIED / REFUTED / UNVERIFIABLE counts and a pass or hold verdict. Use in Wave 2 after data-model-documenter when DATA_MODEL.md changed. Requires a brief declaring the task ID, catalog path or diff, changed section names, Source paths, and files_read. Loads the data-model-verification skill for method; not a substitute for reading that skill inline. For authoring the catalog see data-model-documenter; for general code review see code-reviewer.
+description: Dispatch as isolated-context, read-only subagent to adversarially verify DATA_MODEL.md property rows against cited Source files against a cold-context brief, returning VERIFIED / REFUTED / UNVERIFIABLE counts and a pass or hold verdict. Use in Wave 2 after data-model-documenter when DATA_MODEL.md changed. Requires a brief declaring task ID, catalog path or diff, changed section names, Source paths, and files_read. Loads the data-model-verification skill for method; not a substitute for reading that skill inline. For authoring the catalog see data-model-documenter; for general code review see code-reviewer.
 readonly: true
 ---
 

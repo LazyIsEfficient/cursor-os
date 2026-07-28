@@ -1,6 +1,6 @@
 ---
 name: typescript-testing-backend
-description: Writes and reviews TypeScript backend tests — Jest unit tests for services and controllers with mocked Prisma, and Supertest integration tests against a real isolated PostgreSQL test database. Use when adding or auditing coverage for backend service logic or HTTP routes. Triggers on `*.service.test.ts`, `*.controller.test.ts`, `*.integration.test.ts` files under `**/__tests__/`, or any request to test backend service logic or HTTP routes. Not for React component or hook tests (use typescript-testing-frontend), and not for writing the production service code itself.
+description: Writes and reviews TypeScript backend tests — Jest unit tests for services and controllers with mocked Prisma, Supertest integration tests against a real isolated PostgreSQL test database. Use when adding or auditing coverage for backend service logic or HTTP routes. Triggers on `*.service.test.ts`, `*.controller.test.ts`, `*.integration.test.ts` under `**/__tests__/`, or any request to test backend service logic or HTTP routes. Not for React component or hook tests (use typescript-testing-frontend); not for writing production service code.
 ---
 
 # TypeScript Testing — Backend

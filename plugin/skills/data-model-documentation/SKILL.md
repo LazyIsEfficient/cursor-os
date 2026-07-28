@@ -1,6 +1,6 @@
 ---
 name: data-model-documentation
-description: Catalog APIs, persistence models, and message/event payloads into DATA_MODEL.md at the project root. Use after implementation when a diff touches request/response types, schemas, ORM models, queue payloads, or webhook shapes. Triggers on "document data model", "update DATA_MODEL", "catalog API shapes". For a dispatched cataloger against a cold-context brief — use the data-model-documenter agent. Not when verifying an existing catalog — use data-model-verification / data-model-verifier.
+description: Catalog APIs, persistence models, and message/event payloads into DATA_MODEL.md at project root. Use after implementation when a diff touches request/response types, schemas, ORM models, queue payloads, or webhook shapes. Triggers on "document data model", "update DATA_MODEL", "catalog API shapes". For a dispatched cataloger against a cold-context brief — use the data-model-documenter agent. Not when verifying an existing catalog — use data-model-verification / data-model-verifier.
 ---
 
 # Data Model Documentation

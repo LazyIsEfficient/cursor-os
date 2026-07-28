@@ -1,6 +1,6 @@
 ---
 name: adversarial-claims-reviewer
-description: Dispatch as an isolated-context, read-only subagent to adversarially review a document of formal or technical claims — derivations, statistical analyses, benchmark reports, whitepapers — against a cold-context brief, returning VERIFIED / REFUTED / UNVERIFIABLE / VACUOUS counts for every equation and quantitative claim verified as named in the text. Requires a brief declaring the task ID, document path or text, files_read, and review scope. Loads the adversarial-claims-reviewer skill for method; not a substitute for reading that skill inline.
+description: Dispatch as isolated-context, read-only subagent to adversarially review a document of formal or technical claims — derivations, statistical analyses, benchmark reports, whitepapers — against a cold-context brief, returning VERIFIED / REFUTED / UNVERIFIABLE / VACUOUS counts for every equation and quantitative claim verified as named in the text. Requires a brief declaring task ID, document path or text, files_read, and review scope. Loads the adversarial-claims-reviewer skill for method; not a substitute for reading that skill inline.
 readonly: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: typescript-data-engineering
-description: Builds and modifies TypeScript data pipelines — ETL jobs, event processors, message-broker producers and consumers (RabbitMQ, Kafka, SQS, BullMQ), Redis caching layers, database migrations (Prisma/Drizzle), BigQuery queries and warehouse integrations, and event-sourcing handlers. Use when the work moves or transforms data rather than implementing application business logic. Triggers on data movement and transformation code in any of those surfaces. Not for analytics event capture, and not for writing tests of pipeline code — use typescript-testing-backend.
+description: Builds and modifies TypeScript data pipelines — ETL jobs, event processors, message-broker producers and consumers (RabbitMQ, Kafka, SQS, BullMQ), Redis caching layers, database migrations (Prisma/Drizzle), BigQuery queries and warehouse integrations, event-sourcing handlers. Use when work moves or transforms data rather than implementing application business logic. Triggers on data movement and transformation code in those surfaces. Not for analytics event capture or tests of pipeline code — use typescript-testing-backend.
 ---
 
 # Data Engineering (TypeScript)

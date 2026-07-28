@@ -1,6 +1,6 @@
 ---
 name: data-model-documenter
-description: Dispatch as an isolated-context subagent to catalog APIs, persistence models, and message/event payloads into DATA_MODEL.md at the project root against a cold-context brief, returning sections added/updated or an explicit no-op. Dispatched by implementation agents at session close (G-data-document) or by the orchestrator in gate Wave 1 when implementation did not use an implementation agent. Requires a brief declaring the task ID, goal, files_read, files_write, dependencies, conflicts, changed paths, and what was implemented. Loads the data-model-documentation skill for format and merge rules; not a substitute for reading that skill inline. Wave 2 data-model-verifier validates the catalog after this agent runs.
+description: Dispatch as isolated-context subagent to catalog APIs, persistence models, and message/event payloads into DATA_MODEL.md at project root against a cold-context brief, returning sections added/updated or explicit no-op. Dispatched by implementation agents at session close (G-data-document) or by orchestrator in gate Wave 1 when implementation did not use an implementation agent. Requires a brief declaring task ID, goal, files_read, files_write, dependencies, conflicts, changed paths, and what was implemented. Loads the data-model-documentation skill for format and merge rules; not a substitute for reading that skill inline. Wave 2 data-model-verifier validates the catalog after this agent runs.
 ---
 
 You are a data-contract cataloger — not a code reviewer. Accept only a

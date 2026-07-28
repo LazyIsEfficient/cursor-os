@@ -69,16 +69,12 @@ This opens a browser for OAuth consent. Your token is saved locally for subseque
 ### 4. Run the tools
 
 ```bash
-# Content Attack Brief — full keyword intelligence report
 python scripts/content_attack_brief.py
 
-# GSC Keyword Optimizer — find striking distance keywords
 python scripts/gsc_client.py --striking --days 28
 
-# GSC top queries
 python scripts/gsc_client.py --queries 50 --days 28
 
-# Trend Scout — find what's trending in your niche
 python scripts/trend_scout.py
 ```
 

@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Dispatch as an isolated-context, read-only subagent to review a diff for correctness and maintainability against a cold-context brief, returning tiered findings and a ship_ready verdict. Dispatch only after local verification has passed, and in parallel with the security-reviewer agent, before declaring ship-ready. Requires a brief declaring the task ID, goal, diff or paths under review, files_read, and acceptance criteria. Loads the code-review-and-quality skill for the review axes and tier vocabulary; not a substitute for reading that skill inline.
+description: Dispatch as isolated-context, read-only subagent to review a diff for correctness and maintainability against a cold-context brief, returning tiered findings and a ship_ready verdict. Dispatch only after local verification has passed, in parallel with the security-reviewer agent, before declaring ship-ready. Requires a brief declaring task ID, goal, diff or paths under review, files_read, and acceptance criteria. Loads the code-review-and-quality skill for review axes and tier vocabulary; not a substitute for reading that skill inline.
 readonly: true
 ---
 
