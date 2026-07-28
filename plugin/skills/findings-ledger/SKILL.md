@@ -24,4 +24,4 @@ Normalize path and claim before deriving stable fingerprint. Repeated fingerprin
 - `PROMOTED`: cite new Tier 0 check or Tier 1 evidence artifact; stop re-litigating as Tier 2.
 - `RETIRED-NOISE`: no recurrence or no actionable defect.
 
-Never mark Tier 2 blocking. Tier 1 label requires a reproducible failing test, deterministic command, or explicit counterexample with pinned inputs; without that evidence, demote finding to Tier 2. Append or persist ledger entries only when caller authorizes write; read-only reviewers return entries to caller.
+Never mark Tier 2 blocking. Tier 1 label requires a reproducible failing test, deterministic command, or explicit counterexample with pinned inputs; without that evidence, demote the finding to Tier 2. Append or persist ledger entries only when caller authorizes write; read-only reviewers return entries to caller.

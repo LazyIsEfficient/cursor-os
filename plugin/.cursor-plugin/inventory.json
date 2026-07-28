@@ -744,7 +744,7 @@
       "id": "findings-ledger",
       "kind": "skill",
       "path": "plugin/skills/findings-ledger/SKILL.md",
-      "sha256": "80c07d3efcac154cd672514227733487bc5fcc95504e4035ee8cd969759ab537"
+      "sha256": "b70721c18f1db05787c1427486fcc4ac573c5b069684539ff6c9c4ebb535a1ac"
     },
     {
       "id": "game-balancer",
