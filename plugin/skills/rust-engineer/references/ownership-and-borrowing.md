@@ -16,17 +16,17 @@
 | Shared XOR mutable | Data races at compile time; no need for runtime synchronisation on `!Send` types |
 | Ref lifetime ≤ owner lifetime | Dangling pointers |
 
-No garbage collector, no runtime checks — these properties are proven at compile time by the borrow checker.
+No garbage collector, no runtime checks — properties proven at compile time by borrow checker.
 
 ### Reading Borrow Checker Errors as Design Feedback
 
-The borrow checker does not misfire. Every error is one of a small set of structural problems:
+Borrow checker does not misfire. Every error is one of small set of structural problems:
 
-- **Lifetime too short** — you're trying to return a reference to something that won't live long enough. Fix: return owned data, use `Arc`, or restructure so the owner lives in the right scope.
-- **Simultaneous alias + mutation** — you hold a `&T` and want `&mut T` at the same time. Fix: drop or scope-limit the shared ref first, or use interior mutability.
-- **Moved value used again** — you transferred ownership then tried to use the original binding. Fix: clone before the move, borrow instead of move, or refactor to keep one owner.
+- **Lifetime too short** — returning reference to something that won't live long enough. Fix: return owned data, use `Arc`, or restructure so owner lives in right scope.
+- **Simultaneous alias + mutation** — holding `&T` while wanting `&mut T`. Fix: drop or scope-limit shared ref first, or use interior mutability.
+- **Moved value used again** — transferred ownership then used original binding. Fix: clone before move, borrow instead of move, or refactor to keep one owner.
 
-Reaching for `.clone()` to silence the error is almost always wrong; it hides the design problem the borrow checker found.
+Reaching for `.clone()` to silence error almost always wrong; hides design problem borrow checker found.
 
 ---
 
@@ -34,11 +34,11 @@ Reaching for `.clone()` to silence the error is almost always wrong; it hides th
 
 ### Elision Rules
 
-The compiler inserts lifetime parameters automatically when the rules are unambiguous:
+Compiler inserts lifetime parameters automatically when rules unambiguous:
 
-1. Each elided input lifetime gets its own distinct parameter.
-2. If there is exactly one input lifetime parameter, it is assigned to all output lifetimes.
-3. If one of the inputs is `&self` or `&mut self`, its lifetime is assigned to all output lifetimes.
+1. Each elided input lifetime gets own distinct parameter.
+2. Exactly one input lifetime parameter → assigned to all output lifetimes.
+3. One input is `&self` or `&mut self` → its lifetime assigned to all output lifetimes.
 
 ```rust
 // All equivalent after elision is applied:
@@ -48,7 +48,7 @@ fn first<'a>(s: &'a str) -> &'a str { ... }
 
 ### When Explicit Lifetimes Are Required
 
-**Structs holding references** — the struct must declare the lifetime so the compiler knows the reference constraint:
+**Structs holding references** — struct must declare lifetime so compiler knows reference constraint:
 
 ```rust
 struct Tokenizer<'a> {
@@ -58,7 +58,7 @@ struct Tokenizer<'a> {
 // The Tokenizer cannot outlive the &str it borrows.
 ```
 
-**Multiple ref parameters with ambiguous output lifetime** — elision rule 2 only fires for a single input lifetime; with multiple inputs you must be explicit:
+**Multiple ref parameters with ambiguous output lifetime** — elision rule 2 only fires for single input lifetime; multiple inputs → be explicit:
 
 ```rust
 // Won't compile without explicit lifetimes:
@@ -67,7 +67,7 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 }
 ```
 
-**`impl Trait` with references** — the compiler needs to know how the returned `impl Trait` relates to the input lifetimes:
+**`impl Trait` with references** — compiler needs to know how returned `impl Trait` relates to input lifetimes:
 
 ```rust
 fn make_iter<'a>(s: &'a str) -> impl Iterator<Item = &'a str> + 'a {
@@ -77,19 +77,19 @@ fn make_iter<'a>(s: &'a str) -> impl Iterator<Item = &'a str> + 'a {
 
 ### `'static`
 
-`'static` means the value is valid for the entire program lifetime. It does **not** mean "lives forever" in the sense of being leaked — it means no borrowed data with a shorter lifetime is reachable through it.
+`'static` means value valid for entire program lifetime. Does **not** mean "lives forever" in sense of being leaked — means no borrowed data with shorter lifetime reachable through it.
 
 Common sources:
-- String literals: `&'static str` lives in the binary's data segment.
-- Owned types with no references inside them automatically satisfy `T: 'static`.
-- `Arc<T>` where `T: 'static` — once cloned out of a scope, the `Arc` can be sent anywhere.
-- `Box<dyn Trait + 'static>` — the heap allocation can outlive any particular stack frame.
+- String literals: `&'static str` lives in binary's data segment.
+- Owned types with no references inside automatically satisfy `T: 'static`.
+- `Arc<T>` where `T: 'static` — once cloned out of scope, `Arc` can be sent anywhere.
+- `Box<dyn Trait + 'static>` — heap allocation can outlive any particular stack frame.
 
-`'static` as a bound (`T: 'static`) is common in thread-spawning and async contexts where the runtime may outlive the creating scope.
+`'static` as bound (`T: 'static`) common in thread-spawning and async contexts where runtime may outlive creating scope.
 
 ### Lifetime Bounds: `'a: 'b`
 
-`'a: 'b` reads "`'a` outlives `'b`". Use when you need to guarantee one reference lives at least as long as another:
+`'a: 'b` reads "`'a` outlives `'b`". Use when needing guarantee one reference lives at least as long as another:
 
 ```rust
 fn shorter<'a, 'b: 'a>(x: &'a str, y: &'b str) -> &'a str {
@@ -98,11 +98,11 @@ fn shorter<'a, 'b: 'a>(x: &'a str, y: &'b str) -> &'a str {
 }
 ```
 
-Appears frequently in iterator adaptors and combinators that hold references to other references.
+Appears frequently in iterator adaptors and combinators holding references to other references.
 
 ### Self-Referential Structs
 
-A struct cannot hold both a value and a reference into that same value through normal Rust references — the address is not stable until the value is pinned.
+Struct cannot hold both value and reference into same value through normal Rust references — address not stable until value pinned.
 
 ```rust
 // This does not compile — self-reference is not expressible with &:
@@ -112,9 +112,9 @@ struct Bad {
 }
 ```
 
-**Why it's hard:** Rust can move values freely (copying bytes to a new location). A reference into a field becomes dangling the moment the struct is moved.
+**Why hard:** Rust moves values freely (copying bytes to new location). Reference into field becomes dangling moment struct moves.
 
-**`Pin<P>`** prevents the value behind pointer `P` from being moved after pinning. Required by async state machines (which capture local references across `.await` points).
+**`Pin<P>`** prevents value behind pointer `P` from moving after pinning. Required by async state machines (capture local references across `.await` points).
 
 ```rust
 use std::pin::Pin;
@@ -123,7 +123,7 @@ use std::pin::Pin;
 let pinned: Pin<Box<MyType>> = Box::pin(MyType::new());
 ```
 
-Implementing self-referential structs manually via `Pin` and `unsafe` is error-prone. The practical options:
+Implementing self-referential structs manually via `Pin` and `unsafe` error-prone. Practical options:
 
 | Approach | When to use |
 |----------|-------------|
@@ -138,11 +138,11 @@ Implementing self-referential structs manually via `Pin` and `unsafe` is error-p
 
 ### `Drop` Trait
 
-`Drop::drop` runs when a value goes out of scope or is explicitly dropped with `drop(val)`. You cannot call `drop` directly on a value you own through the trait — use the free function `drop()`.
+`Drop::drop` runs when value goes out of scope or explicitly dropped with `drop(val)`. Cannot call `drop` directly on value owned through trait — use free function `drop()`.
 
 **Drop order:**
 - Local variables drop in **reverse declaration order** (last declared drops first).
-- Struct fields drop in **declaration order** (first field drops first), then the struct itself.
+- Struct fields drop in **declaration order** (first field drops first), then struct itself.
 
 ```rust
 struct A; struct B; struct C;
@@ -161,10 +161,10 @@ fn main() {
 
 ### `ManuallyDrop<T>`
 
-Wraps a value and **prevents its destructor from running**. Used when:
-- You're building a custom allocator or arena and want to reclaim memory without running `Drop`.
-- You need to move a field out of a struct inside `Drop` (normally forbidden).
-- FFI: you're handing ownership to C code that will free the memory.
+Wraps value, **prevents destructor from running**. Used when:
+- Building custom allocator or arena, want to reclaim memory without running `Drop`.
+- Need to move field out of struct inside `Drop` (normally forbidden).
+- FFI: handing ownership to C code that will free memory.
 
 ```rust
 use std::mem::ManuallyDrop;
@@ -173,11 +173,11 @@ let v: ManuallyDrop<Vec<i32>> = ManuallyDrop::new(vec![1, 2, 3]);
 // Vec's Drop won't run — memory is not freed unless you call ManuallyDrop::drop explicitly.
 ```
 
-Never use `ManuallyDrop` to work around a lifetime or borrow issue — that's a memory leak or unsoundness waiting to happen.
+Never use `ManuallyDrop` to work around lifetime or borrow issue — memory leak or unsoundness waiting to happen.
 
 ### Guard Types as RAII
 
-The canonical example is `MutexGuard<'_, T>`: acquiring the lock returns a guard; when the guard drops, the lock releases. Implement the same pattern for any "acquire on entry, release on exit" resource.
+Canonical example: `MutexGuard<'_, T>` — acquiring lock returns guard; guard drops → lock releases. Implement same pattern for any "acquire on entry, release on exit" resource.
 
 ```rust
 struct ConnectionGuard<'a> {
@@ -192,22 +192,22 @@ impl Drop for ConnectionGuard<'_> {
 }
 ```
 
-Key properties of a well-designed guard:
-- Holds a reference (or `Arc`) to the resource it releases back to.
-- Is `!Send` if the underlying resource is thread-local (e.g., `MutexGuard` is `!Send`).
-- Does not implement `Clone` — ownership of the release must be unique.
+Key properties of well-designed guard:
+- Holds reference (or `Arc`) to resource it releases back to.
+- Is `!Send` if underlying resource thread-local (e.g., `MutexGuard` is `!Send`).
+- Does not implement `Clone` — ownership of release must be unique.
 
 ---
 
 ## Interior Mutability
 
-The `&T` → immutable, `&mut T` → mutable invariant is an alias contract, not a hardware fact. Interior mutability types punch through it safely (or unsafely with a contract).
+`&T` → immutable, `&mut T` → mutable invariant is alias contract, not hardware fact. Interior mutability types punch through safely (or unsafely with contract).
 
 ### `Cell<T>`
 
 - Single-threaded only (`!Sync`).
-- Values must be `Copy` (or you use `Cell::replace` / `Cell::take`).
-- No references into the value are ever handed out — you copy in and copy out.
+- Values must be `Copy` (or use `Cell::replace` / `Cell::take`).
+- No references into value ever handed out — copy in, copy out.
 - Zero runtime overhead.
 
 ```rust
@@ -217,14 +217,14 @@ let x = Cell::new(0u32);
 x.set(x.get() + 1);
 ```
 
-Use for small counters or flags inside types that are otherwise immutable by reference.
+Use for small counters or flags inside types otherwise immutable by reference.
 
 ### `RefCell<T>`
 
 - Single-threaded only (`!Sync`).
 - Runtime borrow tracking: `borrow()` returns `Ref<T>`, `borrow_mut()` returns `RefMut<T>`.
-- **Panics** at runtime if you violate the shared XOR mutable rule.
-- Use sparingly — panics in production are worse than compile errors.
+- **Panics** at runtime if shared XOR mutable rule violated.
+- Use sparingly — panics in production worse than compile errors.
 
 ```rust
 use std::cell::RefCell;
@@ -235,13 +235,13 @@ let _r = v.borrow();
 v.borrow_mut().push(4);          // PANICS — shared borrow active
 ```
 
-`try_borrow` / `try_borrow_mut` return `Result` instead of panicking — prefer these in library code.
+`try_borrow` / `try_borrow_mut` return `Result` instead of panicking — prefer in library code.
 
 ### `Mutex<T>`
 
 - Multi-threaded (`Sync`).
-- Blocking: `lock()` blocks until the lock is available, returns `MutexGuard<T>`.
-- **Poisoning**: if a thread panics while holding the lock, subsequent `lock()` calls return `Err(PoisonError)`. The guard is still recoverable via `into_inner()` if the data is known to be consistent.
+- Blocking: `lock()` blocks until lock available, returns `MutexGuard<T>`.
+- **Poisoning**: thread panics while holding lock → subsequent `lock()` calls return `Err(PoisonError)`. Guard still recoverable via `into_inner()` if data known consistent.
 
 ```rust
 use std::sync::Mutex;
@@ -257,14 +257,14 @@ let m = Mutex::new(0i32);
 
 - Multi-threaded (`Sync`).
 - Multiple concurrent readers via `read()`, exclusive writer via `write()`.
-- **Beats `Mutex` when:** reads are frequent, writes are rare, and read-side contention matters.
-- **Does not beat `Mutex` when:** writes are as frequent as reads, or your platform's `RwLock` has writer starvation issues (check your OS).
+- **Beats `Mutex` when:** reads frequent, writes rare, read-side contention matters.
+- **Does not beat `Mutex` when:** writes as frequent as reads, or platform's `RwLock` has writer starvation issues (check OS).
 
 ### `Atomic*` Types
 
 In `std::sync::atomic`: `AtomicBool`, `AtomicI32`, `AtomicU64`, `AtomicUsize`, `AtomicPtr<T>`, etc.
 
-Lock-free for primitive values. No poisoning. Useful for counters, flags, and publish-subscribe patterns.
+Lock-free for primitive values. No poisoning. Useful for counters, flags, publish-subscribe patterns.
 
 **`Ordering` choices:**
 
@@ -276,7 +276,7 @@ Lock-free for primitive values. No poisoning. Useful for counters, flags, and pu
 | `AcqRel` | Acquire + Release on a single RMW op | Compare-and-swap that both reads and writes |
 | `SeqCst` | Total order across all `SeqCst` ops on all threads | Rarely needed; use when Acquire/Release is insufficient and you can't reason why |
 
-The classic pattern:
+Classic pattern:
 
 ```rust
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -310,7 +310,7 @@ Is this used across threads?
 
 ## `Cow<'a, B>`
 
-`Cow` (Clone On Write) is an enum: `Borrowed(&'a B)` or `Owned(<B as ToOwned>::Owned)`.
+`Cow` (Clone On Write) is enum: `Borrowed(&'a B)` or `Owned(<B as ToOwned>::Owned)`.
 
 ```rust
 use std::borrow::Cow;
@@ -325,8 +325,8 @@ fn normalize(s: &str) -> Cow<'_, str> {
 ```
 
 **Pays off when:**
-- A function sometimes needs to modify its input and sometimes can return it as-is.
-- You want a single return type that avoids unnecessary clones.
+- Function sometimes needs to modify input, sometimes returns as-is.
+- Single return type avoiding unnecessary clones wanted.
 
 **Common patterns:**
 
@@ -336,9 +336,9 @@ fn normalize(s: &str) -> Cow<'_, str> {
 | `Cow<'_, [T]>` | Slices that may need padding, filtering, or deduplication |
 | `Cow<'_, Path>` | Path manipulation that might add/remove components |
 
-`Cow` implements `Deref<Target = B>`, so you can call `&str` methods directly without matching.
+`Cow` implements `Deref<Target = B>` — call `&str` methods directly without matching.
 
-Use `into_owned()` when you need a fully owned value unconditionally. Use `to_mut()` when you need `&mut B` — it clones on first write and reuses on subsequent writes within the same call.
+Use `into_owned()` when fully owned value needed unconditionally. Use `to_mut()` when `&mut B` needed — clones on first write, reuses on subsequent writes within same call.
 
 ---
 
@@ -352,11 +352,11 @@ let key = map.keys().next().unwrap().clone();
 map.remove(&key);
 ```
 
-This is sometimes correct (when you genuinely need two independent owners), but often signals that the data structure or API is fighting the borrow checker. Ask: should the caller own this data? Should the container use indices instead of references? Should the function take ownership instead of borrowing?
+Sometimes correct (genuinely need two independent owners), but often signals data structure or API fighting borrow checker. Ask: should caller own this data? Should container use indices instead of references? Should function take ownership instead of borrowing?
 
 ### Holding a Lock Across an `.await` Point
 
-In async code (Tokio, async-std), a `MutexGuard` held across `.await` prevents the future from being `Send`, and may deadlock if the executor is single-threaded.
+In async code (Tokio, async-std), `MutexGuard` held across `.await` prevents future from being `Send`, may deadlock if executor single-threaded.
 
 ```rust
 // WRONG: MutexGuard held across await
@@ -377,11 +377,11 @@ async fn good(m: &Mutex<Data>) {
 }
 ```
 
-Use `tokio::sync::Mutex` (async-aware) if you genuinely need to hold a lock across an await point — it yields rather than blocking the thread.
+Use `tokio::sync::Mutex` (async-aware) if genuinely needing lock across await point — yields rather than blocking thread.
 
 ### Returning References to Local Data
 
-This is always a compile error. The fix is almost always ownership transfer:
+Always compile error. Fix almost always ownership transfer:
 
 ```rust
 // WRONG: reference to local variable
@@ -396,4 +396,4 @@ fn make_greeting(name: &str) -> String {
 }
 ```
 
-If a `&'static str` is genuinely appropriate (compile-time-known values), use `once_cell` or `std::sync::OnceLock` to back it with a static allocation. Do not use `Box::leak` to silence the borrow checker — that's a deliberate leak and should be a conscious, documented decision.
+`&'static str` genuinely appropriate (compile-time-known values) → use `once_cell` or `std::sync::OnceLock` to back with static allocation. Do not use `Box::leak` to silence borrow checker — deliberate leak, should be conscious, documented decision.

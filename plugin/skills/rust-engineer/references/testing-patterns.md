@@ -10,7 +10,7 @@ Rust has three canonical test locations:
 | `tests/` directory | Integration tests | Public API only |
 | `benches/` directory | Benchmarks (criterion) | Public API only |
 
-**Prefer `cargo nextest`** over `cargo test` in CI. Faster execution, better failure output, per-test timeouts, and retry semantics.
+**Prefer `cargo nextest`** over `cargo test` in CI. Faster execution, better failure output, per-test timeouts, retry semantics.
 
 ```sh
 # Install once
@@ -29,7 +29,7 @@ cargo nextest run --test integration_tests
 cargo nextest run --run-ignored only
 ```
 
-`cargo test` is still needed for doc-tests (`nextest` does not run them).
+`cargo test` still needed for doc-tests (`nextest` does not run them).
 
 ---
 
@@ -61,13 +61,13 @@ mod tests {
 ```
 
 Key rules:
-- `#[cfg(test)]` ensures test code is stripped from release builds.
-- `use super::*` pulls in the parent module's private items — this is the only place that's acceptable.
-- `#[should_panic(expected = "...")]` matches a substring of the panic message. Leave `expected` off only when any panic is acceptable (rare).
+- `#[cfg(test)]` ensures test code stripped from release builds.
+- `use super::*` pulls in parent module's private items — only place that's acceptable.
+- `#[should_panic(expected = "...")]` matches substring of panic message. Leave `expected` off only when any panic acceptable (rare).
 
 ### Arrange-Act-Assert
 
-Keep the three phases visually distinct. One blank line between each phase is sufficient:
+Keep three phases visually distinct. One blank line between each phase sufficient:
 
 ```rust
 #[test]
@@ -83,12 +83,12 @@ fn deduct_reduces_balance() {
 }
 ```
 
-Do not collapse all three into a single expression. Future readers (and failing test output) will thank you.
+Do not collapse all three into single expression. Future readers (and failing test output) will thank you.
 
 ### Assertion conventions
 
-- **Left = expected, right = actual.** `assert_eq!(expected, actual)` — this matches the error message format: `left: 5, right: 7`.
-- Use `pretty_assertions` for complex types. It renders a coloured diff instead of a wall of debug output:
+- **Left = expected, right = actual.** `assert_eq!(expected, actual)` — matches error message format: `left: 5, right: 7`.
+- Use `pretty_assertions` for complex types. Renders coloured diff instead of wall of debug output:
 
 ```toml
 [dev-dependencies]
@@ -105,7 +105,7 @@ mod tests {
 
 ### Test helper functions
 
-Use plain functions inside `mod tests`. There are no fixtures in Rust — setup logic is just a function call:
+Use plain functions inside `mod tests`. No fixtures in Rust — setup logic is just function call:
 
 ```rust
 #[cfg(test)]
@@ -127,13 +127,13 @@ mod tests {
 }
 ```
 
-If setup is expensive and shared across many tests, use `std::sync::OnceLock` or `once_cell::sync::Lazy` for lazy initialization.
+Setup expensive and shared across many tests → use `std::sync::OnceLock` or `once_cell::sync::Lazy` for lazy initialization.
 
 ---
 
 ## Integration Tests (`tests/`)
 
-Each `.rs` file in `tests/` compiles as a separate crate linked against your library. It can only access `pub` items.
+Each `.rs` file in `tests/` compiles as separate crate linked against library. Can only access `pub` items.
 
 ```
 tests/
@@ -143,7 +143,7 @@ tests/
   auth_flow.rs
 ```
 
-**Sharing helpers:** put them in `tests/common/mod.rs`, not `tests/common.rs`. Cargo treats any top-level `.rs` file in `tests/` as a test binary — the `mod.rs` pattern avoids this.
+**Sharing helpers:** put in `tests/common/mod.rs`, not `tests/common.rs`. Cargo treats any top-level `.rs` file in `tests/` as test binary — `mod.rs` pattern avoids this.
 
 ```rust
 // tests/common/mod.rs
@@ -163,13 +163,13 @@ async fn health_check_returns_200() {
 }
 ```
 
-Integration tests are the correct place to assert on the public API contract. If you're mocking internals here, you're testing the wrong layer.
+Integration tests are correct place to assert public API contract. Mocking internals here → testing wrong layer.
 
 ---
 
 ## Axum HTTP Layer Testing with `axum-test`
 
-`axum-test` runs your router in-process — no port binding, no network stack.
+`axum-test` runs router in-process — no port binding, no network stack.
 
 ```toml
 [dev-dependencies]
@@ -231,7 +231,7 @@ Common assertion methods:
 | `.json::<T>()` | deserialize and return |
 | `.text()` | raw body as `String` |
 
-**State construction:** build `AppState` exactly as production does. Swap only external dependencies (DB, HTTP clients, clocks) with test doubles. Do not add test-only fields to `AppState`.
+**State construction:** build `AppState` exactly as production. Swap only external dependencies (DB, HTTP clients, clocks) with test doubles. Do not add test-only fields to `AppState`.
 
 ---
 
@@ -239,7 +239,7 @@ Common assertion methods:
 
 ### Design for injectability
 
-Mocking only works if the dependency is behind a trait. Define traits for anything you want to substitute in tests:
+Mocking only works if dependency behind trait. Define traits for anything to substitute in tests:
 
 ```rust
 #[async_trait]
@@ -249,11 +249,11 @@ pub trait UserRepository: Send + Sync {
 }
 ```
 
-Concrete types (`PgUserRepository`) implement the trait. Handlers receive `Arc<dyn UserRepository>` or a generic `R: UserRepository`.
+Concrete types (`PgUserRepository`) implement trait. Handlers receive `Arc<dyn UserRepository>` or generic `R: UserRepository`.
 
 ### `mockall`
 
-`#[automock]` generates a `MockUserRepository` with fluent expectation setup:
+`#[automock]` generates `MockUserRepository` with fluent expectation setup:
 
 ```toml
 [dev-dependencies]
@@ -285,11 +285,11 @@ mod tests {
 }
 ```
 
-Unmet expectations panic at drop. Set `.times(0)` to assert a call never happens.
+Unmet expectations panic at drop. Set `.times(0)` to assert call never happens.
 
 ### Fakes vs mocks
 
-For repository-shaped dependencies, a **fake** (in-memory implementation) is usually cleaner and more maintainable:
+For repository-shaped dependencies, **fake** (in-memory implementation) usually cleaner, more maintainable:
 
 ```rust
 #[derive(Default)]
@@ -316,13 +316,13 @@ impl UserRepository for FakeUserRepo {
 | Fake (in-memory) | Multiple tests need to exercise realistic state transitions |
 | Real implementation | Integration layer tests; only swap the DB connection string |
 
-**Do not mock the database in integration tests.** It hides query bugs, migration drift, and constraint violations — exactly the bugs integration tests exist to catch.
+**Do not mock database in integration tests.** Hides query bugs, migration drift, constraint violations — exactly the bugs integration tests exist to catch.
 
 ---
 
 ## Property-Based Testing with `proptest`
 
-`proptest` generates hundreds of randomised inputs, then shrinks failing cases to the minimal reproducer.
+`proptest` generates hundreds of randomised inputs, shrinks failing cases to minimal reproducer.
 
 ```toml
 [dev-dependencies]
@@ -368,15 +368,15 @@ proptest! {
 
 ### Shrinking
 
-Shrinking is automatic. When a failure is found, proptest reduces the input to the smallest value that still fails and reports it. No manual effort needed — this is the primary advantage over hand-rolled random tests.
+Shrinking automatic. Failure found → proptest reduces input to smallest still-failing value, reports it. No manual effort — primary advantage over hand-rolled random tests.
 
-To reproduce a specific failure, set the `PROPTEST_CASES` env var or use a `ProptestConfig` with a fixed seed.
+To reproduce specific failure, set `PROPTEST_CASES` env var or use `ProptestConfig` with fixed seed.
 
 ---
 
 ## Snapshot Testing with `insta`
 
-`insta` captures output as `.snap` files committed to the repo. Regressions are caught when the output changes unexpectedly.
+`insta` captures output as `.snap` files committed to repo. Regressions caught when output changes unexpectedly.
 
 ```toml
 [dev-dependencies]
@@ -403,7 +403,7 @@ fn api_response_shape() {
 }
 ```
 
-On first run, the snapshot file is created. On subsequent runs, output is compared against it.
+First run: snapshot file created. Subsequent runs: output compared against it.
 
 ### Review workflow
 
@@ -416,12 +416,12 @@ cargo insta review
 ### When to use insta
 
 Use insta when:
-- The output is complex enough that a hand-written assertion would be fragile or verbose (JSON API responses, generated SQL, compiler-style error messages)
+- Output complex enough that hand-written assertion fragile or verbose (JSON API responses, generated SQL, compiler-style error messages)
 - You want to detect unintentional changes to serialization format
 
 Do not use insta when:
-- A precise `assert_eq!` is feasible — snapshots defer the decision of correctness to the reviewer
-- The output changes frequently as part of normal development (snapshot churn is noise)
+- Precise `assert_eq!` feasible — snapshots defer decision of correctness to reviewer
+- Output changes frequently in normal development (snapshot churn is noise)
 
 ---
 
@@ -429,7 +429,7 @@ Do not use insta when:
 
 ### `sqlx::test`
 
-The `#[sqlx::test]` macro creates a temporary database, runs all pending migrations, passes a `PgPool` to the test, and rolls back on drop.
+`#[sqlx::test]` macro creates temporary database, runs all pending migrations, passes `PgPool` to test, rolls back on drop.
 
 ```toml
 [dev-dependencies]
@@ -448,13 +448,13 @@ async fn insert_and_retrieve_user(pool: PgPool) {
 }
 ```
 
-Each test gets an isolated schema. No cleanup code required. Tests can run in parallel without interfering.
+Each test gets isolated schema. No cleanup code required. Tests run in parallel without interfering.
 
 ### Isolation rules
 
-- **Never share a database pool between tests.** One corrupted state poisons everything downstream.
-- **Do not `truncate` or `delete from` in teardown.** Rollback or fresh schema is cheaper and more reliable.
-- **Run migrations in tests the same way as production.** If you skip migrations, you are testing against a schema that does not match your code.
+- **Never share database pool between tests.** One corrupted state poisons everything downstream.
+- **Do not `truncate` or `delete from` in teardown.** Rollback or fresh schema cheaper, more reliable.
+- **Run migrations in tests same way as production.** Skip migrations → testing against schema not matching code.
 
 ### Environment setup
 
@@ -463,7 +463,7 @@ Each test gets an isolated schema. No cleanup code required. Tests can run in pa
 DATABASE_URL=postgres://postgres:password@localhost/myapp_test
 ```
 
-`sqlx::test` appends a unique suffix to the database name per test, so `myapp_test` is the base; individual tests get `myapp_test_<uuid>`.
+`sqlx::test` appends unique suffix to database name per test — `myapp_test` is base; individual tests get `myapp_test_<uuid>`.
 
 ---
 

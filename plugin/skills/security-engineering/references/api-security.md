@@ -2,7 +2,7 @@
 
 ## Authentication Patterns
 
-**Session-based auth** (example — a primary web app):
+**Session-based auth** (example — primary web app):
 
 ```typescript
 // apps/<app>/api/v1/shared/middlewares/auth.middleware.ts
@@ -59,7 +59,7 @@ DATABASE_MAX_CONNECTIONS: z.coerce.number().default(20)
 
 **Thirdweb payload expiry**: 300 seconds (5 minutes) for signature payloads.
 
-**Smart contract velocity controls**: Per-transaction, lifetime, and rolling interval limits (see Web3 section).
+**Smart contract velocity controls**: Per-transaction, lifetime, rolling interval limits (see Web3 section).
 
 ## CORS
 

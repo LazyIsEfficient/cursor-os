@@ -1,44 +1,44 @@
 # SLIs, SLOs, and Error Budgets — In Production
 
-The architect picks SLO *targets* (see `system-architect`). This file is about *operationalizing* them: how to measure, alert, report, and use them as a contract with the product team.
+Architect picks SLO *targets* (see `system-architect`). This file is about *operationalizing* them: measure, alert, report, use as contract with product team.
 
 ## Vocabulary, Precisely
 
 | Term | Definition | Example |
 |---|---|---|
-| **SLI** (Service Level Indicator) | A *measurement* of some aspect of service behavior | "Fraction of HTTP requests that return a 2xx/3xx response within 500ms" |
-| **SLO** (Service Level Objective) | A *target* for an SLI over a window | "99.9% of requests succeed within 500ms over a rolling 28 days" |
-| **SLA** (Service Level Agreement) | A *contract* with users that has consequences (refunds, credits) when violated | "If we miss 99.5% in a month, customer gets 10% credit" |
+| **SLI** (Service Level Indicator) | A *measurement* of some aspect of service behavior | "Fraction of HTTP requests returning 2xx/3xx within 500ms" |
+| **SLO** (Service Level Objective) | A *target* for an SLI over a window | "99.9% of requests succeed within 500ms over rolling 28 days" |
+| **SLA** (Service Level Agreement) | A *contract* with users with consequences (refunds, credits) when violated | "If we miss 99.5% in a month, customer gets 10% credit" |
 | **Error Budget** | `1 - SLO` over the window — how much unreliability is *allowed* | At 99.9% over 28 days: 40 minutes 19 seconds of failure budget |
 
-The most common confusion: **SLOs are not SLAs.** Always set the internal SLO *tighter* than any external SLA — give yourself headroom to detect and respond before the contract triggers.
+Most common confusion: **SLOs are not SLAs.** Always set internal SLO *tighter* than any external SLA — headroom to detect and respond before contract triggers.
 
 ## Picking SLIs That Matter
 
 A good SLI:
 
-1. **Reflects user experience.** "Did the user get the thing they asked for, in time?" — not "did the server's CPU stay below 80%."
-2. **Is a ratio of "good events" over "valid events"**, expressed as a percentage. Easy to reason about and to combine across services.
-3. **Has clear "good" and "valid" definitions** that survive a code review.
-4. **Comes from data you already collect** — don't introduce new instrumentation just to satisfy SRE.
+1. **Reflects user experience.** "Did user get thing they asked for, in time?" — not "did server CPU stay below 80%."
+2. **Is a ratio of "good events" over "valid events"**, expressed as percentage. Easy to reason about and combine across services.
+3. **Has clear "good" and "valid" definitions** surviving code review.
+4. **Comes from data already collected** — do not introduce new instrumentation just to satisfy SRE.
 
 ### The four golden signals (Google SRE)
 
 For most user-facing services, start here:
 
 - **Latency** — how long requests take (split successful vs failed; failed requests can be misleadingly fast).
-- **Traffic** — how much demand the service is experiencing (RPS, concurrent users).
-- **Errors** — fraction of requests that fail (explicitly errored, returned wrong content, took too long).
-- **Saturation** — how "full" the service is (queue depth, thread pool utilization, connection pool).
+- **Traffic** — how much demand service experiencing (RPS, concurrent users).
+- **Errors** — fraction of requests that fail (explicitly errored, wrong content, too slow).
+- **Saturation** — how "full" service is (queue depth, thread pool utilization, connection pool).
 
 Latency and errors usually become SLIs. Traffic and saturation usually become *capacity signals* and dashboard/alert inputs, not SLOs themselves.
 
 ### RED and USE — alternatives for different lenses
 
-- **RED** (Tom Wilkie) — *Rate, Errors, Duration*. For request-driven services. Effectively the golden signals minus saturation.
+- **RED** (Tom Wilkie) — *Rate, Errors, Duration*. For request-driven services. Effectively golden signals minus saturation.
 - **USE** (Brendan Gregg) — *Utilization, Saturation, Errors*. For resources (CPU, disk, network).
 
-Use RED for services, USE for the resources underneath them. Together they give you "is the service working" and "is the substrate healthy."
+Use RED for services, USE for resources underneath. Together: "is service working" and "is substrate healthy."
 
 ## Defining an SLO Concretely
 
@@ -47,16 +47,16 @@ A complete SLO statement contains six things:
 1. **The SLI** (the ratio).
 2. **The threshold** (99.9%).
 3. **The window** (rolling 28 days).
-4. **The user perspective** (which clients/endpoints are included).
+4. **The user perspective** (which clients/endpoints included).
 5. **The exclusions** (planned maintenance windows, requests with malformed input).
-6. **The owner** (a team that will respond when it's at risk).
+6. **The owner** (a team that responds when at risk).
 
 Example:
 
 > **Checkout API availability SLO**
-> 99.9% of HTTP requests to `/api/v1/checkout/*` from clients other than the synthetic monitoring system, excluding requests that return `400` due to client-side validation errors, will complete with a 2xx response within 800ms, measured over a rolling 28-day window. Owned by the Payments team.
+> 99.9% of HTTP requests to `/api/v1/checkout/*` from clients other than synthetic monitoring system, excluding requests returning `400` due to client-side validation errors, will complete with 2xx response within 800ms, measured over rolling 28-day window. Owned by Payments team.
 
-If you can't write the statement in one paragraph, the SLO isn't crisp enough yet.
+If you cannot write the statement in one paragraph, SLO not crisp enough yet.
 
 ## The Error Budget
 
@@ -71,22 +71,22 @@ If you can't write the statement in one paragraph, the SLO isn't crisp enough ye
 | 99.99% | ~4m |
 | 99.999% | ~24s |
 
-Two practical lessons from this table:
+Two practical lessons:
 
-- **Each "9" is roughly 10× more expensive.** Going from 99.9% to 99.99% is the same effort multiple as going from 99% to 99.9%. Don't add nines without a reason a CFO would accept.
-- **Above 99.99% you can't even *deploy*.** Most CI/CD pipelines take longer than 4 minutes; a single bad deploy blows a month of budget. If you genuinely need 4 nines or better, your release strategy must account for it (canaries, automatic rollback under tens of seconds).
+- **Each "9" is roughly 10× more expensive.** Going from 99.9% to 99.99% same effort multiple as 99% to 99.9%. Do not add nines without a reason a CFO would accept.
+- **Above 99.99% you cannot even *deploy*.** Most CI/CD pipelines take longer than 4 minutes; single bad deploy blows a month of budget. If genuinely need 4 nines or better, release strategy must account for it (canaries, automatic rollback under tens of seconds).
 
 ## Burn-Rate Alerting (the only alert pattern that actually works)
 
-A naive alert ("if budget remaining < 0%") fires too late. A naive threshold alert ("error rate > 1%") is too noisy. The right pattern is **multi-window, multi-burn-rate alerts**.
+Naive alert ("if budget remaining < 0%") fires too late. Naive threshold alert ("error rate > 1%") too noisy. Right pattern: **multi-window, multi-burn-rate alerts**.
 
-The idea: alert when the error budget is being burned through *fast enough that, if the current rate continued, the budget would be exhausted before the team could respond*.
+Idea: alert when error budget being burned *fast enough that, if current rate continued, budget exhausted before team could respond*.
 
 ### Burn rate
 
 > `Burn rate = (current error rate) / (SLO error rate)`
 
-A burn rate of 1.0 means you're using budget exactly as fast as the SLO allows. A burn rate of 14.4 means you'd burn the entire 30-day budget in ~50 hours.
+Burn rate of 1.0 means using budget exactly as fast as SLO allows. Burn rate of 14.4 means burning entire 30-day budget in ~50 hours.
 
 ### Two-window alert (Google SRE workbook)
 
@@ -97,7 +97,7 @@ A burn rate of 1.0 means you're using budget exactly as fast as the SLO allows. 
 | **Ticket** | 24 hours | 2 hours | ≥ 1 | "we are over our SLO budget pace, fix during business hours" |
 | **Ticket** | 72 hours | 6 hours | ≥ 1 | slow burn that will eventually matter |
 
-The **two windows** prevent false positives: the long window confirms the burn is sustained; the short window ensures the alert fires quickly when the burn starts. An alert only fires if *both* are above the threshold.
+**Two windows** prevent false positives: long window confirms burn is sustained; short window ensures alert fires quickly when burn starts. Alert only fires if *both* above threshold.
 
 ### Example PromQL
 
@@ -118,51 +118,51 @@ AND
 
 ## Error Budget Policy
 
-The error budget is a *contract*. Without an explicit policy, the budget is just a metric on a dashboard.
+Error budget is a *contract*. Without explicit policy, budget is just metric on dashboard.
 
-A useful policy is one paragraph that everyone — engineering, product, leadership — has signed off on, in writing, **before the budget is ever exhausted**:
+Useful policy is one paragraph everyone — engineering, product, leadership — signed off on, in writing, **before budget ever exhausted**:
 
 > **Checkout API Error Budget Policy**
 >
-> When the rolling 28-day error budget for the Checkout API is between 100% and 25% remaining, normal release cadence applies. Between 25% and 0%, only changes that improve reliability or fix the root cause are released; feature work pauses. When the budget is exhausted, all non-reliability releases are halted and a dedicated reliability sprint begins until the budget is restored to ≥ 50%. The Payments team lead and the product manager for Checkout jointly approve any deviation from this policy.
+> When rolling 28-day error budget for Checkout API is between 100% and 25% remaining, normal release cadence applies. Between 25% and 0%, only changes that improve reliability or fix root cause are released; feature work pauses. When budget is exhausted, all non-reliability releases are halted and a dedicated reliability sprint begins until budget is restored to ≥ 50%. The Payments team lead and product manager for Checkout jointly approve any deviation from this policy.
 
-The hard part is not writing the policy. It's the first time you have to enforce it against pressure to ship a feature. The policy is what protects you from that pressure.
+Hard part is not writing policy. It is first time enforcing it against pressure to ship a feature. Policy is what protects you from that pressure.
 
 ## How Many SLOs?
 
-A common mistake is having an SLO for every endpoint and every dependency. The tax of maintaining them exceeds the value.
+Common mistake: SLO for every endpoint and every dependency. Tax of maintaining exceeds value.
 
 **Defaults:**
 
 - **One availability SLO and one latency SLO per user-facing service.** Not per endpoint.
-- **Group endpoints by user journey**, not by URL. "Browse," "search," "checkout" — each is a journey with its own criticality.
-- **Background/batch jobs have *freshness* SLOs**, not availability — "data is no more than 30 minutes stale 99% of the time."
-- **Internal-only services may not need SLOs at all** — or they have SLOs that are *consumed* by their callers' SLOs.
+- **Group endpoints by user journey**, not by URL. "Browse," "search," "checkout" — each a journey with own criticality.
+- **Background/batch jobs have *freshness* SLOs**, not availability — "data no more than 30 minutes stale 99% of time."
+- **Internal-only services may not need SLOs at all** — or have SLOs *consumed* by callers' SLOs.
 
-If you find yourself with more than ~3 SLOs per service, you're modeling implementation, not user experience.
+If you find more than ~3 SLOs per service, you are modeling implementation, not user experience.
 
 ## Reporting
 
-The error budget needs visibility, not just for the SRE team but for product. Two artifacts:
+Error budget needs visibility, not just for SRE team but for product. Two artifacts:
 
-1. **A real-time dashboard** showing remaining budget, burn rate over the last hour/day/week, and the recent incidents that consumed budget.
-2. **A weekly or monthly review** in which the SRE team and product walk through every SLO that's at risk and decide whether to invest in reliability work or accept the risk. This conversation is where the budget actually does its job.
+1. **A real-time dashboard** showing remaining budget, burn rate over last hour/day/week, and recent incidents that consumed budget.
+2. **A weekly or monthly review** in which SRE team and product walk through every SLO at risk and decide whether to invest in reliability work or accept risk. This conversation is where budget actually does its job.
 
 ## Anti-Patterns
 
-- **SLO as vanity metric** — published on a dashboard, never enforced. Worse than no SLO; gives false confidence.
-- **Aspirational SLO** — set to a number nobody believes, then ignored when missed. Set the SLO to the actual user expectation, not your hopes.
+- **SLO as vanity metric** — published on dashboard, never enforced. Worse than no SLO; gives false confidence.
+- **Aspirational SLO** — set to number nobody believes, then ignored when missed. Set SLO to actual user expectation, not your hopes.
 - **Per-endpoint SLO** — death by a thousand SLOs. Group by user journey.
-- **Burn alerts on the long window only** — alert is hours late; budget is gone by the time it fires. Always pair long with short.
-- **No exclusions for synthetic traffic** — the synthetic monitor itself burns the budget when it fires too aggressively.
-- **SLA = SLO** — the contractual SLA leaves no headroom for the team to react before it's breached. Internal SLO must be tighter.
-- **"We don't have an error budget policy yet"** — then you don't have an SLO. You have a graph.
-- **Changing the SLO when it's missed.** This is the SRE equivalent of moving the goalposts. The right response is to spend the budget on fixing the cause or to renegotiate with product, not to lower the bar.
+- **Burn alerts on long window only** — alert hours late; budget gone by time it fires. Always pair long with short.
+- **No exclusions for synthetic traffic** — synthetic monitor itself burns budget when it fires too aggressively.
+- **SLA = SLO** — contractual SLA leaves no headroom for team to react before breached. Internal SLO must be tighter.
+- **"We don't have an error budget policy yet"** — then you do not have an SLO. You have a graph.
+- **Changing the SLO when it is missed.** SRE equivalent of moving goalposts. Right response: spend budget fixing cause or renegotiate with product, not lower bar.
 
 ## Related
 
-- [alerting-and-paging.md](alerting-and-paging.md) — the alert philosophy that burn-rate alerts implement
-- [incident-response.md](incident-response.md) — what happens when an alert fires
+- [alerting-and-paging.md](alerting-and-paging.md) — alert philosophy burn-rate alerts implement
+- [incident-response.md](incident-response.md) — what happens when alert fires
 - [postmortems.md](postmortems.md) — how SLO breaches feed back into reliability work
-- `system-architect` — designing the instrumentation that produces the SLI data
-- `system-architect` — sizing decisions that determine whether you can hit the SLO
+- `system-architect` — designing instrumentation that produces SLI data
+- `system-architect` — sizing decisions that determine whether you can hit SLO

@@ -40,8 +40,8 @@ includes: [
 ## Secrets Management
 
 - **RDS**: `manageMasterUserPassword: true` — AWS-managed credential rotation
-- **ECS tasks**: Secrets injected via Secrets Manager ARN, never as environment variables
-- **IAM policies**: Scoped to specific secret ARN patterns, never `*`
+- **ECS tasks**: Secrets injected via Secrets Manager ARN, NEVER as environment variables
+- **IAM policies**: Scoped to specific secret ARN patterns, NEVER `*`
 - **GitHub Actions**: OIDC federation — no stored long-lived credentials
 - **.env files**: Always in `.gitignore`, validated at startup via Zod
 - **Dotenvx**: Encrypted secret files with `DECRYPT_PRIVATE_KEY` for shared dev environments

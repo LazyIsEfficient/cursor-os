@@ -8,7 +8,7 @@ How code goes from merged PR to running in production.
 PR merged → staging (auto) → production (manual approval / tag)
 ```
 
-Each environment is a GitHub **Environment** with:
+Each environment is GitHub **Environment** with:
 - Required reviewers (for prod)
 - Wait timer (for prod, optional cool-off)
 - Branch / tag restrictions
@@ -51,20 +51,20 @@ deploy:
         stack-name: org/staging
 ```
 
-The PR sees the diff before merging. The deploy on main applies it. **Never `up` without a `preview` somewhere upstream.**
+PR sees diff before merging. Deploy on main applies it. **Never `up` without a `preview` somewhere upstream.**
 
 ## Deploy Gates
 
-Things that should block a deploy:
+Things that should block deploy:
 - All required checks green
 - Required reviewers approved
-- Linked tickets in the right state (optional, via custom check)
-- Recent incident on the target environment (optional, via status page check)
+- Linked tickets in right state (optional, via custom check)
+- Recent incident on target environment (optional, via status page check)
 - Off-hours window for high-risk deploys (optional, via wait timer)
 
 ## Rollback Strategy
 
-Pick **one** rollback story per system and document it:
+Pick **one** rollback story per system, document it:
 
 | Strategy | When |
 |---|---|
@@ -73,7 +73,7 @@ Pick **one** rollback story per system and document it:
 | **Blue/green swap** | Zero-downtime infra. Most expensive operationally. |
 | **Feature flag off** | When the change is gated. Fastest rollback. |
 
-The workflow that deploys must also support the rollback. A deploy you can't undo is a bug.
+Workflow that deploys must also support rollback. Deploy you can't undo is a bug.
 
 ## OIDC Role Per Environment
 
@@ -91,31 +91,31 @@ deploy:
         aws-region: us-east-1
 ```
 
-Each environment uses a separate IAM role with separate trust policies. A bug in the staging workflow cannot deploy to production.
+Each environment uses separate IAM role with separate trust policies. Bug in staging workflow cannot deploy to production.
 
 ## Idempotency
 
-Re-running the same deploy on the same SHA must be safe:
-- IaC tools (Pulumi/Terraform) are idempotent by design.
-- Container deploys: tag images by commit SHA, not `latest`. Re-deploying = re-applying the same task definition.
+Re-running same deploy on same SHA must be safe:
+- IaC tools (Pulumi/Terraform) idempotent by design.
+- Container deploys: tag images by commit SHA, not `latest`. Re-deploying = re-applying same task definition.
 - Migrations: always forward, idempotent (`CREATE IF NOT EXISTS`, transactional, versioned).
 
 ## Anti-Patterns
 
 - **Auto-deploy to production on merge to main.** No protection rules, no human gate. One merged bad PR = one outage.
-- **Deploy step that builds the artifact.** Build once in CI, deploy the same artifact to staging and prod. Building per-environment introduces drift.
-- **Manual deploy steps in a runbook.** If it can be scripted, script it. Runbooks are for incidents, not normal deploys.
+- **Deploy step that builds the artifact.** Build once in CI, deploy same artifact to staging and prod. Building per-environment introduces drift.
+- **Manual deploy steps in runbook.** Scriptable → script it. Runbooks for incidents, not normal deploys.
 - **No rollback path.** "We'll figure it out if it breaks" is how 2-hour outages become 8-hour outages.
-- **Same role for all environments.** A staging compromise should not pivot to prod.
+- **Same role for all environments.** Staging compromise must not pivot to prod.
 - **Tag-mutable image references** (`myapp:latest`). Pin to immutable digests or commit SHAs.
 
 ## Health Checks Post-Deploy
 
 Every deploy workflow should:
-1. Apply the change
-2. Wait for the new version to come up (rolling, blue/green, etc.)
-3. Hit a health endpoint or run a smoke test
-4. Roll back automatically on failure (or alert the deployer)
-5. Post status to the team channel
+1. Apply change
+2. Wait for new version to come up (rolling, blue/green, etc.)
+3. Hit health endpoint or run smoke test
+4. Roll back automatically on failure (or alert deployer)
+5. Post status to team channel
 
-A deploy that "succeeded" but left the service unhealthy is worse than a deploy that failed loudly.
+Deploy that "succeeded" but left service unhealthy is worse than deploy that failed loudly.

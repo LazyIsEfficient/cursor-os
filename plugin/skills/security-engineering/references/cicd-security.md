@@ -1,18 +1,18 @@
 # CI/CD Security — Automated Review
 
-Run a security-focused, automated code review on every PR as a CI job. This
-reference captures the review methodology, the vulnerability categories worth
-scanning, and the supply-chain checks — independent of any specific review tool.
+Run security-focused automated code review on every PR as CI job. Reference
+captures review methodology, vulnerability categories worth scanning, supply-chain
+checks — independent of any specific review tool.
 
 ## Security review methodology
 
-A security review on a PR proceeds in three phases:
+Security review on PR proceeds in three phases:
 
 1. **Repository context**: Identify existing security frameworks, patterns, sanitization
 2. **Comparative analysis**: Compare new code against established security patterns
 3. **Vulnerability assessment**: Trace user input through to sensitive operations
 
-Trigger the job on `pull_request` (`opened`, `synchronize`, `reopened`,
+Trigger job on `pull_request` (`opened`, `synchronize`, `reopened`,
 `ready_for_review`) with least-privilege permissions (`contents: read`,
 `pull-requests: write`).
 
@@ -29,18 +29,18 @@ Trigger the job on `pull_request` (`opened`, `synchronize`, `reopened`,
 
 **Output**: Structured markdown with File/Line/Severity/Category/Description/Exploit Scenario/Fix Recommendation.
 
-## Deliberate out-of-scope (to reduce false positives)
+## Deliberate out-of-scope (reduce false positives)
 
 - UUIDs assumed unguessable
 - Environment variables and CLI flags trusted
 - Tabnabbing, XS-Leaks, prototype pollution (unless extreme confidence)
 - React/Angular XSS unless unsafe methods (`dangerouslySetInnerHTML`, `bypassSecurityTrustHtml`)
-- Client-side auth checks (server is responsible)
+- Client-side auth checks (server responsible)
 - Logging non-PII data
 
 ## Smart contract review
 
-Smart contract repos warrant a dedicated review that enforces:
+Smart contract repos warrant dedicated review enforcing:
 
 1. **SECURITY FIRST** — flag vulnerabilities immediately
 2. Reentrancy attacks, access control, integer overflow/underflow
@@ -50,12 +50,11 @@ Smart contract repos warrant a dedicated review that enforces:
 
 ## Supply chain check
 
-Run a dependency audit on PR and push to main/staging, blocking on
+Run dependency audit on PR and push to main/staging, blocking on
 high-severity advisories:
 
 ```bash
 pnpm audit --audit-level=high
 ```
 
-Back it with a custom blocking check for known-vulnerable packages the audit
-tool misses.
+Back with custom blocking check for known-vulnerable packages audit tool misses.

@@ -2,7 +2,7 @@
 
 ## Change Sizing
 
-Small, focused changes are easier to review, faster to merge, and safer to deploy. Target these sizes:
+Small, focused changes easier to review, faster to merge, safer to deploy. Target sizes:
 
 ```
 ~100 lines changed   → Good. Reviewable in one sitting.
@@ -10,28 +10,28 @@ Small, focused changes are easier to review, faster to merge, and safer to deplo
 ~1000 lines changed  → Too large. Split it.
 ```
 
-**What counts as "one change":** A single self-contained modification that addresses one thing, includes related tests, and keeps the system functional after submission. One part of a feature — not the whole feature.
+**What counts as "one change":** Single self-contained modification addressing one thing, including related tests, keeping system functional after submission. One part of feature — not whole feature.
 
-**Splitting strategies when a change is too large:**
+**Splitting strategies when change too large:**
 
 | Strategy | How | When |
 |----------|-----|------|
-| **Stack** | Submit a small change, start the next one based on it | Sequential dependencies |
+| **Stack** | Submit small change, start next one based on it | Sequential dependencies |
 | **By file group** | Separate changes for groups needing different reviewers | Cross-cutting concerns |
 | **Horizontal** | Create shared code/stubs first, then consumers | Layered architecture |
 | **Vertical** | Break into smaller full-stack slices of the feature | Feature work |
 
-**When large changes are acceptable:** Complete file deletions and automated refactoring where the reviewer only needs to verify intent, not every line.
+**When large changes acceptable:** Complete file deletions and automated refactoring where reviewer only verifies intent, not every line.
 
-**Separate refactoring from feature work.** A change that refactors existing code and adds new behavior is two changes — submit them separately. Small cleanups (variable renaming) can be included at reviewer discretion.
+**Separate refactoring from feature work.** Change that refactors existing code AND adds new behavior is two changes — submit separately. Small cleanups (variable renaming) includable at reviewer discretion.
 
 ## Change Descriptions
 
-Every change needs a description that stands alone in version control history.
+Every change needs description standing alone in version control history.
 
-**First line:** Short, imperative, standalone. "Delete the FizzBuzz RPC" not "Deleting the FizzBuzz RPC." Must be informative enough that someone searching history can understand the change without reading the diff.
+**First line:** Short, imperative, standalone. "Delete the FizzBuzz RPC" not "Deleting the FizzBuzz RPC." Informative enough that someone searching history understands change without reading diff.
 
-**Body:** What is changing and why. Include context, decisions, and reasoning not visible in the code itself. Link to bug numbers, benchmark results, or design docs where relevant. Acknowledge approach shortcomings when they exist.
+**Body:** What is changing and why. Context, decisions, reasoning not visible in code itself. Link bug numbers, benchmark results, design docs where relevant. Acknowledge approach shortcomings when they exist.
 
 **Anti-patterns:** "Fix bug," "Fix build," "Add patch," "Moving code from A to B," "Phase 1," "Add convenience functions."
 
@@ -39,7 +39,7 @@ Every change needs a description that stands alone in version control history.
 
 ### Step 1: Understand the Context
 
-Before looking at code, understand the intent:
+Before looking at code, understand intent:
 
 ```
 - What is this change trying to accomplish?
@@ -61,7 +61,7 @@ Tests reveal intent and coverage:
 
 ### Step 3: Review the Implementation
 
-Walk through the code with the five axes in mind:
+Walk through code with five axes in mind:
 
 ```
 For each file changed:
@@ -74,9 +74,9 @@ For each file changed:
 
 ### Step 4: Categorize Findings
 
-First assign the finding's **tier** — the tier decides whether it gates. Then add a severity label as a readability aid so the author can scan the list. The label never overrides the tier.
+First assign finding's **tier** — tier decides whether it gates. Then add severity label as readability aid so author can scan list. Label never overrides tier.
 
-Per the authoritative `evidence-review-tiers` rule: "**Tier 1 — judgment with deterministic evidence:** a finding may block only when its attached artifact, failing test, or counterexample reproduces the failure. Without that evidence it is Tier 2." And: "**Tier 2 — subjective judgment:** style, taste, and unevidenced concerns are advisory only. Log them; never use them as gates."
+Per authoritative `evidence-review-tiers` rule: "**Tier 1 — judgment with deterministic evidence:** a finding may block only when its attached artifact, failing test, or counterexample reproduces the failure. Without that evidence it is Tier 2." And: "**Tier 2 — subjective judgment:** style, taste, and unevidenced concerns are advisory only. Log them; never use them as gates."
 
 | Prefix | Meaning | Author Action |
 |--------|---------|---------------|
@@ -86,13 +86,13 @@ Per the authoritative `evidence-review-tiers` rule: "**Tier 1 — judgment with 
 | **Optional:** / **Consider:** | Suggestion | Tier 2 — worth considering, never required |
 | **FYI** | Informational only | No action needed — context for future reference |
 
-Use this exact vocabulary — Critical / Nit / Optional / FYI — everywhere in the review. Do not introduce a parallel severity scale.
+Use exact vocabulary — Critical / Nit / Optional / FYI — everywhere in review. Do not introduce parallel severity scale.
 
-This prevents authors from treating all feedback as mandatory, and prevents an unevidenced "Critical" label from functioning as a merge gate it has not earned.
+Prevents authors treating all feedback as mandatory; prevents unevidenced "Critical" label functioning as merge gate it has not earned.
 
 ### Step 5: Verify the Verification
 
-Check the author's verification story:
+Check author's verification story:
 
 ```
 - What tests were run?
@@ -119,7 +119,7 @@ Model A addresses the feedback
 Human makes the final call
 ```
 
-This catches issues that a single model might miss — different models have different blind spots.
+Catches issues single model might miss — different models have different blind spots.
 
 **Example prompt for a review agent:**
 ```
@@ -134,11 +134,11 @@ backing; otherwise it is Tier 2 and advisory.
 
 After any refactoring or implementation change, check for orphaned code:
 
-1. Identify code that is now unreachable or unused
+1. Identify code now unreachable or unused
 2. List it explicitly
 3. **Ask before deleting:** "Should I remove these now-unused elements: [list]?"
 
-Don't leave dead code lying around — it confuses future readers and agents. But don't silently delete things you're not sure about. When in doubt, ask.
+Don't leave dead code lying around — confuses future readers and agents. Don't silently delete things you're not sure about. When in doubt, ask.
 
 ```
 DEAD CODE IDENTIFIED:
@@ -150,46 +150,46 @@ DEAD CODE IDENTIFIED:
 
 ## Review Speed
 
-Slow reviews block entire teams. The cost of context-switching to review is less than the waiting cost imposed on others.
+Slow reviews block entire teams. Cost of context-switching to review is less than waiting cost imposed on others.
 
-- **Respond within one business day** — this is the maximum, not the target
-- **Ideal cadence:** Respond shortly after a review request arrives, unless deep in focused coding. A typical change should complete multiple review rounds in a single day
-- **Prioritize fast individual responses** over quick final approval. Quick feedback reduces frustration even if multiple rounds are needed
-- **Large changes:** Ask the author to split them rather than reviewing one massive changeset
+- **Respond within one business day** — maximum, not target
+- **Ideal cadence:** Respond shortly after review request arrives, unless deep in focused coding. Typical change should complete multiple review rounds in single day
+- **Prioritize fast individual responses** over quick final approval. Quick feedback reduces frustration even if multiple rounds needed
+- **Large changes:** Ask author to split rather than reviewing one massive changeset
 
 ## Handling Disagreements
 
-When resolving review disputes, apply this hierarchy:
+Resolving review disputes, apply hierarchy:
 
 1. **Technical facts and data** override opinions and preferences
-2. **Style guides** are the absolute authority on style matters
-3. **Software design** must be evaluated on engineering principles, not personal preference
-4. **Codebase consistency** is acceptable if it doesn't degrade overall health
+2. **Style guides** absolute authority on style matters
+3. **Software design** evaluated on engineering principles, not personal preference
+4. **Codebase consistency** acceptable if it doesn't degrade overall health
 
-**Don't accept "I'll clean it up later."** Experience shows deferred cleanup rarely happens. Require cleanup before submission unless it's a genuine emergency. If surrounding issues can't be addressed in this change, require filing a bug with self-assignment.
+**Don't accept "I'll clean it up later."** Deferred cleanup rarely happens. Require cleanup before submission unless genuine emergency. Surrounding issues can't be addressed in this change → require filing bug with self-assignment.
 
 ## Honesty in Review
 
-When reviewing code — whether written by you, another agent, or a human:
+Reviewing code — whether written by you, another agent, or human:
 
 - **Don't rubber-stamp.** "LGTM" without evidence of review helps no one.
 - **Don't soften real issues.** "This might be a minor concern" when it's a bug that will hit production is dishonest.
-- **Quantify problems when possible.** "This N+1 query will add ~50ms per item in the list" is better than "this could be slow."
-- **Push back on approaches with clear problems.** Sycophancy is a failure mode in reviews. If the implementation has issues, say so directly and propose alternatives.
-- **Accept override gracefully.** If the author has full context and disagrees, defer to their judgment. Comment on code, not people — reframe personal critiques to focus on the code itself.
+- **Quantify problems when possible.** "This N+1 query will add ~50ms per item in the list" beats "this could be slow."
+- **Push back on approaches with clear problems.** Sycophancy is failure mode in reviews. Implementation has issues → say so directly, propose alternatives.
+- **Accept override gracefully.** Author has full context and disagrees → defer to their judgment. Comment on code, not people — reframe personal critiques to focus on code itself.
 
 ## Dependency Discipline
 
 Part of code review is dependency review:
 
 **Before adding any dependency:**
-1. Does the existing stack solve this? (Often it does.)
-2. How large is the dependency? (Check bundle impact.)
-3. Is it actively maintained? (Check last commit, open issues.)
-4. Does it have known vulnerabilities? (`npm audit`)
-5. What's the license? (Must be compatible with the project.)
+1. Does existing stack solve this? (Often it does.)
+2. How large is dependency? (Check bundle impact.)
+3. Actively maintained? (Check last commit, open issues.)
+4. Known vulnerabilities? (`npm audit`)
+5. What's the license? (Must be compatible with project.)
 
-**Rule:** Prefer standard library and existing utilities over new dependencies. Every dependency is a liability.
+**Rule:** Prefer standard library and existing utilities over new dependencies. Every dependency is liability.
 
 ## The Review Checklist
 

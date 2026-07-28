@@ -1,6 +1,6 @@
 # Caching and Artifacts
 
-Caches make CI fast; artifacts move data between jobs and out of the run.
+Caches make CI fast; artifacts move data between jobs and out of run.
 
 ## `actions/cache` Basics
 
@@ -15,9 +15,9 @@ Caches make CI fast; artifacts move data between jobs and out of the run.
 ```
 
 Rules:
-- **Key on the lockfile hash**, never on dates or commit SHAs.
-- **`restore-keys`** provides a fallback when the exact key misses — use a prefix that's still reasonably specific.
-- **Scoped paths only** — cache `~/.npm`, not `node_modules` (the latter is faster to reinstall from a populated `~/.npm` than to restore).
+- **Key on lockfile hash**, never dates or commit SHAs.
+- **`restore-keys`** provides fallback when exact key misses — use prefix still reasonably specific.
+- **Scoped paths only** — cache `~/.npm`, not `node_modules` (latter faster to reinstall from populated `~/.npm` than to restore).
 - **One cache per tool**: don't bundle node_modules + build output + Docker layers in one cache.
 
 ## Setup Actions Already Cache
@@ -32,16 +32,16 @@ Rules:
     cache-dependency-path: package-lock.json
 ```
 
-Prefer this over hand-rolled `actions/cache` for language toolchains.
+Prefer over hand-rolled `actions/cache` for language toolchains.
 
 ## Build Caches
 
-For TypeScript / Vite / Next / Turborepo, cache the build output dir keyed on:
+For TypeScript / Vite / Next / Turborepo, cache build output dir keyed on:
 - Lockfile hash
 - Source file hash (for full incremental builds)
 - Tool version
 
-Turborepo / Nx have remote cache backends (S3, Vercel, Nx Cloud) — usually faster and more reliable than `actions/cache` once you're at scale.
+Turborepo / Nx have remote cache backends (S3, Vercel, Nx Cloud) — usually faster and more reliable than `actions/cache` at scale.
 
 ## Docker Layer Caching
 
@@ -53,14 +53,14 @@ Turborepo / Nx have remote cache backends (S3, Vercel, Nx Cloud) — usually fas
     cache-to: type=gha,mode=max
 ```
 
-`type=gha` uses the GitHub Actions cache backend transparently. `mode=max` caches all layers, not just the final stage.
+`type=gha` uses GitHub Actions cache backend transparently. `mode=max` caches all layers, not just final stage.
 
 ## Cache Hygiene
 
-- **Cache size limit**: 10 GB per repo. Caches are evicted LRU. If you push past the limit, older caches die.
-- **Cache scope**: caches are scoped to the branch + base branch. PRs see their own cache + the base branch's cache.
-- **Invalidation**: change the key when the cached content's shape changes (new tool version, new lockfile format).
-- **Don't cache secrets**, ever. Caches can be downloaded by any workflow run on the repo.
+- **Cache size limit**: 10 GB per repo. Caches evicted LRU. Push past limit → older caches die.
+- **Cache scope**: scoped to branch + base branch. PRs see own cache + base branch's cache.
+- **Invalidation**: change key when cached content's shape changes (new tool version, new lockfile format).
+- **Don't cache secrets**, ever. Caches downloadable by any workflow run on repo.
 
 ## Artifacts vs Cache
 
@@ -93,15 +93,15 @@ Turborepo / Nx have remote cache backends (S3, Vercel, Nx Cloud) — usually fas
 ```
 
 Rules:
-- **Always upload test reports / logs** with `if: always()` so failures are debuggable.
-- **Set `retention-days`** explicitly — the 90-day default is wasteful for high-volume repos.
-- **Unique names per matrix shard** to avoid collisions; merge in a downstream job.
-- **Don't upload `node_modules`** as an artifact — that's what cache is for.
+- **Always upload test reports / logs** with `if: always()` so failures debuggable.
+- **Set `retention-days`** explicitly — 90-day default wasteful for high-volume repos.
+- **Unique names per matrix shard** to avoid collisions; merge in downstream job.
+- **Don't upload `node_modules`** as artifact — that's what cache is for.
 
 ## Anti-Patterns
 
 - Caching secrets or signed artifacts.
 - Cache key based on `${{ github.run_id }}` — never hits.
-- Uploading the entire workspace as an artifact "just in case".
+- Uploading entire workspace as artifact "just in case".
 - 90-day retention on every artifact when 7 days would do.
-- Hand-rolled cache for tools where the setup action already handles it.
+- Hand-rolled cache for tools where setup action already handles it.

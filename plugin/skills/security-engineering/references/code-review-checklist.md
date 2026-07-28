@@ -8,7 +8,7 @@
 
 ## Authentication & Sessions
 - [ ] Passwords hashed with Argon2/bcrypt (not MD5/SHA1)
-- [ ] Session tokens have sufficient entropy (128+ bits)
+- [ ] Session tokens sufficient entropy (128+ bits)
 - [ ] Sessions invalidated on logout
 - [ ] MFA available for sensitive operations
 - [ ] JWT secrets validated at startup, expiry configured

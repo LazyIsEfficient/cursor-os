@@ -1,6 +1,6 @@
 # Pipeline Security Hardening
 
-CI runners execute privileged code on every push. Treat workflows as a supply-chain attack surface.
+CI runners execute privileged code on every push. Treat workflows as supply-chain attack surface.
 
 ## Pin Actions to Commit SHAs
 
@@ -12,10 +12,10 @@ CI runners execute privileged code on every push. Treat workflows as a supply-ch
 - uses: some/action@a1b2c3d4e5f6789012345678901234567890abcd
 ```
 
-- Tags are pointers; a compromised maintainer can re-point them.
-- SHAs are content-addressed; can't be silently changed.
-- Exception: `actions/*` from GitHub itself — major-version tags are acceptable but SHAs are still preferred.
-- Use Dependabot to keep SHAs current — it opens PRs with the new SHA so you review the diff.
+- Tags are pointers; compromised maintainer can re-point them.
+- SHAs content-addressed; can't be silently changed.
+- Exception: `actions/*` from GitHub itself — major-version tags acceptable, SHAs still preferred.
+- Use Dependabot to keep SHAs current — opens PRs with new SHA so you review diff.
 
 ## Permissions: Default Deny
 
@@ -34,7 +34,7 @@ jobs:
     ...
 ```
 
-Never rely on the org / repo default. Be explicit.
+Never rely on org / repo default. Be explicit.
 
 Common scopes:
 | Scope | Use for |
@@ -56,7 +56,7 @@ Common scopes:
 - run: echo "Title: ${{ github.event.pull_request.title }}"
 ```
 
-A PR title of `"; rm -rf $HOME; #` becomes shell code.
+PR title of `"; rm -rf $HOME; #` becomes shell code.
 
 ### ✅ Pass through env var
 
@@ -66,9 +66,9 @@ A PR title of `"; rm -rf $HOME; #` becomes shell code.
   run: echo "Title: $PR_TITLE"
 ```
 
-Env vars are not interpolated by the shell parser; the value is treated as data.
+Env vars not interpolated by shell parser; value treated as data.
 
-Apply the same pattern for any untrusted field: `head_ref`, `body`, `commit.message`, label names, comment bodies.
+Apply same pattern for any untrusted field: `head_ref`, `body`, `commit.message`, label names, comment bodies.
 
 ## `pull_request` vs `pull_request_target`
 
@@ -79,26 +79,26 @@ Apply the same pattern for any untrusted field: `head_ref`, `body`, `commit.mess
 | Has secrets on forks | No | **Yes** |
 | Safe by default | ✅ | ❌ |
 
-`pull_request_target` is required for some legitimate cases (labeling, automation that needs write tokens on PRs from forks). When using it:
-- **Never** check out the PR's head code.
-- If you must, check out the base, then run only **trusted** logic against PR metadata — never PR scripts, never `npm install`.
+`pull_request_target` required for some legitimate cases (labeling, automation needing write tokens on PRs from forks). When using it:
+- **Never** check out PR's head code.
+- If you must, check out base, then run only **trusted** logic against PR metadata — never PR scripts, never `npm install`.
 
 ## Third-Party Action Review
 
-Before adding a new third-party action:
-1. Check the publisher — verified org? Active maintenance?
-2. Read the source — what does it do at runtime? Network calls?
-3. Check for `node_modules/` committed at the SHA you're pinning — vendored code is what actually runs.
+Before adding new third-party action:
+1. Check publisher — verified org? Active maintenance?
+2. Read source — what does it do at runtime? Network calls?
+3. Check for `node_modules/` committed at SHA you're pinning — vendored code is what actually runs.
 4. Pin to SHA.
 5. Add to Dependabot grouping.
 
-Prefer first-party (`actions/*`, `aws-actions/*`, `google-github-actions/*`) when an equivalent exists.
+Prefer first-party (`actions/*`, `aws-actions/*`, `google-github-actions/*`) when equivalent exists.
 
 ## Runner Hardening
 
-- Use **GitHub-hosted runners** for untrusted code (PRs from forks). Self-hosted runners that handle PR code are an account-takeover vector.
+- Use **GitHub-hosted runners** for untrusted code (PRs from forks). Self-hosted runners handling PR code are account-takeover vector.
 - If you need self-hosted: **ephemeral runners only** (one job per runner, then destroyed). Never persistent runners for public repos.
-- Keep runner images patched — re-pin Ubuntu version when GitHub updates the image.
+- Keep runner images patched — re-pin Ubuntu version when GitHub updates image.
 
 ## Supply Chain Hygiene
 

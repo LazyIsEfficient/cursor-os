@@ -2,7 +2,7 @@
 
 ## What `unsafe` Actually Means
 
-`unsafe` is not an escape hatch from the borrow checker. The borrow checker runs inside `unsafe` blocks exactly as it does outside them. `unsafe` grants access to five capabilities the compiler cannot verify independently:
+`unsafe` is not escape hatch from borrow checker. Borrow checker runs inside `unsafe` blocks exactly as outside. `unsafe` grants access to five capabilities compiler cannot verify independently:
 
 | Superpower | What it allows |
 |---|---|
@@ -12,34 +12,34 @@
 | Implement unsafe traits | `unsafe impl Send for T`, `unsafe impl Sync for T`, etc. |
 | Access union fields | Reading a union field reinterprets the stored bytes |
 
-Everything else — move rules, borrow rules, lifetime checking, drop ordering — is enforced identically. Writing `unsafe { x.borrow() }` does not suppress a borrow-check error; it compiles only if the borrow is valid.
+Everything else — move rules, borrow rules, lifetime checking, drop ordering — enforced identically. Writing `unsafe { x.borrow() }` does not suppress borrow-check error; compiles only if borrow valid.
 
 ---
 
 ## When `unsafe` Is Justified
 
-Use `unsafe` when the invariant is real and provable, not when the borrow checker is inconvenient.
+Use `unsafe` when invariant is real and provable, not when borrow checker inconvenient.
 
 **Justified:**
-- FFI — calling C functions is inherently `unsafe`; there is no alternative
-- Zero-copy data structures where aliasing rules can be proven at the call site (e.g. splitting a slice into non-overlapping mutable halves)
-- Hot-path bounds elision when the proof is local and checkable (`get_unchecked` inside a loop whose bounds are already validated once)
-- Implementing `Send`/`Sync` for custom types with manually-managed thread safety (e.g. a wrapper around a C handle that is documented thread-safe)
-- Low-level primitives that require raw pointer manipulation (`Arc`, `Vec`, `MutexGuard` internals)
+- FFI — calling C functions is inherently `unsafe`; no alternative
+- Zero-copy data structures where aliasing rules provable at call site (e.g. splitting slice into non-overlapping mutable halves)
+- Hot-path bounds elision when proof is local and checkable (`get_unchecked` inside loop whose bounds already validated once)
+- Implementing `Send`/`Sync` for custom types with manually-managed thread safety (e.g. wrapper around C handle documented thread-safe)
+- Low-level primitives requiring raw pointer manipulation (`Arc`, `Vec`, `MutexGuard` internals)
 
 **Not justified:**
-- Borrow-checker pressure — that signals a design problem; restructure lifetimes or ownership instead
-- "It's obviously fine" — if it is obvious, write the `SAFETY` proof; if you cannot, it is not justified
-- Avoiding runtime cost speculatively — profile first; bounds checks are nearly free in non-hot code
+- Borrow-checker pressure — signals design problem; restructure lifetimes or ownership instead
+- "It's obviously fine" — if obvious, write `SAFETY` proof; cannot → not justified
+- Avoiding runtime cost speculatively — profile first; bounds checks nearly free in non-hot code
 
 ---
 
 ## The SAFETY Comment Requirement
 
-Every `unsafe` block and every `unsafe fn` declaration must be preceded by a `// SAFETY:` comment. This is not a style preference — it is the evidence record that the invariant has been thought through.
+Every `unsafe` block and every `unsafe fn` declaration must be preceded by `// SAFETY:` comment. Not style preference — evidence record that invariant has been thought through.
 
 ### Required content
-1. What invariant makes the operation safe
+1. What invariant makes operation safe
 2. Why that invariant holds at this specific call site
 
 ### Acceptable
@@ -69,9 +69,9 @@ let x = unsafe { *ptr };
 let x = unsafe { *ptr };
 ```
 
-These describe nothing. A comment that does not identify the specific invariant and its proof at the call site is not a SAFETY comment.
+These describe nothing. Comment not identifying specific invariant and its proof at call site is not SAFETY comment.
 
-### `unsafe fn` — document at the declaration
+### `unsafe fn` — document at declaration
 
 ```rust
 /// # Safety
@@ -84,15 +84,15 @@ unsafe fn borrow_raw<'a, T>(ptr: *const T) -> &'a T {
 }
 ```
 
-The `/// # Safety` doc section is the contract for callers. The `// SAFETY:` comment inside is the proof for the implementation.
+`/// # Safety` doc section is contract for callers. `// SAFETY:` comment inside is proof for implementation.
 
 ---
 
 ## Encapsulation Boundary Rules
 
-Unsafe implementation details must never leak through the public API. Safe callers must be unable to trigger UB.
+Unsafe implementation details must never leak through public API. Safe callers must be unable to trigger UB.
 
-### Wrap every `unsafe` block in a safe abstraction
+### Wrap every `unsafe` block in safe abstraction
 
 ```rust
 // Private: unsafe internals
@@ -122,7 +122,7 @@ pub fn split_checked<T>(slice: &mut [T], mid: usize) -> (&mut [T], &mut [T]) {
 
 ### The `unsafe trait` pattern
 
-Mark a trait `unsafe` when *implementors* must uphold an invariant the compiler cannot check. Users of the trait get a safe API; implementors take on the proof burden.
+Mark trait `unsafe` when *implementors* must uphold invariant compiler cannot check. Users of trait get safe API; implementors take proof burden.
 
 ```rust
 /// # Safety
@@ -149,13 +149,13 @@ unsafe impl GloballyUnique for Widget {
 | `*const T` as a view | `&T` or `&[T]` with correct lifetime |
 | Pointer + length pair | `&[T]` or a safe slice wrapper |
 
-Raw pointers carry no lifetime. The moment they cross the public API boundary the caller has no way to reason about validity.
+Raw pointers carry no lifetime. Moment they cross public API boundary caller has no way to reason about validity.
 
 ---
 
 ## Common Unsound Patterns
 
-These produce undefined behaviour. The compiler will not warn about most of them.
+These produce undefined behaviour. Compiler will not warn about most.
 
 ### Transmuting between types of different sizes
 
@@ -164,9 +164,9 @@ These produce undefined behaviour. The compiler will not warn about most of them
 let x: i64 = unsafe { std::mem::transmute(42i32) };
 ```
 
-Use `as` casts or `From`/`Into` instead. If you need `transmute`, sizes must match exactly. Consider `transmute_copy` only if you understand byte semantics.
+Use `as` casts or `From`/`Into` instead. Need `transmute` → sizes must match exactly. Consider `transmute_copy` only if you understand byte semantics.
 
-### Simultaneous `&mut T` and `&T` to the same data
+### Simultaneous `&mut T` and `&T` to same data
 
 ```rust
 let mut x = 42u32;
@@ -178,7 +178,7 @@ let m: &mut u32 = unsafe { &mut *(&mut x as *mut u32) };
 // Using r and m simultaneously is UB regardless of the unsafe block.
 ```
 
-The borrow checker enforces this in safe code. In `unsafe` you can construct both; using them together is still UB.
+Borrow checker enforces in safe code. In `unsafe` you can construct both; using together still UB.
 
 ### Raw pointer invalidation via reallocation
 
@@ -189,7 +189,7 @@ v.push(4);          // may reallocate; ptr is now dangling
 let _ = unsafe { *ptr };  // UB: ptr may point to freed memory
 ```
 
-Do not hold raw pointers into a `Vec` across any operation that may reallocate. Stabilise the buffer first (`reserve` the exact capacity, then confirm no reallocation will occur) or use indices.
+Do not hold raw pointers into `Vec` across any operation that may reallocate. Stabilise buffer first (`reserve` exact capacity, confirm no reallocation will occur) or use indices.
 
 ### `mem::forget` on types whose `Drop` releases resources
 
@@ -203,9 +203,9 @@ let mut md = std::mem::ManuallyDrop::new(my_file);
 unsafe { std::mem::ManuallyDrop::drop(&mut md) };
 ```
 
-`mem::forget` is safe (it cannot cause UB by itself), but pairing it with types that own resources causes resource leaks. Use `ManuallyDrop<T>` when you need precise drop timing.
+`mem::forget` is safe (cannot cause UB by itself), but pairing with types owning resources causes resource leaks. Use `ManuallyDrop<T>` when needing precise drop timing.
 
-### Casting `*const T` to `*mut T` through a shared reference
+### Casting `*const T` to `*mut T` through shared reference
 
 ```rust
 let x = 42u32;
@@ -216,20 +216,20 @@ let m = r as *const u32 as *mut u32;
 unsafe { *m = 99 };  // UB
 ```
 
-If you need mutation, the original binding must be `mut` and the pointer must be `*mut T` from the start. Never derive mutability from an immutable reference.
+Need mutation → original binding must be `mut`, pointer must be `*mut T` from start. Never derive mutability from immutable reference.
 
 ---
 
 ## `Send` and `Sync` as Unsafe Traits
 
-Auto-derived `Send` and `Sync` are correct for the vast majority of types. Writing `unsafe impl` is a manual proof.
+Auto-derived `Send` and `Sync` correct for vast majority of types. Writing `unsafe impl` is manual proof.
 
 ### `unsafe impl Send for T`
 
 You assert: *T can be transferred to another thread without UB.*
 
 Requires:
-- No raw pointers that alias data owned by another thread
+- No raw pointers aliasing data owned by another thread
 - No `Rc<_>` (non-atomic ref-count) or similar non-thread-safe handles
 - Any interior mutability uses synchronised primitives (`Mutex`, `RwLock`, atomics)
 
@@ -256,7 +256,7 @@ impl !Send for MyThreadLocal {}
 impl !Sync for MyThreadLocal {}
 ```
 
-Use negative impls (or wrap in `PhantomData<*mut ()>`) when the type inherently cannot cross threads — e.g. a type bound to a thread-local handle.
+Use negative impls (or wrap in `PhantomData<*mut ()>`) when type inherently cannot cross threads — e.g. type bound to thread-local handle.
 
 ---
 
@@ -288,7 +288,7 @@ pub fn compress(src: &[u8], dst: &mut Vec<u8>) -> Result<(), CompressError> {
 
 ### Layout compatibility: `#[repr(C)]`
 
-All types crossing an FFI boundary must be `#[repr(C)]`. Without it, Rust may reorder fields.
+All types crossing FFI boundary must be `#[repr(C)]`. Without it, Rust may reorder fields.
 
 ```rust
 #[repr(C)]
@@ -324,11 +324,11 @@ Never assume C callers pass valid pointers.
 | Rust string → C (owned, null-terminated) | `CString::new(s)?` |
 | Static C string literal | `c"hello"` (Rust 1.77+) |
 
-Never pass `&str` or `String` across FFI — they are not null-terminated and their layout is not C-compatible.
+Never pass `&str` or `String` across FFI — not null-terminated, layout not C-compatible.
 
 ### Lifetime documentation
 
-Raw pointers from C carry no lifetime information. Document the expected lifetime at the declaration:
+Raw pointers from C carry no lifetime information. Document expected lifetime at declaration:
 
 ```rust
 extern "C" {
@@ -347,15 +347,15 @@ extern "C" {
 cargo miri test
 ```
 
-Run this on any crate that contains `unsafe`. Make it a required CI job for `unsafe`-heavy crates.
+Run on any crate containing `unsafe`. Make required CI job for `unsafe`-heavy crates.
 
 ### What Miri detects
 
 - Use-after-free
 - Reads of uninitialised memory
 - Invalid pointer arithmetic (out-of-bounds, misaligned)
-- Violations of Stacked Borrows aliasing rules (detects the `&mut` + `&` simultaneous access pattern)
-- Data races (with `-Zmiri-track-raw-pointers` and the Miri race detector flag)
+- Violations of Stacked Borrows aliasing rules (detects `&mut` + `&` simultaneous access pattern)
+- Data races (with `-Zmiri-track-raw-pointers` and Miri race detector flag)
 
 ```sh
 MIRIFLAGS="-Zmiri-track-raw-pointers" cargo miri test
@@ -364,24 +364,24 @@ MIRIFLAGS="-Zmiri-track-raw-pointers" cargo miri test
 ### What Miri does not detect
 
 - Logic errors
-- Multi-threaded races without the race detector enabled
+- Multi-threaded races without race detector enabled
 - Hardware-specific behaviour (SIMD, memory-mapped I/O)
-- UB in code that is never exercised by the test suite
+- UB in code never exercised by test suite
 
 ### Practical workflow
 
 1. Add `unsafe`
-2. Write the `SAFETY` proof
+2. Write `SAFETY` proof
 3. Run `cargo miri test` locally
 4. Add `cargo miri test` to CI for that crate
 
-Miri is slow (expect 10–100× slower than native). Run it on unit tests, not integration tests with large data sets, unless you need the coverage.
+Miri is slow (expect 10–100× slower than native). Run on unit tests, not integration tests with large data sets, unless coverage needed.
 
 ---
 
 ## Soundness vs Safety
 
-These terms have precise meanings. Conflating them is a class of critical bug.
+Terms have precise meanings. Conflating them is class of critical bug.
 
 | Term | Definition |
 |---|---|
@@ -406,10 +406,10 @@ impl ByteBuf {
 }
 ```
 
-A caller who triggers use-after-free through `as_slice()` alone — using only safe code — has found an unsoundness. Fix: ensure the lifetime of the returned slice is tied to the `ByteBuf`, or take ownership of the allocation inside `ByteBuf` so it cannot be freed externally.
+Caller triggering use-after-free through `as_slice()` alone — using only safe code — has found unsoundness. Fix: tie lifetime of returned slice to `ByteBuf`, or take ownership of allocation inside `ByteBuf` so it cannot be freed externally.
 
 ### The standard
 
-- Unsoundness in a library's public API is equivalent to a memory-safety CVE.
-- Internal `unsafe` with provably correct invariants is acceptable.
-- When in doubt: reduce the public API surface, return owned types, and push the `unsafe` deeper.
+- Unsoundness in library's public API = memory-safety CVE equivalent.
+- Internal `unsafe` with provably correct invariants acceptable.
+- When in doubt: reduce public API surface, return owned types, push `unsafe` deeper.

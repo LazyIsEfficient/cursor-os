@@ -2,7 +2,7 @@
 
 ## Zero-Cost Abstractions as a Design Principle
 
-"Zero-cost" means no overhead compared to the equivalent hand-written C. It does **not** mean "free" — the computation still runs. Bjarne Stroustrup's original formulation: *"What you don't use, you don't pay for. What you do use, you couldn't hand-code better."*
+"Zero-cost" means no overhead vs equivalent hand-written C. Does **not** mean "free" — computation still runs. Stroustrup's original formulation: *"What you don't use, you don't pay for. What you do use, you couldn't hand-code better."*
 
 **Zero-cost in Rust:**
 
@@ -23,29 +23,29 @@
 | `.clone()` | Deep copy — cost is proportional to data |
 | `impl Trait` (return position) | Opaque type, not `dyn`, still zero-cost — do not confuse these |
 
-**Default rule:** reach for abstractions first. Verify with a profiler that they cost you before removing them. Premature concretization (removing iterators, inlining generics manually) trades maintainability for imaginary gains.
+**Default rule:** reach for abstractions first. Verify with profiler that they cost you before removing. Premature concretization (removing iterators, inlining generics manually) trades maintainability for imaginary gains.
 
 ---
 
 ## Measure First — The Profiling Workflow
 
-Never guess. Never profile a debug build. Follow this sequence:
+Never guess. Never profile debug build. Follow sequence:
 
 ### 1. Reproduce Under Realistic Load
-Synthetic microbenchmarks lie. Reproduce the actual access pattern, data size, and concurrency. A benchmark that runs on 10 items tells you nothing about 10 million.
+Synthetic microbenchmarks lie. Reproduce actual access pattern, data size, concurrency. Benchmark on 10 items tells nothing about 10 million.
 
 ### 2. Build for Release
 ```bash
 cargo build --release
 ```
-Debug builds disable inlining and optimisation. Profiling a debug build is measuring overhead, not your code.
+Debug builds disable inlining and optimisation. Profiling debug build measures overhead, not your code.
 
 ### 3. `cargo flamegraph` — Identify Hot Functions
 ```bash
 cargo install flamegraph
 cargo flamegraph --bin my-binary -- --args
 ```
-Produces a flamegraph SVG. Wide frames are hot. Look for:
+Produces flamegraph SVG. Wide frames are hot. Look for:
 - Unexpected `alloc::` / `Vec::` / `String::` calls in hot paths
 - `clone()` you didn't know was there
 - Synchronization (`Mutex::lock`, `Arc::drop`) dominating
@@ -65,18 +65,18 @@ debug = 1
 cargo install cargo-criterion  # optional CLI runner
 cargo bench
 ```
-Results stored in `target/criterion/`. Criterion handles warmup, statistical analysis, and regression detection automatically. Use it to compare two implementations with a controlled setup.
+Results in `target/criterion/`. Criterion handles warmup, statistical analysis, regression detection automatically. Use to compare two implementations with controlled setup.
 
 ### 5. DHAT — Heap Allocation Profiling
 ```bash
 valgrind --tool=dhat --dhat-out-file=dhat.out ./target/release/my-binary
 ```
-Or use the `dhat` crate for in-process profiling without Valgrind. Identifies:
+Or use `dhat` crate for in-process profiling without Valgrind. Identifies:
 - Total bytes allocated
 - Peak live bytes
 - Allocation call sites (which `Vec::push`, which `String::from`, etc.)
 
-Use when flamegraph shows `malloc`/`free` dominating but you need to find the Rust call sites.
+Use when flamegraph shows `malloc`/`free` dominating but you need Rust call sites.
 
 ### 6. `tokio-console` — Async Task Profiling
 ```bash
@@ -84,7 +84,7 @@ cargo install tokio-console
 # In your app: add tokio-console-subscriber, instrument with RUSTFLAGS="--cfg tokio_unstable"
 ```
 Identifies:
-- Tasks stuck in a `Pending` state (await never resolves)
+- Tasks stuck in `Pending` state (await never resolves)
 - Tasks with abnormally high poll counts (busy-looping)
 - Tasks holding wakers longer than expected
 
@@ -127,7 +127,7 @@ criterion_group!(benches, bench_fibonacci);
 criterion_main!(benches);
 ```
 
-`black_box()` prevents the compiler from constant-folding or dead-code-eliminating the work under measurement. Always wrap inputs and outputs.
+`black_box()` prevents compiler from constant-folding or dead-code-eliminating work under measurement. Always wrap inputs and outputs.
 
 ### Comparing Implementations
 
@@ -162,7 +162,7 @@ fn compare_implementations(c: &mut Criterion) {
 
 ### Avoiding Allocations in Hot Paths
 
-**Pre-allocate when size is known:**
+**Pre-allocate when size known:**
 ```rust
 // Bad: multiple reallocations
 let mut v = Vec::new();
@@ -192,7 +192,7 @@ use smallvec::SmallVec;
 // Stack-allocated for ≤4 elements; falls back to heap
 let mut v: SmallVec<[u8; 4]> = SmallVec::new();
 ```
-Use when collections are almost always small; avoids heap for the common case.
+Use when collections almost always small; avoids heap for common case.
 
 **`Cow<'_, T>` to avoid cloning read-mostly data:**
 ```rust
@@ -209,7 +209,7 @@ fn normalize(s: &str) -> Cow<'_, str> {
 
 ### Zero-Copy I/O with `bytes`
 
-`bytes::Bytes` is a reference-counted slice — `clone()` is O(1) (increments refcount, no memcpy).
+`bytes::Bytes` is reference-counted slice — `clone()` is O(1) (increments refcount, no memcpy).
 
 ```rust
 use bytes::{Bytes, BytesMut};
@@ -226,7 +226,7 @@ let frozen: Bytes = buf.freeze();
 let slice = frozen.clone();  // just bumps refcount
 ```
 
-Prefer `Bytes` over `Vec<u8>` anywhere the same buffer is passed to multiple consumers (HTTP response bodies, parsed frames, cache entries).
+Prefer `Bytes` over `Vec<u8>` anywhere same buffer passed to multiple consumers (HTTP response bodies, parsed frames, cache entries).
 
 ### String Performance
 
@@ -257,7 +257,7 @@ let shared: std::sync::Arc<str> = "hello".into();
 
 ### Iteration
 
-Iterator chains compile to the same code as hand-written loops. They do **not** materialise intermediate collections.
+Iterator chains compile to same code as hand-written loops. Do **not** materialise intermediate collections.
 
 ```rust
 // This does not allocate intermediate Vecs
@@ -268,7 +268,7 @@ let sum: u32 = data
     .sum();
 ```
 
-For data-parallel CPU work, swap `.iter()` for `.par_iter()` (Rayon) — no other changes needed:
+For data-parallel CPU work, swap `.iter()` for `.par_iter()` (Rayon) — no other changes:
 ```rust
 use rayon::prelude::*;
 
@@ -278,13 +278,13 @@ let sum: u32 = data.par_iter()
     .sum();
 ```
 
-Rayon uses a work-stealing thread pool sized to available CPUs. Only helps when work per element is non-trivial (> ~1µs) and data is large enough to amortize thread overhead.
+Rayon uses work-stealing thread pool sized to available CPUs. Only helps when work per element non-trivial (> ~1µs) and data large enough to amortize thread overhead.
 
 ---
 
 ## Async Performance Considerations
 
-- **Many tasks are cheap; wakeup storms are not.** Spawning millions of tasks is fine. Millions of tasks that wake each other repeatedly (broadcast, polling loops) can saturate the scheduler.
+- **Many tasks cheap; wakeup storms not.** Spawning millions of tasks fine. Millions of tasks waking each other repeatedly (broadcast, polling loops) can saturate scheduler.
 - **Yield correctly:**
   ```rust
   // Bad: sleep(0) has OS scheduler overhead
@@ -308,8 +308,8 @@ Rayon uses a work-stealing thread pool sized to available CPUs. Only helps when 
       });
   }
   ```
-- **Batch I/O.** Network round-trips dominate. A single `write_all` of 100 records costs ~the same as one record. Buffer writes with `BufWriter` or accumulate records before flushing.
-- **Avoid blocking in async context.** CPU-bound work blocks the executor thread. Use `tokio::task::spawn_blocking` to run it on a dedicated thread pool.
+- **Batch I/O.** Network round-trips dominate. Single `write_all` of 100 records costs ~same as one record. Buffer writes with `BufWriter` or accumulate records before flushing.
+- **Avoid blocking in async context.** CPU-bound work blocks executor thread. Use `tokio::task::spawn_blocking` to run on dedicated thread pool.
 
 ---
 
@@ -332,19 +332,19 @@ debug = 1          # strip = false equivalent; keeps symbol names for profiling
 | `"thin"` | Moderate increase | Good (~5–15%) |
 | `"fat"` | Slow | Best, diminishing returns vs thin |
 
-Use `codegen-units = 1` only for final production binaries or benchmarks. It makes incremental builds impractical.
+Use `codegen-units = 1` only for final production binaries or benchmarks. Makes incremental builds impractical.
 
 ---
 
 ## When NOT to Optimise
 
-- Before you have a measurable, reproducible regression. Guessing the bottleneck is almost always wrong.
-- When the bottleneck is I/O. If `cargo flamegraph` shows your hot path is `epoll_wait` or `read`, CPU optimisation is noise.
-- When the change makes the code materially harder to maintain. If you must — add a comment explaining **what** you measured and **why** this form is faster:
+- Before measurable, reproducible regression exists. Guessing bottleneck almost always wrong.
+- When bottleneck is I/O. `cargo flamegraph` shows hot path is `epoll_wait` or `read` → CPU optimisation is noise.
+- When change makes code materially harder to maintain. If you must — add comment explaining **what** you measured and **why** this form is faster:
   ```rust
   // PERF: avoid allocation in tight loop; criterion bench showed 3x improvement
   // over returning Vec<u8>. See benches/frame_parse.rs.
   fn decode_frame(buf: &[u8], out: &mut Vec<u8>) { /* ... */ }
   ```
 
-**Optimisation debt is real.** Unsafe transmutes, manual SIMD, and cache-aligned structs make the code reviewer's job harder and introduce correctness risk. Pay only when the profiler demands it.
+**Optimisation debt is real.** Unsafe transmutes, manual SIMD, cache-aligned structs make code reviewer's job harder, introduce correctness risk. Pay only when profiler demands it.

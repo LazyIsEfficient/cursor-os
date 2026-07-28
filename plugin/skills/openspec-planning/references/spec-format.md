@@ -1,8 +1,8 @@
 # OpenSpec artifact format
 
-Verified against `openspec` CLI v1.6.0 (`@fission-ai/openspec`). When the
+Verified against `openspec` CLI v1.6.0 (`@fission-ai/openspec`). When
 installed CLI differs, trust `openspec instructions <artifact> --change <id>`
-— it prints the schema's live template and rules per artifact.
+— it prints schema's live template and rules per artifact.
 
 ## Repository layout
 
@@ -20,8 +20,8 @@ openspec/
     └── specs/<domain>/spec.md     # deltas against main specs
 ```
 
-`dispatch/` is a cursor-harness extension, not an upstream artifact; the CLI
-ignores unknown files in the change directory.
+`dispatch/` is cursor-harness extension, not upstream artifact; CLI
+ignores unknown files in change directory.
 
 ## proposal.md
 
@@ -43,7 +43,7 @@ alternatives), `## Risks / Trade-offs`, optionally `## Migration Plan`,
 Delta operations as `##` headers:
 
 - `## ADDED Requirements` — new behavior.
-- `## MODIFIED Requirements` — changed behavior; MUST copy the entire existing
+- `## MODIFIED Requirements` — changed behavior; MUST copy entire existing
   requirement block and edit it (partial content loses detail at archive).
 - `## REMOVED Requirements` — MUST include `**Reason**` and `**Migration**`.
 - `## RENAMED Requirements` — FROM:/TO: format only.
@@ -59,13 +59,13 @@ Requirement format:
 - **THEN** <expected outcome>
 ```
 
-Rules the CLI enforces: every requirement needs at least one scenario;
+Rules CLI enforces: every requirement needs at least one scenario;
 scenarios MUST use exactly four hashtags (`####`); a change MUST contain at
 least one delta or even plain `openspec validate <id>` fails. MODIFIED header
-text must match the existing requirement (whitespace-insensitive). A scenario
-at the wrong heading level (e.g. three hashtags) is dropped from parsing —
-the CLI emits an INFO that the header is ignored, then validation fails with
-an explicit `ADDED "<name>" must include at least one scenario` ERROR and
+text must match existing requirement (whitespace-insensitive). Scenario
+at wrong heading level (e.g. three hashtags) dropped from parsing —
+CLI emits INFO that header is ignored, then validation fails with
+explicit `ADDED "<name>" must include at least one scenario` ERROR and
 Next-steps guidance.
 
 ## tasks.md
@@ -77,10 +77,10 @@ Next-steps guidance.
 - [ ] 1.2 <task description>
 ```
 
-Every task is a `- [ ] X.Y` checkbox — the apply phase parses this format to
-track progress; non-checkbox lines are not tracked. Group related tasks under
-numbered `##` headings; order by dependency. Completed tasks are checked
-(`- [x]`). Harness extension: append the dispatch brief reference to each
+Every task is `- [ ] X.Y` checkbox — apply phase parses this format to
+track progress; non-checkbox lines not tracked. Group related tasks under
+numbered `##` headings; order by dependency. Completed tasks checked
+(`- [x]`). Harness extension: append dispatch brief reference to each
 dispatchable item, e.g. `- [ ] 2.1 Implement parser (brief: dispatch/T-parser.md)`.
 
 ## Main specs — openspec/specs/<domain>/spec.md

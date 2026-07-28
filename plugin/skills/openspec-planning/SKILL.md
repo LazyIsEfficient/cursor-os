@@ -5,25 +5,25 @@ description: Plans engineering changes as OpenSpec artifacts — proposals, spec
 
 # OpenSpec planning
 
-All engineering planning artifacts live on disk under `openspec/` in the
-consumer repository root. The chat-YAML brief and chat-YAML task DAG are
-superseded — a plan that exists only in chat is not a plan.
+All engineering planning artifacts live on disk under `openspec/` in
+consumer repository root. Chat-YAML brief and chat-YAML task DAG
+superseded — plan existing only in chat is not a plan.
 
 ## Prerequisite (hard stop)
 
-The `openspec` CLI is an external prerequisite like `git` or `gh` — never a
+`openspec` CLI is external prerequisite like `git` or `gh` — never a
 package.json dependency. Check `command -v openspec` (or
-`openspec --version`). If missing, tell the user to run
+`openspec --version`). Missing → tell user to run
 `npm install -g @fission-ai/openspec` (requires Node >= 20.19) and stop until
-it is available. CLI validation is Tier 0 — never hand-validate artifact
-format. The CLI prints a telemetry notice on every invocation; it collects
-anonymous usage stats unless the user opts out with `OPENSPEC_TELEMETRY=0` —
-mention this when instructing the install.
+available. CLI validation is Tier 0 — never hand-validate artifact
+format. CLI prints telemetry notice on every invocation; collects
+anonymous usage stats unless user opts out with `OPENSPEC_TELEMETRY=0` —
+mention this when instructing install.
 
-If the consumer repository has no `openspec/` directory, run
+Consumer repository has no `openspec/` directory → run
 `openspec init --tools cursor` there first. In THIS harness repository do not
-run init (it writes upstream tool files that collide with the plugin layout);
-the dogfooded tree is maintained by hand.
+run init (writes upstream tool files colliding with plugin layout);
+dogfooded tree maintained by hand.
 
 ## Workflow
 
@@ -35,31 +35,31 @@ the dogfooded tree is maintained by hand.
    writes `tasks.md` (checkbox groups), delta `specs/<domain>/spec.md` for
    behavior contracts, and one dispatch brief per task at
    `dispatch/<task-id>.md`.
-3. **Validate** — `openspec validate <id> --strict`. Fix what the CLI reports
-   and re-run until clean. Validation is whole-change and fails until at
-   least one spec delta exists, so it becomes a hard gate after the plan step
-   and before any dispatch.
+3. **Validate** — `openspec validate <id> --strict`. Fix what CLI reports,
+   re-run until clean. Validation is whole-change and fails until at
+   least one spec delta exists — becomes hard gate after plan step,
+   before any dispatch.
 4. **Dispatch** — one Cursor `Task` per task, dispatched as parallel calls
-   wave by wave in dependency order; each Task prompt is built from its
+   wave by wave in dependency order; each Task prompt built from its
    `dispatch/<task-id>.md` file. Implementers check off `tasks.md` items as
    they complete.
-5. **Implement + gate** — the gate DAG and Task dispatch mechanics are
+5. **Implement + gate** — gate DAG and Task dispatch mechanics
    unchanged ([gate-dag.md](../../references/gate-dag.md)).
-6. **Archive** — after the PR merges, `openspec archive <id> -y` merges deltas
-   into `openspec/specs/` and moves the change to `changes/archive/`. Never
+6. **Archive** — after PR merges, `openspec archive <id> -y` merges deltas
+   into `openspec/specs/` and moves change to `changes/archive/`. Never
    archive before merge.
 
 ## Dispatch brief contract
 
-Every dispatchable task in `tasks.md` references a brief file
-`openspec/changes/<id>/dispatch/<task-id>.md` containing the cold-context
-fields an implementation agent requires: goal, files_read, files_write,
+Every dispatchable task in `tasks.md` references brief file
+`openspec/changes/<id>/dispatch/<task-id>.md` containing cold-context
+fields implementation agent requires: goal, files_read, files_write,
 dependencies, conflicts, acceptance, verification — plus optional
-`subagent_type` (`engineer` or a stack specialist name; defaults to
-`engineer`). A `tasks.md` item without its brief file is not dispatchable.
+`subagent_type` (`engineer` or stack specialist name; defaults to
+`engineer`). `tasks.md` item without its brief file is not dispatchable.
 
 Formats and lifecycle detail:
 [references/spec-format.md](references/spec-format.md),
-[references/change-lifecycle.md](references/change-lifecycle.md). When the
+[references/change-lifecycle.md](references/change-lifecycle.md). When
 installed CLI disagrees with these references, `openspec instructions
-<artifact>` is the live source of truth.
+<artifact>` is live source of truth.

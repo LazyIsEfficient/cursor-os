@@ -2,12 +2,12 @@
 
 ## Step 1: Intake & Parse
 
-Read the source content. Identify content type automatically or confirm with user:
+Read source content. Identify content type automatically or confirm with user:
 - HTML file → landing page or form page
 - Markdown / plain text → email or ad copy
-- If ambiguous, ask: "Is this a landing page, email sequence, ad copy, or form page?"
+- Ambiguous → ask: "Is this a landing page, email sequence, ad copy, or form page?"
 
-Extract all optimizable elements. List them back to user:
+Extract all optimizable elements. List back to user:
 ```
 Found 5 elements to optimize:
 1. Hero headline: "We help B2B companies grow"
@@ -29,22 +29,22 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 ## Step 3: Run Optimization Rounds
 
-For each element, run the round structure from `references/round-structure.md`.
+For each element, run round structure from `references/round-structure.md`.
 
-**Critical API efficiency rule:** ALWAYS batch all variants into a single prompt. Never call the API once per variant. A round with 10 variants = 1 API call.
+**Critical API efficiency rule:** ALWAYS batch all variants into single prompt. Never call API once per variant. Round with 10 variants = 1 API call.
 
 Model preference (in order):
 1. `claude-sonnet-4-5` (preferred — fast + smart)
 2. `claude-opus-4` (if highest quality needed)
-3. Any claude-3.5+ model if the above aren't available
+3. Any claude-3.5+ model if above unavailable
 
 ## Step 4: Cross-Breed (Multi-Element)
 
 After all elements have winners:
-1. Assemble the top winner from each element into a complete unit
-2. Generate 5 holistic variants that naturally combine the winning elements
-3. Score the complete units (not just individual parts)
-4. Pick the winner with the highest holistic score
+1. Assemble top winner from each element into complete unit
+2. Generate 5 holistic variants naturally combining winning elements
+3. Score complete units (not just individual parts)
+4. Pick winner with highest holistic score
 
 ## Step 5: Write Output Files
 

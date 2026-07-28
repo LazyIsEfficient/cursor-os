@@ -1,6 +1,6 @@
 # OIDC and Secrets
 
-Long-lived cloud credentials in CI are a liability. OIDC federation lets a workflow assume a cloud role for the duration of a single run, with claims about the repo, branch, and environment baked into the trust policy.
+Long-lived cloud credentials in CI are a liability. OIDC federation lets workflow assume cloud role for duration of single run, with claims about repo, branch, environment baked into trust policy.
 
 ## OIDC to AWS
 
@@ -27,9 +27,9 @@ Long-lived cloud credentials in CI are a liability. OIDC federation lets a workf
 
 Critical: scope `sub` as **narrowly as possible**:
 - `repo:org/repo:ref:refs/heads/main` — only main branch
-- `repo:org/repo:environment:production` — only when the prod environment is in use
+- `repo:org/repo:environment:production` — only when prod environment in use
 - `repo:org/repo:pull_request` — for PR validation
-- **Avoid** `repo:org/repo:*` — that grants any branch / PR / tag.
+- **Avoid** `repo:org/repo:*` — grants any branch / PR / tag.
 
 ### Workflow Side
 
@@ -60,29 +60,29 @@ jobs:
     service_account: deploy@PROJECT.iam.gserviceaccount.com
 ```
 
-Same rules apply: scope the provider's attribute condition to specific repos / branches / environments.
+Same rules: scope provider's attribute condition to specific repos / branches / environments.
 
 ## Repository / Environment Secrets
 
-When you genuinely need a secret (third-party API key, signing key):
+When genuinely needing a secret (third-party API key, signing key):
 
 - **Environment secrets** > repo secrets > org secrets. Smaller scope = smaller blast radius.
 - **Environment protection rules**: required reviewers, wait timers, branch restrictions.
-- **Never read secrets in `pull_request` workflows from forks** — GitHub correctly withholds them, but be sure your workflow doesn't `pull_request_target` around it.
-- **Rotate on a schedule** and on every contributor offboarding.
+- **Never read secrets in `pull_request` workflows from forks** — GitHub correctly withholds them; ensure workflow doesn't `pull_request_target` around it.
+- **Rotate on schedule** and on every contributor offboarding.
 
 ## Anti-Patterns
 
-- **AWS access keys in repo secrets** for any account that can touch production.
-- **`AWS_*` env vars set at the workflow level** — they leak into every step, including ones that run untrusted code.
-- **Re-using one IAM role for all environments** — a bug in dev should not be able to touch prod.
-- **`if: github.actor == 'someone'`** as an authz check — actor is spoofable in some contexts; use environment protection rules.
-- **Echoing the OIDC token** for "debugging". It's a credential.
-- **Wide `sub` claims** like `repo:org/repo:*` — defeats the point of OIDC.
+- **AWS access keys in repo secrets** for any account touching production.
+- **`AWS_*` env vars set at workflow level** — leak into every step, including ones running untrusted code.
+- **Re-using one IAM role for all environments** — bug in dev must not touch prod.
+- **`if: github.actor == 'someone'`** as authz check — actor spoofable in some contexts; use environment protection rules.
+- **Echoing OIDC token** for "debugging". It's a credential.
+- **Wide `sub` claims** like `repo:org/repo:*` — defeats point of OIDC.
 
 ## Verification Checklist
 
-Before merging a workflow that touches cloud:
+Before merging workflow touching cloud:
 - [ ] Uses OIDC, not access keys
 - [ ] `sub` claim scoped to exact ref / environment
 - [ ] `id-token: write` granted at job level, not workflow level
