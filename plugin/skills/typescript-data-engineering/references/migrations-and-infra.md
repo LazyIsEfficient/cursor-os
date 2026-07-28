@@ -10,7 +10,6 @@
 ### Prisma Migrations
 
 ```bash
-# Generate migration from schema changes
 npx prisma migrate dev --name descriptive_migration_name
 
 # Apply migrations in CI/production (Cloud Build)
@@ -22,10 +21,8 @@ Cloud Build config: `packages/prisma/cloudbuild.migrate.yaml`
 ### Drizzle Migrations
 
 ```bash
-# Generate migration
 npx drizzle-kit generate
 
-# Apply migration
 npx drizzle-kit migrate
 ```
 

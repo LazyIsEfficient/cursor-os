@@ -30,7 +30,6 @@ Clean only records your tests create — never truncate seed data:
 
 ```typescript
 beforeEach(async () => {
-  // Clean only test-created records
   await testPrisma.pointTransaction.deleteMany({})
   await testPrisma.project.deleteMany({ where: { slug: { startsWith: 'test-' } } })
 })

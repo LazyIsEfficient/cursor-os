@@ -1,6 +1,6 @@
 ---
 name: typescript-analytics
-description: "Use when implementing analytics with PostHog in a TypeScript app — capturing events, identifying users, adding feature flags, tracking errors, or wiring API lifecycle telemetry. Triggers on edits to analytics integration files, or mentions of \"PostHog\", \"analytics\", \"feature flag\", \"event tracking\", \"capture\", \"identify\", \"A/B test\", or \"experiment\"."
+description: "Use when implementing analytics with PostHog in a TypeScript app — capturing events, identifying users, adding feature flags, tracking errors, or wiring API lifecycle telemetry. Triggers on edits to analytics integration files or mentions of \"PostHog\", \"analytics\", \"feature flag\", \"event tracking\", \"capture\", \"identify\", \"A/B test\", or \"experiment\"."
 ---
 
 # Analytics Engineering (PostHog + TypeScript)

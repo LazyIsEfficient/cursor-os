@@ -93,15 +93,11 @@ Use `authTestHelpers` from shared test-utils for all auth state:
 ```typescript
 import { authTestHelpers } from '@/app/api/v1/shared/test-utils/mocks/authentication-mock'
 
-// Mock an authenticated user
 authTestHelpers.mockAuthenticatedUser(userId, email?, walletAddress?)
 
-// Mock unauthenticated state
 authTestHelpers.mockUnauthenticatedUser()
 
-// Mock an auth error
 authTestHelpers.mockAuthenticationError('Session expired')
 
-// Reset auth mocks between tests
 authTestHelpers.clearMocks()
 ```

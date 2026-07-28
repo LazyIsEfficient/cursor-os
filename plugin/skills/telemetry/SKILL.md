@@ -1,6 +1,6 @@
 ---
 name: telemetry
-description: Internal utility for the skills library itself — opt-in, local-first, privacy-respecting usage telemetry and update checks. Provides version checking, usage logging, and usage reporting for the skills in this repo. Use only when asked to view skill usage stats, configure telemetry opt-in/out, wire a skill to log its own runs, or check for skill updates.
+description: Internal utility for the skills library itself — opt-in, local-first, privacy-respecting usage telemetry and update checks. Provides version checking, usage logging, and usage reporting for skills in this repo. Use only when asked to view skill usage stats, configure telemetry opt-in/out, wire a skill to log its own runs, or check for skill updates.
 ---
 
 # Telemetry

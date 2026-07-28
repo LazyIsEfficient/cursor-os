@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Dispatch as an isolated-context, read-only subagent to audit a diff for security defects against a cold-context brief, returning tiered findings and a ship_ready verdict. Dispatch only after local verification has passed, and in parallel with the code-reviewer agent, before declaring ship-ready. Requires a brief declaring the task ID, threat surface, diff or paths under audit, files_read, and acceptance criteria. Loads the security-engineering skill for the audit method and tier vocabulary; not a substitute for reading that skill inline.
+description: Dispatch as isolated-context, read-only subagent to audit a diff for security defects against a cold-context brief, returning tiered findings and a ship_ready verdict. Dispatch only after local verification has passed, in parallel with the code-reviewer agent, before declaring ship-ready. Requires a brief declaring task ID, threat surface, diff or paths under audit, files_read, and acceptance criteria. Loads the security-engineering skill for audit method and tier vocabulary; not a substitute for reading that skill inline.
 readonly: true
 ---
 

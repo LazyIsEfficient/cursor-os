@@ -5,7 +5,6 @@
 Full keyword intelligence pipeline. Requires `AHREFS_TOKEN` + GSC auth.
 
 ```bash
-# Run the full brief
 python scripts/content_attack_brief.py
 ```
 
@@ -26,7 +25,6 @@ python scripts/content_attack_brief.py
 Google Search Console API client. Works as CLI or importable library.
 
 ```bash
-# CLI usage
 python scripts/gsc_client.py --queries 50 --days 28
 python scripts/gsc_client.py --striking                    # Striking distance keywords (pos 4-20)
 python scripts/gsc_client.py --pages 100 --days 7
@@ -37,7 +35,6 @@ python scripts/gsc_client.py --json --queries 25           # JSON output
 ```
 
 ```python
-# Library usage
 from gsc_client import GSCClient
 
 gsc = GSCClient()

@@ -7,7 +7,6 @@ Events use `domain:action` pattern with enum:
 ```typescript
 // libs/posthog/constants.ts
 export enum EVENTS {
-  // Auth
   SIGN_IN_CLICKED = 'sign_in:clicked',
   SIGN_IN = 'sign_in',
   LOGOUT_CLICKED = 'logout:clicked',
@@ -16,12 +15,10 @@ export enum EVENTS {
   LINK_WALLET_SUCCESS = 'link_wallet:success',
   LINK_WALLET_ERROR = 'link_wallet:error',
 
-  // Quests
   QUEST_CARD_CLICKED = 'quest:card_clicked',
   QUEST_ENROLLED = 'quest:enrolled',
   QUEST_COMPLETED = 'quest:completed',
 
-  // Games
   GAME_CARD_CLICKED = 'game:card_clicked',
 
   // Token operations (each follows CTA → Success → Error pattern)
@@ -110,7 +107,6 @@ const response = await apiClient.activities.enrollActivity({
 ## Manual Event Capture Example
 
 ```typescript
-// Token claim flow
 const handleClaim = async () => {
   capturePostHogEvent(EVENTS.CLAIM_CTA_CLICKED, {
     tokenSlug: slug,

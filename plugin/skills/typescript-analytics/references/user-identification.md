@@ -9,13 +9,11 @@ export default function PosthogTrackIdentity(): null {
 
   useEffect(() => {
     if (isAuthenticated && user?.id && user?.email) {
-      // Identify user
       posthog.identify(user.id, {
         id: user.id,
         email: user.email,
       })
 
-      // Track group membership
       user.groups?.forEach((group) => {
         if (group?.slug) {
           posthog.group('group', group.slug)

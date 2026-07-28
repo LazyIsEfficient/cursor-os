@@ -22,7 +22,6 @@ volume, story points, or feature counts.
 This is a Claude Code skill — there are no scripts to install. Drive it from `SKILL.md`:
 
 ```bash
-# 1. Count the codebase (whichever counter is installed)
 tokei .            # or: cloc --vcs=git .
 
 # 2. Hand the codebase + LOC breakdown to Claude Code and follow the

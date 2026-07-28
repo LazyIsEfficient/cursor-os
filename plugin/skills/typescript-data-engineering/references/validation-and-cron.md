@@ -16,7 +16,6 @@ const EventPayloadSchema = z.object({
 
 type EventPayload = z.infer<typeof EventPayloadSchema>
 
-// Validate at ingestion boundary
 const validated = EventPayloadSchema.parse(rawEvent)
 ```
 

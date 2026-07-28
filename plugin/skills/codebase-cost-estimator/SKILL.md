@@ -1,6 +1,6 @@
 ---
 name: codebase-cost-estimator
-description: "Estimate the full development cost of an existing codebase from lines of code, architectural complexity, and team-composition overhead. Use for 'how much would this cost to build', 'what did this codebase cost', development-cost or build-cost estimates, calendar-time estimates, and Claude/AI ROI on a delivered codebase. Estimates by measured LOC and complexity, not by ticket volume."
+description: "Estimate full development cost of an existing codebase from lines of code, architectural complexity, team-composition overhead. Use for 'how much would this cost to build', 'what did this codebase cost', development-cost or build-cost estimates, calendar-time estimates, and Claude/AI ROI on a delivered codebase. Estimates by measured LOC and complexity, not ticket volume."
 ---
 
 # Codebase Cost Estimator

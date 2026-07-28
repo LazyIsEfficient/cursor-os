@@ -70,16 +70,12 @@ Turns sales call transcripts into structured intelligence. Works with the Gong A
 - **Follow-up drafts** — personalized outbound suggestions based on what happened on the call
 
 ```bash
-# Analyze a transcript file
 python scripts/gong_insight_pipeline.py --file transcript.txt
 
-# Analyze a directory of transcripts
 python scripts/gong_insight_pipeline.py --dir ./transcripts/ --content-topics
 
-# Pull from Gong API (last 7 days)
 python scripts/gong_insight_pipeline.py --gong --days 7
 
-# Full output with follow-ups
 python scripts/gong_insight_pipeline.py --file call.txt --follow-ups --output insights.json
 
 # Example output:
@@ -116,16 +112,12 @@ The "prove content ROI" tool. Maps blog posts, videos, podcasts, and webinars to
 - Top performers ranked by attributed revenue
 
 ```bash
-# Full attribution report (linear model)
 python scripts/revenue_attribution.py --report
 
-# Time-decay model (more credit to recent touchpoints)
 python scripts/revenue_attribution.py --report --model time-decay
 
-# Content gaps (which funnel stages are uncovered?)
 python scripts/revenue_attribution.py --gaps
 
-# CPA by content type
 python scripts/revenue_attribution.py --cpa --costs content_costs.json
 
 # Example output:
@@ -164,16 +156,12 @@ Pulls from all four data sources (GA4, HubSpot, Ahrefs, Gong) and generates a un
 - **Period comparison** — month-over-month, quarter-over-quarter, or year-over-year
 
 ```bash
-# Console summary
 python scripts/client_report_generator.py --client "Acme Corp"
 
-# Full markdown report
 python scripts/client_report_generator.py --client "Acme Corp" --format markdown --output report.md
 
-# JSON for dashboards/slides
 python scripts/client_report_generator.py --client "Acme Corp" --format json --anomalies
 
-# Skip sources you don't use
 python scripts/client_report_generator.py --client "Acme Corp" --skip gong,ahrefs
 
 # Example output:
@@ -216,7 +204,6 @@ cp .env.example .env
 All tools ship with built-in sample data and fall back gracefully when API keys aren't configured. Try them out of the box:
 
 ```bash
-# Analyze a transcript
 echo "Prospect: That's more than we budgeted for this quarter.
 Rep: I understand. What range were you expecting?
 Prospect: We were looking at HubSpot too, they quoted us around 50k.
@@ -224,10 +211,8 @@ Rep: Makes sense. Our ROI calculator shows 3x return in year one." > sample.txt
 
 python scripts/gong_insight_pipeline.py --file sample.txt --follow-ups
 
-# Run attribution report (uses sample data without API keys)
 python scripts/revenue_attribution.py --report --gaps
 
-# Generate client report (uses sample data without API keys)
 python scripts/client_report_generator.py --client "Demo Corp" --anomalies
 ```
 

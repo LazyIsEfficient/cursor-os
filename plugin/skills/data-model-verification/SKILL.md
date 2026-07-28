@@ -1,6 +1,6 @@
 ---
 name: data-model-verification
-description: Adversarially verifies DATA_MODEL.md property rows against cited Source files. Use after data-model-documenter when DATA_MODEL.md changed — inventories each property in added/changed catalog sections and classifies VERIFIED / REFUTED / UNVERIFIABLE. Triggers on "verify DATA_MODEL", "check catalog against source", "data model verification". For a dispatched review against a cold-context brief — use the data-model-verifier agent. Not when authoring the catalog — use data-model-documentation. Not for general code review — use code-reviewer.
+description: Adversarially verifies DATA_MODEL.md property rows against cited Source files. Use after data-model-documenter when DATA_MODEL.md changed — inventories each property in added/changed catalog sections, classifies VERIFIED / REFUTED / UNVERIFIABLE. Triggers on "verify DATA_MODEL", "check catalog against source", "data model verification". For a dispatched review against a cold-context brief — use the data-model-verifier agent. Not when authoring the catalog — use data-model-documentation. Not for general code review — use code-reviewer.
 ---
 
 # Data Model Verification
