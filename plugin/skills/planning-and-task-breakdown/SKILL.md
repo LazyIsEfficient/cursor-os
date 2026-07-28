@@ -55,7 +55,7 @@ history executes from it. Reference brief from its `tasks.md` item, e.g.
 5. Keep independent tasks in same wave. Dispatch parallel work as separate
    Cursor Task calls; do not invent or prescribe Task arguments.
 6. Confirm every dependency and conflict names existing stable ID,
-   graph acyclic, and at least one task has `dependencies: []`.
+   graph is acyclic, and at least one task has `dependencies: []`.
 7. Run `openspec validate <id> --strict` — MUST exit 0 before any dispatch.
    Never hand-validate format.
 

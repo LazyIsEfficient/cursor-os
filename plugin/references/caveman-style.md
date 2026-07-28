@@ -20,6 +20,7 @@ Compression never touches these. Violation = blocking error.
 - Normative directives: NEVER / MUST / ALWAYS / SHALL keep full force. Do not soften to "should" or "avoid".
 - Code blocks — unchanged, byte for byte.
 - Exact file paths, command invocations, flag names.
+- Test-enforced phrases — orchestration/validator tests assert exact wording (e.g. "graph is acyclic", "requires a reproducible"). If compression breaks a test, restore the phrase; tests are the contract.
 - Numbered protocol steps — order and count preserved.
 - Cross-references — every link target preserved.
 - All information content — every rule, exception, edge case. Cut words, never meaning.
