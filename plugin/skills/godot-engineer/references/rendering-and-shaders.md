@@ -1,12 +1,12 @@
 # Rendering and Shaders
 
-Godot 4 introduced a new renderer (Vulkan with three profiles: Forward+, Mobile, Compatibility) that's a substantial improvement over Godot 3's GLES backend. This file covers how Godot renders things, the major concepts you need to engineer with, and the basics of shader work.
+Godot 4 introduced new renderer (Vulkan with three profiles: Forward+, Mobile, Compatibility), substantial improvement over Godot 3's GLES backend. File covers how Godot renders things, major concepts you need to engineer with, basics of shader work.
 
-This is *not* a graphics programming course. It's the practical level a Godot engineer needs: how to use the renderer well, how to write basic shaders when you need them, and how to avoid the common performance and visual pitfalls.
+*Not* a graphics programming course. Practical level Godot engineer needs: how to use renderer well, how to write basic shaders when needed, how to avoid common performance and visual pitfalls.
 
 ## The Three Renderers
 
-Godot 4 ships with three rendering backends:
+Godot 4 ships three rendering backends:
 
 | Renderer | Best for | Limitations |
 |---|---|---|
@@ -14,30 +14,30 @@ Godot 4 ships with three rendering backends:
 | **Mobile** | Mobile, lower-end hardware, simpler 3D scenes | Fewer rendering features (no global illumination, fewer lights, etc.) |
 | **Compatibility** (formerly GLES2/3) | Web, very old hardware, when Vulkan isn't available | Most limited; older shading model |
 
-You pick the renderer in **Project Settings → Rendering → Renderer**. You can also set per-platform overrides — Forward+ on desktop, Mobile on mobile, Compatibility on web.
+Pick renderer in **Project Settings → Rendering → Renderer**. Per-platform overrides allowed — Forward+ on desktop, Mobile on mobile, Compatibility on web.
 
-For a 2D game, the renderer choice mostly doesn't matter — 2D works similarly across all three. For 3D, the choice has real consequences. Pick based on your target platforms.
+2D game: renderer choice mostly doesn't matter — 2D works similarly across all three. 3D: choice has real consequences. Pick based on target platforms.
 
 ## 2D Rendering
 
-The 2D renderer is conceptually simple: every visible 2D node is drawn in a sorted order based on `z_index` and tree position. There's no real "depth buffer" — sorting is based on layer and order.
+2D renderer conceptually simple: every visible 2D node drawn in sorted order based on `z_index` and tree position. No real "depth buffer" — sorting based on layer and order.
 
 Key concepts for 2D:
 
 ### `CanvasItem` and the draw order
 
-Everything visible in 2D inherits from `CanvasItem` (`Sprite2D`, `Label`, `Polygon2D`, `Line2D`, etc.). They're drawn in tree order — earlier siblings under later siblings — with `z_index` as an override.
+Everything visible in 2D inherits from `CanvasItem` (`Sprite2D`, `Label`, `Polygon2D`, `Line2D`, etc.). Drawn in tree order — earlier siblings under later siblings — with `z_index` as override.
 
-A common pitfall: a UI element drawn under a sprite because the sprite is later in the tree. Use `z_index` to control layering, or restructure the scene.
+Common pitfall: UI element drawn under sprite because sprite later in tree. Use `z_index` to control layering, or restructure scene.
 
 ### `CanvasLayer`
 
-A `CanvasLayer` creates a *separate* drawing layer that ignores the camera. Use it for:
+`CanvasLayer` creates *separate* drawing layer ignoring camera. Use for:
 
-- HUD and UI (so they don't move with the camera)
+- HUD and UI (don't move with camera)
 - Pause menus and overlays
 - Transition effects
-- Anything that should be in screen space, not world space
+- Anything in screen space, not world space
 
 ```
 Level (Node2D)
@@ -53,7 +53,7 @@ Level (Node2D)
 
 ### Sprites and atlases
 
-For pixel art and 2D games with many sprites, **texture atlases** dramatically improve performance by reducing draw calls. Godot's importer can pack textures into atlases automatically, or you can use sprite sheets manually with `AtlasTexture`.
+Pixel art and 2D games with many sprites: **texture atlases** dramatically improve performance by reducing draw calls. Godot's importer can pack textures into atlases automatically, or use sprite sheets manually with `AtlasTexture`.
 
 ```csharp
 [Export] public Texture2D Atlas { get; set; }
@@ -70,41 +70,41 @@ public override void _Ready()
 }
 ```
 
-For animated sprites, `AnimatedSprite2D` with `SpriteFrames` (which can use an atlas) is the standard.
+Animated sprites: `AnimatedSprite2D` with `SpriteFrames` (can use atlas) is standard.
 
 ### Pixel art settings
 
-For pixel art games:
+Pixel art games:
 
-- **Project Settings → Rendering → Textures → Default Texture Filter → Nearest** (or set per-texture in the import settings)
+- **Project Settings → Rendering → Textures → Default Texture Filter → Nearest** (or per-texture in import settings)
 - **Project Settings → Display → Window → Stretch → Mode → `viewport`** for integer scaling
 - **Stretch → Aspect → `keep`** to preserve aspect ratio
-- Set the project's base resolution to your target pixel art resolution (e.g., 320x180)
+- Set project's base resolution to target pixel art resolution (e.g., 320x180)
 
-The `viewport` stretch mode renders the game at the base resolution and scales the result to the window, giving crisp pixels. This is the right setup for any pixel art game.
+`viewport` stretch mode renders game at base resolution, scales result to window, giving crisp pixels. Right setup for any pixel art game.
 
 ### Lighting in 2D
 
-Godot 4 has a 2D lighting system: `PointLight2D`, `DirectionalLight2D`, and `LightOccluder2D` for shadows. To use it:
+Godot 4 has 2D lighting system: `PointLight2D`, `DirectionalLight2D`, `LightOccluder2D` for shadows. To use:
 
-1. Set sprites' textures to have a "normal map" if you want directional lighting effects.
+1. Set sprites' textures to have "normal map" if wanting directional lighting effects.
 2. Add `PointLight2D` nodes for light sources.
 3. Add `LightOccluder2D` nodes (with `OccluderPolygon2D` shape) where shadows should be cast.
-4. Sprites and `CanvasItem`s have a `Light Mask` property that determines which lights affect them.
+4. Sprites and `CanvasItem`s have `Light Mask` property determining which lights affect them.
 
-For a simpler "darkness" effect, a black `ColorRect` with a `BackBufferCopy` and a circular mask shader is often faster than full 2D lighting.
+Simpler "darkness" effect: black `ColorRect` with `BackBufferCopy` and circular mask shader often faster than full 2D lighting.
 
 ## 3D Rendering
 
-3D in Godot is built around `Node3D` (formerly `Spatial`), with familiar concepts:
+3D in Godot built around `Node3D` (formerly `Spatial`), familiar concepts:
 
-- **`MeshInstance3D`** — displays a 3D mesh.
-- **`Material`** — how the mesh's surface looks (color, texture, roughness, etc.).
+- **`MeshInstance3D`** — displays 3D mesh.
+- **`Material`** — how mesh's surface looks (color, texture, roughness, etc.).
 - **`Light3D`** — light sources (`DirectionalLight3D`, `OmniLight3D`, `SpotLight3D`).
-- **`Camera3D`** — what the player sees.
+- **`Camera3D`** — what player sees.
 - **`Environment`** — global rendering settings (sky, ambient, fog, post-processing).
 
-A minimal 3D scene:
+Minimal 3D scene:
 
 ```
 Main (Node3D)
@@ -118,9 +118,9 @@ Main (Node3D)
 
 ### Materials
 
-Godot's `StandardMaterial3D` is a PBR material with all the usual settings: albedo, metallic, roughness, normal, emission, etc. You can assign textures to each property and tweak parameters in the inspector.
+Godot's `StandardMaterial3D` is PBR material with usual settings: albedo, metallic, roughness, normal, emission, etc. Assign textures to each property, tweak parameters in inspector.
 
-For more control, use `ShaderMaterial` with a custom shader (more on shaders below).
+More control: `ShaderMaterial` with custom shader (more on shaders below).
 
 ### Lighting models and global illumination
 
@@ -129,14 +129,14 @@ Godot 4's Forward+ renderer supports:
 - **Real-time lights** with shadows (directional, omni, spot).
 - **Voxel GI** (`VoxelGI` node) — global illumination via voxelization. Good quality, moderate cost.
 - **SDFGI** (Signed Distance Field GI) — large-scale dynamic GI; good for outdoor scenes.
-- **LightmapGI** — pre-baked lightmaps. Best quality, no runtime cost, but only for static geometry.
+- **LightmapGI** — pre-baked lightmaps. Best quality, no runtime cost, only for static geometry.
 - **Reflection probes** for local reflections.
 
-For most projects, baked lightmaps are the right choice — best visual quality, lowest runtime cost. Use real-time lights only for dynamic things.
+Most projects: baked lightmaps right choice — best visual quality, lowest runtime cost. Real-time lights only for dynamic things.
 
 ### Environment
 
-A `WorldEnvironment` node holds an `Environment` resource that controls:
+`WorldEnvironment` node holds `Environment` resource controlling:
 
 - **Sky** — procedural sky, panorama, or solid color
 - **Ambient light** — global ambient term
@@ -146,7 +146,7 @@ A `WorldEnvironment` node holds an `Environment` resource that controls:
 - **SSAO** — screen-space ambient occlusion
 - **SSR** — screen-space reflections
 
-You usually have one `WorldEnvironment` per level. Tweak the `Environment` resource for the level's mood.
+Usually one `WorldEnvironment` per level. Tweak `Environment` resource for level's mood.
 
 ### Camera basics
 
@@ -167,17 +167,17 @@ public partial class FollowCamera : Camera3D
 }
 ```
 
-A common camera bug: putting camera updates in `_PhysicsProcess`, which produces a stutter when the framerate doesn't match the physics rate. Camera updates belong in `_Process` for smooth visuals.
+Common camera bug: camera updates in `_PhysicsProcess` → stutter when framerate doesn't match physics rate. Camera updates belong in `_Process` for smooth visuals.
 
 ## Viewports
 
-A `Viewport` (or `SubViewport` in Godot 4) is a separate rendering target. Use cases:
+`Viewport` (or `SubViewport` in Godot 4) is separate rendering target. Use cases:
 
-- **Render-to-texture** — render the world to a texture for use in materials or UI.
+- **Render-to-texture** — render world to texture for use in materials or UI.
 - **Split screen** — multiple viewports for multiplayer.
-- **Mini-maps** — render the level from above to a `SubViewport` and display in the HUD.
+- **Mini-maps** — render level from above to `SubViewport`, display in HUD.
 - **Cameras for cutscenes** — switch between cameras in different viewports.
-- **Post-processing chains** — render to a viewport, apply a shader, render again.
+- **Post-processing chains** — render to viewport, apply shader, render again.
 
 Basic setup:
 
@@ -188,20 +188,20 @@ SubViewportContainer (Control, sizes the viewport)
     └── (the things to render)
 ```
 
-The `SubViewportContainer` displays the rendered viewport as a UI element.
+`SubViewportContainer` displays rendered viewport as UI element.
 
 ## Shaders — The Basics
 
-Godot's shading language (`gdshader`) is similar to GLSL but with engine-specific extensions. Shaders are written in `.gdshader` files (or inline in `ShaderMaterial.code`).
+Godot's shading language (`gdshader`) similar to GLSL but with engine-specific extensions. Shaders written in `.gdshader` files (or inline in `ShaderMaterial.code`).
 
 ### When to write a shader
 
-Most of the time, you don't need to. Standard materials handle most cases. Reach for a shader when:
+Most of time: don't need to. Standard materials handle most cases. Reach for shader when:
 
-- You need a *visual effect* the standard material can't do (water ripples, dissolve, outline, etc.)
-- You need a *performance optimization* via custom rendering
-- You need *procedural content* (procedural sky, procedural texture)
-- You need a *post-processing effect*
+- Need *visual effect* standard material can't do (water ripples, dissolve, outline, etc.)
+- Need *performance optimization* via custom rendering
+- Need *procedural content* (procedural sky, procedural texture)
+- Need *post-processing effect*
 
 ### Shader types
 
@@ -215,7 +215,7 @@ Most of the time, you don't need to. Standard materials handle most cases. Reach
 
 ### A simple 2D shader
 
-A shader that tints a sprite based on time:
+Shader tinting sprite based on time:
 
 ```glsl
 shader_type canvas_item;
@@ -230,22 +230,22 @@ void fragment() {
 }
 ```
 
-Save as `pulse.gdshader`. Apply in the editor: select a `Sprite2D` → Material → New ShaderMaterial → assign the shader.
+Save as `pulse.gdshader`. Apply in editor: select `Sprite2D` → Material → New ShaderMaterial → assign shader.
 
-A few language notes:
+Language notes:
 
-- **`shader_type canvas_item`** declares the shader type. Required.
-- **`uniform`** declares parameters that can be set from the inspector or code.
-- **`hint_range(min, max)`** is a hint for the editor (gives you a slider).
-- **`source_color`** hint marks a uniform as a color (gets a color picker).
-- **`TIME`** is a built-in that's the time since the shader started.
-- **`TEXTURE`** is the sprite's texture (built-in for `canvas_item`).
-- **`UV`** is the texture coordinate (built-in).
-- **`COLOR`** is the output color (built-in).
+- **`shader_type canvas_item`** declares shader type. Required.
+- **`uniform`** declares parameters settable from inspector or code.
+- **`hint_range(min, max)`** is hint for editor (gives slider).
+- **`source_color`** hint marks uniform as color (gets color picker).
+- **`TIME`** is built-in: time since shader started.
+- **`TEXTURE`** is sprite's texture (built-in for `canvas_item`).
+- **`UV`** is texture coordinate (built-in).
+- **`COLOR`** is output color (built-in).
 
 ### A simple 3D shader
 
-A custom material with a Fresnel rim light:
+Custom material with Fresnel rim light:
 
 ```glsl
 shader_type spatial;
@@ -263,7 +263,7 @@ void fragment() {
 }
 ```
 
-This shader gives a 3D mesh a rim light effect, where the edges glow more strongly than the surfaces facing the camera.
+Shader gives 3D mesh rim light effect — edges glow more strongly than surfaces facing camera.
 
 ### Setting shader parameters from code
 
@@ -287,7 +287,7 @@ public partial class ShimmerEffect : Sprite2D
 
 ### Common 2D shader effects
 
-A few shaders worth keeping around:
+Shaders worth keeping around:
 
 **Outline:**
 
@@ -329,7 +329,7 @@ void fragment() {
 }
 ```
 
-Animate `flash_strength` with a `Tween` for hit feedback.
+Animate `flash_strength` with `Tween` for hit feedback.
 
 **Dissolve:**
 
@@ -355,53 +355,53 @@ void fragment() {
 }
 ```
 
-For a dissolving-into-particles effect, animate `dissolve` from 0 to 1.
+Dissolving-into-particles effect: animate `dissolve` from 0 to 1.
 
 ## Performance Considerations
 
 ### 2D performance
 
 - **Use atlases.** Dramatically reduces draw calls.
-- **Use `MultiMeshInstance2D`** for many copies of the same mesh (e.g., grass, debris).
-- **Limit `Light2D` count.** Each adds cost; for darkness, a shader is often cheaper.
-- **`Polygon2D` and `Line2D` are slower than sprites.** Use sprites where possible.
-- **`TileMap` is highly optimized.** Use it for tile-based 2D, not individual sprite nodes.
+- **Use `MultiMeshInstance2D`** for many copies of same mesh (grass, debris).
+- **Limit `Light2D` count.** Each adds cost; for darkness, shader often cheaper.
+- **`Polygon2D` and `Line2D` slower than sprites.** Use sprites where possible.
+- **`TileMap` highly optimized.** Use for tile-based 2D, not individual sprite nodes.
 
 ### 3D performance
 
-- **Bake lighting** for static scenes. Real-time lights are expensive; baked lighting is free at runtime.
+- **Bake lighting** for static scenes. Real-time lights expensive; baked lighting free at runtime.
 - **Use LODs** (`Level of Detail`). `MeshInstance3D` supports automatic LOD generation in Godot 4.
-- **Use `MultiMeshInstance3D`** for many copies of the same mesh (e.g., trees, rocks, bullets).
-- **Frustum culling is automatic** but only works if your meshes have correct bounds. Set `Visibility AABB` if needed.
-- **Avoid transparent surfaces** where possible. Transparency requires sorting and disables some optimizations.
-- **Watch the draw call count.** Use the **Visual Profiler** to see how many draw calls per frame; aim to keep it low.
+- **Use `MultiMeshInstance3D`** for many copies of same mesh (trees, rocks, bullets).
+- **Frustum culling automatic** but only works if meshes have correct bounds. Set `Visibility AABB` if needed.
+- **Avoid transparent surfaces** where possible. Transparency requires sorting, disables some optimizations.
+- **Watch draw call count.** Use **Visual Profiler** to see draw calls per frame; keep low.
 
 ### Shader performance
 
-- **`fragment` runs per pixel.** Keep it cheap.
+- **`fragment` runs per pixel.** Keep cheap.
 - **`vertex` runs per vertex.** Cheaper if you can move work there.
-- **Texture lookups are expensive.** Each `texture(...)` call costs.
-- **`if` statements in shaders are slow.** Prefer `mix`, `step`, `clamp` for branchless code.
+- **Texture lookups expensive.** Each `texture(...)` call costs.
+- **`if` statements in shaders slow.** Prefer `mix`, `step`, `clamp` for branchless code.
 - **`discard` disables some optimizations.** Use sparingly.
 
-For the deeper performance discussion, see [performance-and-profiling.md](performance-and-profiling.md).
+Deeper performance discussion: [performance-and-profiling.md](performance-and-profiling.md).
 
 ## Anti-Patterns
 
 - **Default texture filter for pixel art.** Defaults to linear; pixel art needs nearest. Set per-import or in project settings.
 - **Camera in `_PhysicsProcess`.** Stutters when framerate ≠ physics rate. Use `_Process`.
-- **No `CanvasLayer` for HUD.** HUD scrolls with the camera; looks broken.
-- **Sprites without atlases** in a project with hundreds of sprites. Massive draw call count.
+- **No `CanvasLayer` for HUD.** HUD scrolls with camera; looks broken.
+- **Sprites without atlases** in project with hundreds of sprites. Massive draw call count.
 - **Real-time lights everywhere in 3D.** Bake static ones.
-- **Custom shaders when standard material would do.** Standard materials are often more performant and cover most cases.
-- **Heavy logic in `fragment` shader.** Move to vertex shader or to CPU where possible.
-- **Texture loads in shader uniforms changed every frame.** Sets a new texture sampler; expensive. Pre-load and reuse.
+- **Custom shaders when standard material would do.** Standard materials often more performant, cover most cases.
+- **Heavy logic in `fragment` shader.** Move to vertex shader or CPU where possible.
+- **Texture loads in shader uniforms changed every frame.** Sets new texture sampler; expensive. Pre-load and reuse.
 - **`Polygon2D` for things that should be sprites.** Slower; use sprites.
 - **No frustum culling on large meshes.** Set `Visibility AABB` correctly.
-- **Transparent objects with the wrong sort order.** Half-transparent things look broken.
-- **Rendering the world to a `SubViewport` every frame** when it doesn't change. Cache the result.
-- **Multiple `WorldEnvironment` nodes.** Only one is active; the others are wasted.
-- **Forgetting to set the rendering backend per platform.** Forward+ on mobile is too heavy; Mobile on desktop is unnecessarily limited.
+- **Transparent objects with wrong sort order.** Half-transparent things look broken.
+- **Rendering world to `SubViewport` every frame** when it doesn't change. Cache result.
+- **Multiple `WorldEnvironment` nodes.** Only one active; others wasted.
+- **Forgetting to set rendering backend per platform.** Forward+ on mobile too heavy; Mobile on desktop unnecessarily limited.
 - **Hand-writing shaders for things Godot's `StandardMaterial3D` already does.** Reinventing.
 
 ## Related

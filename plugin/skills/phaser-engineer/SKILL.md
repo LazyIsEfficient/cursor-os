@@ -5,52 +5,52 @@ description: Method and standards for building games and interactive software in
 
 # Phaser Engineer
 
-You are operating as a Phaser engineer. Your concern is **building games and interactive software in Phaser 3 with TypeScript** — writing the gameplay code, structuring scenes, handling the engine's quirks, hitting frame budgets, and shipping a static bundle that runs cleanly in a browser.
+You are Phaser engineer. Concern: **building games and interactive software in Phaser 3 with TypeScript** — writing gameplay code, structuring scenes, handling engine quirks, hitting frame budgets, shipping static bundle that runs cleanly in browser.
 
-The "engineer" in the name is deliberate: this skill is for the *engineering* side of game development. Game design (mechanics, balance, narrative, monetization, level design) is a different craft and lives in a separate skill. You build what the design calls for; you push back when the design fights the engine; you don't decide *what* the game is.
+"Engineer" in name deliberate: this skill is for *engineering* side of game development. Game design (mechanics, balance, narrative, monetization, level design) is different craft, lives in separate skill. You build what design calls for; push back when design fights engine; you don't decide *what* game is.
 
-The two failure modes of game-engineering work are equally bad:
+Two failure modes of game-engineering work equally bad:
 
-- **Fighting the engine.** The engineer treats Phaser as a generic HTML5 canvas and reinvents what the engine already provides. Custom animation loops instead of `AnimationManager`. Custom tweens instead of `this.tweens.add(...)`. Custom physics instead of Arcade or Matter. Custom asset preloading instead of `Loader`. The result is code that's slower, buggier, and more fragile than the built-in path.
-- **Going with whatever the engine encourages, regardless of consequence.** A single 3,000-line `GameScene` that owns every entity. Allocations in the middle of `update()`. `scene.scene.get('OtherScene').thingIWant` reaching into other scenes. Global state in the registry abused as a god object. Works in a 5-screen prototype; collapses in a real project.
+- **Fighting engine.** Engineer treats Phaser as generic HTML5 canvas, reinvents what engine already provides. Custom animation loops instead of `AnimationManager`. Custom tweens instead of `this.tweens.add(...)`. Custom physics instead of Arcade or Matter. Custom asset preloading instead of `Loader`. Result: code slower, buggier, more fragile than built-in path.
+- **Going with whatever engine encourages, regardless of consequence.** Single 3,000-line `GameScene` owning every entity. Allocations in middle of `update()`. `scene.scene.get('OtherScene').thingIWant` reaching into other scenes. Global state in registry abused as god object. Works in 5-screen prototype; collapses in real project.
 
-The right stance is **work with the engine when it's right; structure your code around it when it's not**. Phaser is opinionated; you should know its opinions before you override them.
+Right stance: **work with engine when right; structure code around it when not**. Phaser is opinionated; know its opinions before overriding.
 
-This skill targets **Phaser 3.x** with **TypeScript** as the primary language. JavaScript is mentioned where it changes the answer, but examples are in TypeScript. Phaser 4 is not in scope.
+Skill targets **Phaser 3.x** with **TypeScript** as primary language. JavaScript mentioned where it changes answer, but examples in TypeScript. Phaser 4 not in scope.
 
 ## Universal Rules
 
-1. **Composition with GameObjects and Containers, not deep class hierarchies.** A player isn't a custom subclass of `Sprite` ten layers deep — it's a `Container` (or a `Sprite`) with attached components: input handler, state machine, hitbox, animation set. Inheritance gets in the way once a second character type appears.
-2. **Scenes are units of state, not god objects.** A `Scene` should own one screen-worth of concern: a level, a menu, a HUD, a transition. When a scene crosses ~600 lines, split it (sub-scene with `launch`, parallel scene for HUD, or extract systems into plain TypeScript classes the scene composes).
-3. **Don't reach across scenes.** `this.scene.get('OtherScene')` and poking at its fields is the Phaser equivalent of `GetNode("../../UI")`. Prefer `scene.events`, the global `game.events` bus, or the `registry` (with discipline) for cross-scene comms.
-4. **`update(time, delta)` is the hot path. Treat it like one.** No allocations per frame if you can help it (no `new Vector2()`, no `[].map(...)` on big arrays, no string concat that produces garbage). Pool objects you spawn and despawn (`Group` with `runChildUpdate` and `getFirstDead`).
-5. **Stay inside the frame budget.** 60 FPS = 16.6 ms per frame. Mobile-web halves your headroom. Profile with the browser's performance tab before optimizing — *measure, don't guess*.
-6. **TypeScript-first; types are part of the design.** Use Phaser's bundled TS types (`phaser/types/phaser`, shipped with the `phaser` package) aggressively — do **not** install `@types/phaser`; the DefinitelyTyped package is stale and fights the bundled types. Type your scene `data` payloads, your event payloads, your registry keys. Avoid `any`. The compile error is cheaper than the runtime crash.
-7. **Audio has a contract with the browser, not just Phaser.** Browsers block autoplay until a user gesture. Plan for `sound.unlock()` on first input. Don't preload 100 MB of WAV — use compressed formats and audio sprites.
-8. **Asset pipeline is engineering.** Texture atlases (Texture Packer / Aseprite / built-in tools), audio sprites, tilemap exports from Tiled — these are build steps. Treat them as code: versioned, scripted, reproducible.
-9. **Save versioning is non-negotiable.** Every save written to `localStorage` or `IndexedDB` carries a schema version. Migration code handles older versions. A game shipping with no migration plan strands its players on the next update.
-10. **Don't reinvent the engine.** When Phaser has a built-in tool — `Tween`, `AnimationManager`, `Loader`, `Cameras`, `tilemap.createFromObjects`, `Group`, `Pointer`, `Input.Keyboard.JustDown` — use it. Reinventing usually produces worse, slower, more-bugged code.
-11. **Vite is the default build tool.** Hot module reload accelerates the gameplay-iteration loop more than any other single tool. Use it. Webpack/Parcel are valid but the documentation, examples, and templates here assume Vite + TS.
-12. **Test on the target platform early.** Mobile Safari, mobile Chrome, and low-end Android reveal problems desktop Chrome never will — input differences, audio unlock, GPU stalls, screen sizes. Don't wait until launch week.
-13. **Performance work is data-driven.** "It feels slow" is a hypothesis; the profiler is the test. The Phaser debug body renderer, `game.loop.actualFps`, and Chrome's performance tab are your three primary instruments.
+1. **Composition with GameObjects and Containers, not deep class hierarchies.** Player isn't custom subclass of `Sprite` ten layers deep — it's `Container` (or `Sprite`) with attached components: input handler, state machine, hitbox, animation set. Inheritance gets in way once second character type appears.
+2. **Scenes are units of state, not god objects.** `Scene` should own one screen-worth of concern: level, menu, HUD, transition. Scene crossing ~600 lines? Split it (sub-scene with `launch`, parallel scene for HUD, or extract systems into plain TypeScript classes scene composes).
+3. **Don't reach across scenes.** `this.scene.get('OtherScene')` and poking its fields is Phaser equivalent of `GetNode("../../UI")`. Prefer `scene.events`, global `game.events` bus, or `registry` (with discipline) for cross-scene comms.
+4. **`update(time, delta)` is hot path. Treat it like one.** No allocations per frame if avoidable (no `new Vector2()`, no `[].map(...)` on big arrays, no string concat producing garbage). Pool objects you spawn and despawn (`Group` with `runChildUpdate` and `getFirstDead`).
+5. **Stay inside frame budget.** 60 FPS = 16.6 ms per frame. Mobile-web halves headroom. Profile with browser's performance tab before optimizing — *measure, don't guess*.
+6. **TypeScript-first; types are part of design.** Use Phaser's bundled TS types (`phaser/types/phaser`, shipped with `phaser` package) aggressively — do **not** install `@types/phaser`; DefinitelyTyped package stale and fights bundled types. Type scene `data` payloads, event payloads, registry keys. Avoid `any`. Compile error cheaper than runtime crash.
+7. **Audio has contract with browser, not just Phaser.** Browsers block autoplay until user gesture. Plan for `sound.unlock()` on first input. Don't preload 100 MB of WAV — use compressed formats and audio sprites.
+8. **Asset pipeline is engineering.** Texture atlases (Texture Packer / Aseprite / built-in tools), audio sprites, tilemap exports from Tiled — these are build steps. Treat as code: versioned, scripted, reproducible.
+9. **Save versioning is non-negotiable.** Every save written to `localStorage` or `IndexedDB` carries schema version. Migration code handles older versions. Game shipping with no migration plan strands players on next update.
+10. **Don't reinvent engine.** Phaser has built-in tool — `Tween`, `AnimationManager`, `Loader`, `Cameras`, `tilemap.createFromObjects`, `Group`, `Pointer`, `Input.Keyboard.JustDown` — use it. Reinventing usually produces worse, slower, more-bugged code.
+11. **Vite is default build tool.** Hot module reload accelerates gameplay-iteration loop more than any other single tool. Use it. Webpack/Parcel valid but documentation, examples, templates here assume Vite + TS.
+12. **Test on target platform early.** Mobile Safari, mobile Chrome, low-end Android reveal problems desktop Chrome never will — input differences, audio unlock, GPU stalls, screen sizes. Don't wait until launch week.
+13. **Performance work is data-driven.** "It feels slow" is hypothesis; profiler is test. Phaser debug body renderer, `game.loop.actualFps`, Chrome's performance tab are three primary instruments.
 
 ## When to load this skill
 
-- Scaffolding a new Phaser 3 + TypeScript project (Vite, `tsconfig`, asset pipeline, project structure).
-- Designing or restructuring scenes; deciding what should be a separate scene vs. a sub-scene vs. a system extracted to a plain TS class.
+- Scaffolding new Phaser 3 + TypeScript project (Vite, `tsconfig`, asset pipeline, project structure).
+- Designing or restructuring scenes; deciding what should be separate scene vs. sub-scene vs. system extracted to plain TS class.
 - Writing gameplay code in TypeScript — controllers, state machines, AI, combat resolution, physics interactions.
 - Handling input — keyboard, pointer, touch, gamepad, custom rebinding.
-- Working with Arcade physics (default, faster, AABB-based). For Matter physics (constraints, rotation, more accurate), this skill currently covers only the Arcade-vs-Matter decision (see `references/physics-arcade.md`); the Matter implementation deep-dive is deferred and not yet covered — fall back to the official Phaser/Matter docs until a reference is added.
+- Working with Arcade physics (default, faster, AABB-based). For Matter physics (constraints, rotation, more accurate), skill currently covers only Arcade-vs-Matter decision (see `references/physics-arcade.md`); Matter implementation deep-dive deferred, not yet covered — fall back to official Phaser/Matter docs until reference added.
 - Building animations with `AnimationManager` or `Tween` chains.
 - Importing and rendering Tiled tilemaps; turning Tiled object layers into game entities.
 - Loading and managing assets: atlases, audio sprites, JSON, fonts, asset packs, dynamic loading.
 - Implementing save/load to `localStorage` or `IndexedDB` with versioning and migration.
-- Hitting a performance wall and needing to profile and fix the actual bottleneck.
-- Reviewing a Phaser project for anti-patterns and structural problems.
+- Hitting performance wall, needing to profile and fix actual bottleneck.
+- Reviewing Phaser project for anti-patterns and structural problems.
 
-**Game design** (mechanics, narrative, level design), **balance**, and the **IAP / store catalog** are upstream concerns this skill does not own — treat their output as input. If the project is in **Godot/C#** instead of Phaser, see [godot-engineer](../godot-engineer/SKILL.md).
+**Game design** (mechanics, narrative, level design), **balance**, **IAP / store catalog** are upstream concerns skill does not own — treat their output as input. Project in **Godot/C#** instead of Phaser? See [godot-engineer](../godot-engineer/SKILL.md).
 
-This skill explicitly does **not** cover multiplayer/networking or web3/wallet integration in v1. Defer those surfaces and pull in the right specialist when needed.
+Skill explicitly does **not** cover multiplayer/networking or web3/wallet integration in v1. Defer those surfaces; pull in right specialist when needed.
 
 ## References
 
@@ -67,6 +67,6 @@ This skill explicitly does **not** cover multiplayer/networking or web3/wallet i
 
 ## Adjacent concerns
 
-- [../godot-engineer/SKILL.md](../godot-engineer/SKILL.md) — sibling skill for the same engineering concern in Godot 4 + C#. Many of the same patterns (composition, frame budget, save versioning) transfer; APIs do not.
-- **Security review.** Single-player browser games still have security concerns: save tampering (localStorage is plaintext), client-side score submission, anti-cheat for leaderboards. Tell the caller a security review is required for any game with server-side state — `security-reviewer` is orchestrator-owned (do not dispatch it from the implementation agent).
-- **Deployment.** Static-bundle deploy to Vercel/Netlify/itch.io, asset CDN, cache headers are CI/CD concerns this skill does not own.
+- [../godot-engineer/SKILL.md](../godot-engineer/SKILL.md) — sibling skill for same engineering concern in Godot 4 + C#. Many same patterns (composition, frame budget, save versioning) transfer; APIs do not.
+- **Security review.** Single-player browser games still have security concerns: save tampering (localStorage is plaintext), client-side score submission, anti-cheat for leaderboards. Tell caller security review required for any game with server-side state — `security-reviewer` is orchestrator-owned (do not dispatch from implementation agent).
+- **Deployment.** Static-bundle deploy to Vercel/Netlify/itch.io, asset CDN, cache headers are CI/CD concerns skill does not own.

@@ -1,20 +1,20 @@
 # Store-page conversion
 
-The store page is where most marketing impressions terminate. A good page converts 25–45% of visitors to install / wishlist; a bad one converts 5–15%. Same traffic, dramatically different revenue.
+Store page = where most marketing impressions terminate. Good page converts 25–45% of visitors to install / wishlist; bad one 5–15%. Same traffic, dramatically different revenue.
 
 ## What converts
 
-In rough order of impact:
+Rough impact order:
 
-1. **Icon** — App Store / Google Play; thumbnails in lists are 60×60. The icon must read at that size and signal the genre / fantasy.
-2. **Screenshot 1** — first thing the visitor sees after the icon. Should land the fantasy + verb in one image.
-3. **Trailer / video** — autoplay preview on iOS; hero video on Steam. The first 5 seconds carry most of the impact.
-4. **Tagline / subtitle** — "complementary text to the title" — one short line landing the wedge or the fantasy.
-5. **Above-fold description** — the first ~3 lines (mobile) or first paragraph (Steam). Most visitors don't scroll.
-6. **Reviews / ratings** — visible on every store; high-impact for trust signal.
-7. **Wishlist / install CTA** — clear, persistent, the obvious next step.
+1. **Icon** — App Store / Google Play; list thumbnails are 60×60. Icon must read at that size, signal genre / fantasy.
+2. **Screenshot 1** — first thing visitor sees after icon. Lands fantasy + verb in one image.
+3. **Trailer / video** — autoplay preview on iOS; hero video on Steam. First 5 seconds carry most impact.
+4. **Tagline / subtitle** — "complementary text to the title" — one short line landing wedge or fantasy.
+5. **Above-fold description** — first ~3 lines (mobile) or first paragraph (Steam). Most visitors don't scroll.
+6. **Reviews / ratings** — visible on every store; high-impact trust signal.
+7. **Wishlist / install CTA** — clear, persistent, obvious next step.
 8. **Social proof badges** — "Editor's Choice," "Featured," "Trending," critic quotes (where allowed).
-9. **In-page screenshots** — 4–6 shots that build context after the hook.
+9. **In-page screenshots** — 4–6 shots building context after hook.
 10. **Footer description** — full description, feature list, tech specs.
 
 ## Per-platform anatomy
@@ -27,7 +27,7 @@ In rough order of impact:
 - Subtitle (≤30 chars)
 - Star rating + review count
 - "Get" / price button
-- Up to 3 screenshots in the carousel
+- Up to 3 screenshots in carousel
 
 **Below fold:**
 - Description (first 3 lines visible; "more" expands)
@@ -91,7 +91,7 @@ In rough order of impact:
 
 ### Web (Stripe / direct)
 
-Full design control. Use the same hierarchy as platform stores:
+Full design control. Same hierarchy as platform stores:
 
 1. Hero image / video above fold
 2. Tagline + CTA
@@ -107,23 +107,23 @@ Install funnel:
 1. **Impression** — visitor sees icon / capsule somewhere
 2. **Click-through** — clicks to store page
 3. **Page view** — page loads
-4. **Engagement** — visitor stays on page, scrolls, reads
+4. **Engagement** — visitor stays, scrolls, reads
 5. **Wishlist / install** — primary conversion event
 6. **Confirmation** — purchase / install completes
 
-Track each step. Optimize the worst step first.
+Track each step. Optimize worst step first.
 
 ## Wishlist conversion (Steam-specific)
 
-Pre-launch, wishlist count is the leading indicator. Tactics:
+Pre-launch, wishlist count = leading indicator. Tactics:
 
 - **Steam Next Fest** participation (drives big wishlist spikes)
-- **Demo** during a Next Fest or surrounding launch
+- **Demo** during Next Fest or surrounding launch
 - **"Add to Wishlist" CTA** on every external touch point
-- **Email signup → wishlist add** flow on the marketing site
+- **Email signup → wishlist add** flow on marketing site
 - **Influencer / press coverage** during major events (Summer Game Fest, Gamescom, TGS)
 
-Wishlist-to-purchase conversion at launch typically 10–25%. A 50,000-wishlist launch translates to roughly 5,000–12,500 day-one purchases.
+Wishlist-to-purchase conversion at launch typically 10–25%. 50,000-wishlist launch ≈ 5,000–12,500 day-one purchases.
 
 ## Localization & internationalization
 
@@ -134,13 +134,13 @@ Localized store pages outperform non-localized:
 - **Localized screenshots** with translated UI text
 - **Localized pricing** per region (with `iap-manager`)
 
-Best ROI markets to localize first: JP, KR, ZH-Hans, ZH-Hant, ES, BR PT, FR, DE, RU. Tier-2 markets (TR, AR, ID, VN) often pay strong returns relative to investment.
+Best first-localize ROI markets: JP, KR, ZH-Hans, ZH-Hant, ES, BR PT, FR, DE, RU. Tier-2 markets (TR, AR, ID, VN) often strong returns relative to investment.
 
 ## A/B testing on store pages
 
 - **App Store custom product pages** — test alternate icons, screenshots, taglines per source
 - **Google Play store listing experiments** — built-in A/B for icon / description / screenshots / feature graphic
-- **Steam page A/B** — change capsule images and watch metrics in Steamworks
+- **Steam page A/B** — change capsule images, watch Steamworks metrics
 
 Test priority:
 1. Icon (5–10% conversion swings common)
@@ -150,9 +150,9 @@ Test priority:
 
 ## Pre-launch tactics (Steam path)
 
-- Create the page **6–12 months pre-launch**
-- Iterate creative based on wishlist conversion data
-- Steam Next Fest participation (twice per year — Feb and June typically) drives big wishlist spikes if the demo is good
+- Create page **6–12 months pre-launch**
+- Iterate creative from wishlist conversion data
+- Steam Next Fest participation (twice yearly — Feb and June typically) drives big spikes if demo good
 - Festival participation (Steam Festival pages, themed pages) for visibility
 - Curator outreach 30–60 days pre-launch
 
@@ -160,8 +160,8 @@ Test priority:
 
 - **`iap-manager`:** IAP catalog summary on store page must match real catalog
 - **`game-monetization-strategist`:** ROAS / CPI floors inform store-page conversion targets
-- **`growth-engine`:** A/B testing infrastructure (especially for web pages)
+- **`growth-engine`:** A/B testing infrastructure (especially web pages)
 - **`seo-ops`:** ASO (App Store Optimization) keyword research
 - **`autoresearch`:** multi-round optimization of store-page copy if high-stakes
-- **`content-ops`:** expert-panel scoring of the page as a whole
-- **`ux-design`:** for web direct stores; coordinate page structure
+- **`content-ops`:** expert-panel scoring of page as whole
+- **`ux-design`:** web direct stores; coordinate page structure

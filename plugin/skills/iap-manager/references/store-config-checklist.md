@@ -1,25 +1,25 @@
 # Store config checklist
 
-Storefront configuration is operational glue. The catalog is right; the model is right; if the store config is wrong, none of it ships. Walk this checklist before any launch.
+Storefront configuration = operational glue. Catalog right; model right; store config wrong → nothing ships. Walk checklist before any launch.
 
 ## App Store Connect (iOS)
 
 - [ ] **In-App Purchases registered** — every SKU created in App Store Connect with correct product ID
 - [ ] **Localizations** — display name and description per supported language
-- [ ] **Pricing tier** — selected per SKU; cross-checked vs the price-tier ladder
-- [ ] **Subscription group** (if applicable) — sub SKUs in the right group; auto-renewable settings correct
+- [ ] **Pricing tier** — selected per SKU; cross-checked vs price-tier ladder
+- [ ] **Subscription group** (if applicable) — sub SKUs in right group; auto-renewable settings correct
 - [ ] **Free trial / introductory offer** (if applicable) — eligibility rules set
-- [ ] **Sandbox testers** — internal test accounts can complete purchases in sandbox
+- [ ] **Sandbox testers** — internal test accounts can complete sandbox purchases
 - [ ] **Receipt validation** server-side ready — App Store server-to-server notification endpoint configured (with `godot-engineer`)
-- [ ] **App review screenshots** — for SKUs that need review
+- [ ] **App review screenshots** — for SKUs needing review
 - [ ] **Promotional offers** (if applicable) — set up and tested
-- [ ] **Restore-purchases** flow tested — players who reinstall can recover purchases
+- [ ] **Restore-purchases** flow tested — reinstalling players recover purchases
 - [ ] **Cross-region currency** — verified in 3+ markets
 
 ## Google Play Console (Android)
 
 - [ ] **In-app products** — every SKU created with correct SKU ID (matching iOS naming convention if cross-platform)
-- [ ] **Subscriptions** — base plans, offers, and pricing phases configured
+- [ ] **Subscriptions** — base plans, offers, pricing phases configured
 - [ ] **Country availability** — explicit per-region; default deny for restricted markets
 - [ ] **License testers** — internal accounts for closed track testing
 - [ ] **Real-time developer notifications** — Pub/Sub endpoint receiving purchase events
@@ -27,11 +27,11 @@ Storefront configuration is operational glue. The catalog is right; the model is
 - [ ] **Closed track tested** — closed beta tested all SKUs
 - [ ] **Promo codes** (if applicable) — generated and tested
 - [ ] **Restore flow** tested for reinstalls
-- [ ] **Subscription cancellation flow** tested (a hostile cancel flow gets you delisted)
+- [ ] **Subscription cancellation flow** tested (hostile cancel flow gets you delisted)
 
 ## Steam Partner
 
-- [ ] **DLC entries created** — each as a separate AppID linked to the base game
+- [ ] **DLC entries created** — each separate AppID linked to base game
 - [ ] **DLC pricing** — set per region (Steam recommendations or custom)
 - [ ] **Microtransaction items** (if F2P) — registered in Steamworks
 - [ ] **Cross-platform inventory** (if applicable) — Steam Inventory Service or custom
@@ -60,14 +60,14 @@ Storefront configuration is operational glue. The catalog is right; the model is
 - [ ] **Secondary market integration** — listed on relevant marketplaces
 - [ ] **Wallet UX** — connect / sign / pay flow tested for major wallets (MetaMask, WalletConnect, Phantom)
 - [ ] **Custodial wallet** path (if used) — sign-up flow tested
-- [ ] **Web2 fallback** — non-wallet players have a clear path
+- [ ] **Web2 fallback** — non-wallet players have clear path
 - [ ] **Token pack config** — fiat-on-ramp configured (if applicable)
 - [ ] **Jurisdictional gating** — KYC / restricted markets handled
 
 ## Cross-platform considerations
 
-- [ ] **Cross-progress** — purchases on iOS surface on Android (and vice versa) for the same account
-- [ ] **Account-binding** — players link to a shared account (game ID, social login, web3 wallet) before paying
+- [ ] **Cross-progress** — iOS purchases surface on Android (and vice versa) for same account
+- [ ] **Account-binding** — players link to shared account (game ID, social login, web3 wallet) before paying
 - [ ] **Receipt validation server** — single source of truth for entitlements across platforms (with `godot-engineer`)
 - [ ] **Anti-fraud** — duplicate-receipt detection, jailbreak detection, anomaly detection (with `security-engineering`)
 

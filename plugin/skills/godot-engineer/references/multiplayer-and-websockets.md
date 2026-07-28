@@ -1,32 +1,32 @@
 # Multiplayer and WebSockets
 
-This file is specifically about **WebSocket-based multiplayer in Godot 4 with C#** — the right pattern for browser-friendly games, asymmetric network conditions, and games that need to traverse firewalls without UDP.
+File is specifically about **WebSocket-based multiplayer in Godot 4 with C#** — right pattern for browser-friendly games, asymmetric network conditions, games needing firewall traversal without UDP.
 
-WebSockets are the right choice when:
+WebSockets right choice when:
 
-- The game runs on the **web** (where UDP isn't available).
-- You need **firewall traversal** without NAT punching or relays.
-- You need a **simple deployment model** (HTTP-style infrastructure, TLS, load balancers).
-- The game is **turn-based or low-tempo** enough that TCP latency is acceptable.
+- Game runs on **web** (UDP unavailable).
+- Need **firewall traversal** without NAT punching or relays.
+- Need **simple deployment model** (HTTP-style infrastructure, TLS, load balancers).
+- Game is **turn-based or low-tempo** enough that TCP latency acceptable.
 
-WebSockets are *not* the right choice when:
+WebSockets *not* right choice when:
 
-- You need **sub-50ms responsiveness** for fast-paced action (use ENet or UDP).
-- You need **lockstep determinism** for fighting games (use a deterministic protocol).
-- You're shipping **only to native platforms** with no web target (UDP is faster).
+- Need **sub-50ms responsiveness** for fast-paced action (use ENet or UDP).
+- Need **lockstep determinism** for fighting games (use deterministic protocol).
+- Shipping **only to native platforms** with no web target (UDP faster).
 
-For this skill, the assumption is **WebSockets are the chosen transport**. Godot 4 has first-class support via `WebSocketMultiplayerPeer`.
+For this skill, assumption is **WebSockets are chosen transport**. Godot 4 has first-class support via `WebSocketMultiplayerPeer`.
 
 ## Godot's High-Level Multiplayer
 
-Godot's "high-level multiplayer" API is the layer that lets you call methods on remote peers (RPCs) and synchronize state across the network. It's transport-agnostic — the same RPC code works over ENet, WebSockets, or WebRTC. You pick the transport via the `MultiplayerPeer` you assign.
+Godot's "high-level multiplayer" API is layer letting you call methods on remote peers (RPCs) and synchronize state across network. Transport-agnostic — same RPC code works over ENet, WebSockets, WebRTC. Pick transport via `MultiplayerPeer` you assign.
 
-The architecture:
+Architecture:
 
-1. **A `MultiplayerPeer`** handles the actual network connection. For WebSockets, this is `WebSocketMultiplayerPeer`.
-2. **The `MultiplayerAPI`** (one per `SceneTree`) manages the high-level RPC system on top of the peer.
-3. **Nodes call RPCs** on each other; the API serializes the calls and sends them over the peer.
-4. **Authority** determines which peer "owns" a node and is the source of truth for it.
+1. **A `MultiplayerPeer`** handles actual network connection. WebSockets: `WebSocketMultiplayerPeer`.
+2. **The `MultiplayerAPI`** (one per `SceneTree`) manages high-level RPC system on top of peer.
+3. **Nodes call RPCs** on each other; API serializes calls, sends over peer.
+4. **Authority** determines which peer "owns" a node, is source of truth for it.
 
 ## Basic Setup
 
@@ -109,16 +109,16 @@ public partial class Client : Node
 }
 ```
 
-A few things to note:
+Things to note:
 
-- **`ws://`** for unencrypted WebSocket; **`wss://`** for TLS-encrypted (use this in production).
-- **`CreateServer(port)`** for the server; **`CreateClient(url)`** for the client.
-- **The same `MultiplayerPeer` interface** works for both; the difference is whether you call `CreateServer` or `CreateClient`.
-- **`Multiplayer.PeerConnected` / `PeerDisconnected`** fire on the *server*; on the client, you only see your own connection state.
+- **`ws://`** for unencrypted WebSocket; **`wss://`** for TLS-encrypted (use in production).
+- **`CreateServer(port)`** for server; **`CreateClient(url)`** for client.
+- **Same `MultiplayerPeer` interface** works for both; difference is whether you call `CreateServer` or `CreateClient`.
+- **`Multiplayer.PeerConnected` / `PeerDisconnected`** fire on *server*; client only sees own connection state.
 
 ## RPCs
 
-A Remote Procedure Call (RPC) is a method that, when called on one peer, executes on another peer (or many peers). In Godot 4 C#:
+Remote Procedure Call (RPC) is method that, called on one peer, executes on another peer (or many peers). In Godot 4 C#:
 
 ```csharp
 public partial class Player : CharacterBody2D
@@ -152,18 +152,18 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-The `[Rpc]` attribute marks a method as RPC-callable. The parameters:
+`[Rpc]` attribute marks method as RPC-callable. Parameters:
 
 - **`RpcMode`**:
-  - **`Authority`**: only the peer with authority over this node can call it.
+  - **`Authority`**: only peer with authority over this node can call it.
   - **`AnyPeer`**: any peer can call it.
-- **`CallLocal`**: whether the local peer also runs the method when calling RPC. Default is `false` (only remote runs).
+- **`CallLocal`**: whether local peer also runs method when calling RPC. Default `false` (only remote runs).
 - **`TransferMode`**:
   - **`Reliable`**: guaranteed delivery, in order. Slower. Use for important events.
-  - **`Unreliable`**: fire and forget. Fastest. Use for high-frequency state updates where missing one is fine.
+  - **`Unreliable`**: fire and forget. Fastest. Use for high-frequency state updates where missing one fine.
   - **`UnreliableOrdered`**: fire and forget but ordered. Use for sequenced state updates.
 
-To call an RPC:
+To call RPC:
 
 ```csharp
 // Call RPC on this node, on all peers (including server)
@@ -176,13 +176,13 @@ RpcId(targetPeerId, MethodName.SpawnAt, new Vector2(100, 100));
 SpawnAt(new Vector2(100, 100));
 ```
 
-The `MethodName.SpawnAt` is a generated constant (similar to `SignalName.X`). Use it for type safety.
+`MethodName.SpawnAt` is generated constant (similar to `SignalName.X`). Use for type safety.
 
-**Important caveat for WebSockets**: WebSockets are TCP-based, so "Unreliable" RPCs are still delivered reliably and in order. The `TransferMode` is *advisory* — the WebSocket peer ignores it and treats everything as reliable. This is different from ENet, where unreliable is genuinely faster. For WebSocket-based games, design assuming all messages are reliable.
+**Important caveat for WebSockets**: WebSockets are TCP-based, so "Unreliable" RPCs still delivered reliably and in order. `TransferMode` is *advisory* — WebSocket peer ignores it, treats everything as reliable. Different from ENet, where unreliable genuinely faster. WebSocket-based games: design assuming all messages reliable.
 
 ## Authority
 
-Each node has an **authority** — a peer ID that's the source of truth for that node. By default, the server (peer ID 1) has authority over everything.
+Each node has **authority** — peer ID that's source of truth for node. Default: server (peer ID 1) has authority over everything.
 
 ```csharp
 // Set authority on a node
@@ -195,19 +195,19 @@ if (playerNode.IsMultiplayerAuthority()) { ... }
 var authority = playerNode.GetMultiplayerAuthority();
 ```
 
-The authority pattern is critical for security: only the authoritative peer should make decisions about its node's state. Other peers see *the result* of those decisions but don't get to modify them.
+Authority pattern critical for security: only authoritative peer should make decisions about its node's state. Other peers see *result* of decisions, don't get to modify them.
 
-For most networked games, **the server is the authority**. Clients send inputs (move requests, action requests); the server validates them, applies them, and broadcasts the results. This prevents cheating because clients can't directly modify game state — they can only ask the server to do things.
+Most networked games: **server is authority**. Clients send inputs (move requests, action requests); server validates, applies, broadcasts results. Prevents cheating — clients can't directly modify game state, only ask server to do things.
 
-The opposite pattern (**clients have authority over their own players**) is simpler but vulnerable to cheating. It's fine for cooperative or trusted games; it's wrong for competitive games.
+Opposite pattern (**clients have authority over own players**) simpler but vulnerable to cheating. Fine for cooperative or trusted games; wrong for competitive games.
 
 ## State Synchronization
 
-For state that changes frequently (player positions, animations, health), you have several options:
+State changing frequently (player positions, animations, health): several options:
 
 ### Manual sync (RPC every frame)
 
-The simplest approach: send the state via RPC every physics frame.
+Simplest approach: send state via RPC every physics frame.
 
 ```csharp
 public override void _PhysicsProcess(double delta)
@@ -228,11 +228,11 @@ public void SyncTransform(Vector2 position, float rotation)
 }
 ```
 
-This works for small games but doesn't scale — every frame sends a packet per player. For 60 FPS and 8 players, that's 480 packets per second. Over WebSockets, this can saturate.
+Works for small games, doesn't scale — every frame sends packet per player. 60 FPS × 8 players = 480 packets per second. Over WebSockets, can saturate.
 
 ### `MultiplayerSynchronizer` node
 
-Godot 4 has a `MultiplayerSynchronizer` node that automatically synchronizes specified properties of a node. Add it as a child of the node you want to sync; configure which properties to replicate; the engine handles the rest.
+Godot 4 has `MultiplayerSynchronizer` node automatically synchronizing specified properties of node. Add as child of node to sync; configure which properties to replicate; engine handles rest.
 
 ```
 Player (CharacterBody2D)
@@ -245,13 +245,13 @@ Player (CharacterBody2D)
 └── ...
 ```
 
-The `MultiplayerSynchronizer` reads the properties on the authority peer and replicates them to all other peers. By default, it sends every frame; you can configure the rate.
+`MultiplayerSynchronizer` reads properties on authority peer, replicates to all other peers. Default: sends every frame; configurable rate.
 
-This is the recommended way to sync state in Godot 4. It's less code than manual RPCs and the engine optimizes the wire format.
+Recommended way to sync state in Godot 4. Less code than manual RPCs; engine optimizes wire format.
 
 ### `MultiplayerSpawner` node
 
-Similarly, `MultiplayerSpawner` automatically replicates node spawning across the network. Add it to a parent node, configure which scenes can be spawned, and when the authority spawns one, all clients receive the spawn.
+Similarly, `MultiplayerSpawner` automatically replicates node spawning across network. Add to parent node, configure spawnable scenes; authority spawns one → all clients receive spawn.
 
 ```
 Level
@@ -261,14 +261,14 @@ Level
 └── Players (Node)
 ```
 
-When the server adds a child to `Players`, the spawner replicates it. When the server removes it, all clients also remove it.
+Server adds child to `Players` → spawner replicates it. Server removes it → all clients also remove it.
 
 ### Bandwidth considerations
 
-WebSockets over TLS have a per-message overhead. Sending hundreds of small messages per second is wasteful. Two strategies:
+WebSockets over TLS have per-message overhead. Hundreds of small messages per second wasteful. Two strategies:
 
-- **Batch updates**: collect state changes for multiple objects and send them in one RPC.
-- **Reduce update frequency**: sync at 20Hz instead of 60Hz; interpolate visually on the client.
+- **Batch updates**: collect state changes for multiple objects, send in one RPC.
+- **Reduce update frequency**: sync at 20Hz instead of 60Hz; interpolate visually on client.
 
 ```csharp
 private float _syncTimer = 0;
@@ -289,7 +289,7 @@ public override void _PhysicsProcess(double delta)
 }
 ```
 
-Then on the client side, interpolate visually between received positions:
+Client side: interpolate visually between received positions:
 
 ```csharp
 private Vector2 _lastReceivedPosition;
@@ -321,25 +321,25 @@ public void SyncTransform(Vector2 position, float rotation)
 
 ## Client-Side Prediction (Briefly)
 
-For competitive games where input latency matters, you want **client-side prediction**: the client immediately applies its own input locally, then reconciles with the server's authoritative state.
+Competitive games where input latency matters: want **client-side prediction** — client immediately applies own input locally, then reconciles with server's authoritative state.
 
-The pattern:
+Pattern:
 
 1. Client sends input to server.
 2. Client immediately applies input locally (predicted).
 3. Server processes input, sends back authoritative state.
-4. Client compares its predicted state to the server's state.
-5. If they differ, the client rolls back and re-applies inputs.
+4. Client compares predicted state to server's state.
+5. Differ → client rolls back, re-applies inputs.
 
-This is *complex*. Implementing it correctly is a significant undertaking. The high-level Godot API doesn't provide it; you build it on top.
+This is *complex*. Implementing correctly is significant undertaking. High-level Godot API doesn't provide it; you build on top.
 
-For most WebSocket-based games, **don't bother with prediction**. WebSockets are usually slow enough that prediction isn't appropriate; if you need prediction-quality responsiveness, you probably shouldn't be using WebSockets in the first place.
+Most WebSocket-based games: **don't bother with prediction**. WebSockets usually slow enough that prediction isn't appropriate; need prediction-quality responsiveness → probably shouldn't use WebSockets in first place.
 
-If you really need prediction over WebSockets (e.g., a fast-paced game that must run on web), consider:
+Really need prediction over WebSockets (e.g., fast-paced game that must run on web)? Consider:
 
 - **Predictive movement only**, not predictive combat.
 - **Authoritative server for combat** to prevent cheating.
-- **Visual interpolation everywhere** to hide the network roughness.
+- **Visual interpolation everywhere** to hide network roughness.
 
 ## Server vs Peer-to-Peer
 
@@ -347,30 +347,30 @@ Two architectures:
 
 ### Dedicated server
 
-- One process is the server; all clients connect to it.
-- The server has authority over all game state.
-- Clients send inputs and receive state.
-- **Pros**: cheat resistance; consistent experience; can be hosted in the cloud.
+- One process is server; all clients connect to it.
+- Server has authority over all game state.
+- Clients send inputs, receive state.
+- **Pros**: cheat resistance; consistent experience; hostable in cloud.
 - **Cons**: requires server infrastructure; cost.
 
 ### Peer-to-peer with one host
 
-- One client is the "host" and acts as the server. Other clients connect to it.
-- The host has authority over all game state.
+- One client is "host", acts as server. Other clients connect to it.
+- Host has authority over all game state.
 - **Pros**: no server infrastructure cost.
-- **Cons**: host has an unfair advantage (zero latency to itself); host migration is hard; vulnerable to host's network conditions; firewall traversal is harder (though WebSockets help).
+- **Cons**: host has unfair advantage (zero latency to itself); host migration hard; vulnerable to host's network conditions; firewall traversal harder (though WebSockets help).
 
-For WebSocket games, **dedicated server is the more practical choice**. WebSockets need a server endpoint anyway; making it a dedicated server is straightforward. P2P over WebSockets requires a relay server, which is basically just a dedicated server again.
+WebSocket games: **dedicated server is more practical choice**. WebSockets need server endpoint anyway; making dedicated server straightforward. P2P over WebSockets requires relay server — basically just dedicated server again.
 
 ## Hosting a Godot WebSocket Server
 
-A Godot multiplayer server can run as:
+Godot multiplayer server can run as:
 
-1. **A regular Godot exported binary** in headless mode (`--headless`).
-2. **A separate "server" project** that shares code with the client via a shared module.
-3. **A custom server** in another language that speaks Godot's protocol (advanced).
+1. **Regular Godot exported binary** in headless mode (`--headless`).
+2. **Separate "server" project** sharing code with client via shared module.
+3. **Custom server** in another language speaking Godot's protocol (advanced).
 
-The first option is the easiest. Build your client project with a "server" feature flag; export it as a Linux server build; deploy to a VPS or container.
+First option easiest. Build client project with "server" feature flag; export as Linux server build; deploy to VPS or container.
 
 ```csharp
 public override void _Ready()
@@ -386,20 +386,20 @@ public override void _Ready()
 }
 ```
 
-For deployment, treat the server like any other long-running process. See:
+Deployment: treat server like any long-running process. See:
 
-- **infrastructure provisioning practice** for standing up the host — out of scope for this skill
-- **deployment-pipeline practice** for the build and deploy
+- **infrastructure provisioning practice** for standing up host — out of scope for this skill
+- **deployment-pipeline practice** for build and deploy
 - **site-reliability-engineering** for keeping it running and observing it
 
 ## TLS / Secure WebSockets
 
-Production WebSocket servers should use TLS (`wss://`). Godot can handle TLS via either:
+Production WebSocket servers should use TLS (`wss://`). Godot handles TLS via either:
 
-- **Godot's built-in TLS**: configure the server with a certificate.
-- **A reverse proxy in front**: nginx, Caddy, or a load balancer terminates TLS and forwards plain WebSocket to Godot.
+- **Godot's built-in TLS**: configure server with certificate.
+- **Reverse proxy in front**: nginx, Caddy, or load balancer terminates TLS, forwards plain WebSocket to Godot.
 
-The reverse proxy approach is usually easier — let the proxy handle certificate renewal (Let's Encrypt), the Godot server stays simple.
+Reverse proxy approach usually easier — proxy handles certificate renewal (Let's Encrypt); Godot server stays simple.
 
 ```nginx
 server {
@@ -418,35 +418,35 @@ server {
 }
 ```
 
-The client connects with `wss://game.example.com/game`.
+Client connects with `wss://game.example.com/game`.
 
 ## Lobbies and Matchmaking
 
-For more than a single fixed server, you need a lobby/matchmaking system. WebSockets work naturally with HTTP infrastructure, so the typical pattern:
+More than single fixed server → need lobby/matchmaking system. WebSockets work naturally with HTTP infrastructure; typical pattern:
 
-1. **An HTTP API** (separate from the game server) handles authentication, lobby browsing, matchmaking.
-2. **The HTTP API tells the client** which game server to connect to.
-3. **The client connects to the chosen game server** via WebSocket.
+1. **HTTP API** (separate from game server) handles authentication, lobby browsing, matchmaking.
+2. **HTTP API tells client** which game server to connect to.
+3. **Client connects to chosen game server** via WebSocket.
 
-The HTTP API can be:
+HTTP API can be:
 
-- A custom backend (Node, Go, Python, .NET) — pair with the [`engineer`](../../../agents/engineer.md) agent; hosting and provisioning it is out of scope for this skill.
-- A managed service (PlayFab, Nakama, Heroic Labs).
-- The game server itself (one server handles both lobby and game; simpler but doesn't scale to many concurrent rooms).
+- Custom backend (Node, Go, Python, .NET) — pair with [`engineer`](../../../agents/engineer.md) agent; hosting and provisioning out of scope for this skill.
+- Managed service (PlayFab, Nakama, Heroic Labs).
+- Game server itself (one server handles both lobby and game; simpler but doesn't scale to many concurrent rooms).
 
 ## Security
 
-Multiplayer games are a security concern. The basics:
+Multiplayer games are security concern. Basics:
 
 ### Server-side validation
 
-The client cannot be trusted. Anything the client says about its own state should be validated by the server before being applied:
+Client cannot be trusted. Anything client says about own state validated by server before applied:
 
-- **Move requests**: check the move is legal (distance, direction, collisions).
-- **Action requests**: check the action is allowed (cooldowns, permissions).
-- **State changes**: never let the client directly set game state; always go through validation.
+- **Move requests**: check move legal (distance, direction, collisions).
+- **Action requests**: check action allowed (cooldowns, permissions).
+- **State changes**: never let client directly set game state; always through validation.
 
-A common pattern: clients send *intents* (what they want to do); the server decides whether to allow it.
+Common pattern: clients send *intents* (what they want to do); server decides whether to allow.
 
 ```csharp
 [Rpc(MultiplayerApi.RpcMode.AnyPeer)]
@@ -472,18 +472,18 @@ public void RequestAttack(int targetPlayerId)
 }
 ```
 
-The server is the only authority on attack outcomes. Clients just play the visual result.
+Server is only authority on attack outcomes. Clients just play visual result.
 
 ### Rate limiting
 
-Clients can spam RPCs. The server should rate-limit per-client: max N RPCs per second per peer. Drop or disconnect peers that exceed.
+Clients can spam RPCs. Server should rate-limit per-client: max N RPCs per second per peer. Drop or disconnect peers exceeding.
 
 ### Authentication
 
-If your game has user accounts, authenticate the WebSocket connection:
+Game has user accounts → authenticate WebSocket connection:
 
-- Pass a token in the URL or as a header during the WebSocket handshake.
-- Validate the token on the server before accepting the connection.
+- Pass token in URL or as header during WebSocket handshake.
+- Validate token on server before accepting connection.
 - Reject unauthenticated connections.
 
 ```csharp
@@ -493,26 +493,26 @@ peer.CreateClient($"wss://game.example.com/game?token={authToken}");
 // Server (need to check the URL during handshake — Godot exposes this via the underlying HTTP request)
 ```
 
-Godot's `WebSocketMultiplayerPeer` doesn't expose the handshake headers easily; for production auth, you may need to use a reverse proxy that validates the token before passing to the game server.
+Godot's `WebSocketMultiplayerPeer` doesn't expose handshake headers easily; production auth may need reverse proxy validating token before passing to game server.
 
 ### Anti-cheat
 
 Beyond server-side validation, common anti-cheat measures:
 
-- **Track suspicious patterns**: a player whose actions are too fast or too consistent might be using a bot.
+- **Track suspicious patterns**: player whose actions too fast or too consistent might be bot.
 - **Rate-limit movement and actions** strictly.
 - **Refuse client-side hit confirmation** (always validate hits server-side).
-- **Encrypt sensitive game state** before sending to the client (so the client can't see things it shouldn't, like enemy positions outside vision).
+- **Encrypt sensitive game state** before sending to client (so client can't see things it shouldn't, like enemy positions outside vision).
 
-For competitive games, cheating is a real concern; refer to the [`security-reviewer`](../../../agents/security-reviewer.md) agent for broader practices.
+Competitive games: cheating real concern; refer to [`security-reviewer`](../../../agents/security-reviewer.md) agent for broader practices.
 
 ## Reconnection and Network Loss
 
-Networks fail. Connections drop. Players reload tabs. The game has to handle this gracefully.
+Networks fail. Connections drop. Players reload tabs. Game must handle gracefully.
 
 ### Detecting disconnection
 
-The `Multiplayer.ServerDisconnected` signal fires on the client when the server connection is lost. The `Multiplayer.PeerDisconnected` signal fires on the server when a peer disconnects.
+`Multiplayer.ServerDisconnected` signal fires on client when server connection lost. `Multiplayer.PeerDisconnected` signal fires on server when peer disconnects.
 
 ```csharp
 public override void _Ready()
@@ -529,7 +529,7 @@ private void OnServerDisconnected()
 
 ### Reconnection strategy
 
-For brief disconnects (network blip), automatically reconnect with backoff:
+Brief disconnects (network blip): automatically reconnect with backoff:
 
 ```csharp
 private int _reconnectAttempts = 0;
@@ -551,37 +551,37 @@ private async void TryReconnect()
 }
 ```
 
-For session continuity, the server needs to remember the player's state for some time after they disconnect, and let them re-claim it on reconnect (often with a session token).
+Session continuity: server needs to remember player's state for some time after disconnect, let them re-claim on reconnect (often with session token).
 
 ### Graceful failure
 
-When reconnection fails, the game should:
+Reconnection fails → game should:
 
-- Show a clear error message ("Lost connection to server").
-- Offer a way to retry or return to the main menu.
-- Save any progress that can be saved locally.
+- Show clear error message ("Lost connection to server").
+- Offer way to retry or return to main menu.
+- Save any progress savable locally.
 - Not crash or hang.
 
 ## Anti-Patterns
 
-- **Trusting the client.** Clients lie. Validate everything server-side.
-- **Authority on the client** in a competitive game. Clients can cheat.
-- **State changes via direct property set.** Use RPCs through the high-level API.
+- **Trusting client.** Clients lie. Validate everything server-side.
+- **Authority on client** in competitive game. Clients can cheat.
+- **State changes via direct property set.** Use RPCs through high-level API.
 - **Sending large RPCs every frame.** Batch and rate-limit.
 - **Using "unreliable" RPCs over WebSockets** thinking they'll be faster. They aren't.
 - **No client-side interpolation** with low-frequency updates. Player positions look jerky.
-- **No reconnection logic.** Network blip kicks the player out permanently.
+- **No reconnection logic.** Network blip kicks player out permanently.
 - **Hardcoded server URLs.** Configure via build flag or runtime input.
-- **Connecting without TLS in production.** Plaintext WebSockets are intercept-able.
-- **No authentication on game server connections.** Anyone with the URL can join.
-- **No rate limiting.** Clients spam RPCs and DoS the server.
-- **Storing game state in scenes only on the host.** Host crashes → game lost.
+- **Connecting without TLS in production.** Plaintext WebSockets intercept-able.
+- **No authentication on game server connections.** Anyone with URL can join.
+- **No rate limiting.** Clients spam RPCs, DoS server.
+- **Storing game state in scenes only on host.** Host crashes → game lost.
 - **No graceful shutdown.** Server kill leaves clients hanging.
-- **No observability on the server.** Can't tell why it's running slowly or crashing.
+- **No observability on server.** Can't tell why running slowly or crashing.
 - **Mixing P2P and server-authoritative patterns.** Inconsistent who-decides-what semantics.
-- **Synchronizing things that don't need synchronizing.** Particle effects, audio, UI — can be local-only.
-- **Replicating physics state** instead of inputs. Bandwidth-heavy and prone to divergence.
-- **Long blocking operations on the server's main thread.** Stalls all clients.
+- **Synchronizing things not needing synchronizing.** Particle effects, audio, UI — local-only.
+- **Replicating physics state** instead of inputs. Bandwidth-heavy, prone to divergence.
+- **Long blocking operations on server's main thread.** Stalls all clients.
 - **No server-side logging of suspicious actions.** Can't detect or investigate cheating.
 - **Different game logic on client and server.** Drift; cheating; debugging hell.
 
@@ -591,7 +591,7 @@ When reconnection fails, the game should:
 - [signals-and-events.md](signals-and-events.md) — connection signals
 - the [`security-reviewer`](../../../agents/security-reviewer.md) agent — server-side validation, anti-cheat
 - system-architect — server architecture, scaling
-- infrastructure provisioning practice — hosting the server, out of scope for this skill
-- deployment-pipeline practice — building and deploying the server
-- site-reliability-engineering — running the server in production
+- infrastructure provisioning practice — hosting server, out of scope for this skill
+- deployment-pipeline practice — building and deploying server
+- site-reliability-engineering — running server in production
 - [godot-anti-patterns.md](godot-anti-patterns.md) — broader patterns to avoid

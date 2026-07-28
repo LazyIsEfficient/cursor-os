@@ -1,18 +1,18 @@
 # Exporting and Platforms
 
-Building a Godot game and getting it to players is most of the work that happens *after* the game is "done." Each platform has its own requirements, gotchas, and asset pipeline. This file is the practical guide to exporting Godot 4 projects to each common target.
+Building Godot game and getting it to players is most of the work that happens *after* game is "done." Each platform has own requirements, gotchas, asset pipeline. File is practical guide to exporting Godot 4 projects to each common target.
 
-The single most important rule: **test on the target platform early and often**. Desktop is forgiving; mobile, web, and console will surface problems that don't exist on dev machines. A game that's tested only on desktop will discover its mobile-specific bugs the day before launch.
+Single most important rule: **test on target platform early and often**. Desktop forgiving; mobile, web, console surface problems not existing on dev machines. Game tested only on desktop discovers mobile-specific bugs day before launch.
 
 ## Export Presets
 
-Export configuration lives in **Project → Export...** as one or more presets. Each preset targets a specific platform with specific settings.
+Export configuration lives in **Project → Export...** as one or more presets. Each preset targets specific platform with specific settings.
 
-A typical project has:
+Typical project has:
 
 - **Windows Desktop** — `.exe` for Windows users.
 - **Linux** — `.x86_64` binary for Linux users.
-- **macOS** — `.app` bundle (signed and notarized for the App Store).
+- **macOS** — `.app` bundle (signed and notarized for App Store).
 - **Android** — APK or AAB for Google Play.
 - **iOS** — Xcode project for App Store.
 - **Web** — HTML/JS/WASM for browsers.
@@ -24,65 +24,65 @@ Plus, sometimes:
 
 ## Export Templates
 
-Before exporting, you need the **export templates** — Godot's pre-built engine binaries for each target platform. Download them via **Editor → Manage Export Templates...** or directly from the Godot website.
+Before exporting, need **export templates** — Godot's pre-built engine binaries for each target platform. Download via **Editor → Manage Export Templates...** or directly from Godot website.
 
-Templates are versioned to match the editor. If you upgrade Godot, you also need to upgrade templates.
+Templates versioned to match editor. Upgrade Godot → also upgrade templates.
 
-For C# projects, you need the **.NET version** of the export templates, not the standard ones. The .NET templates include the .NET runtime in the export.
+C# projects: need **.NET version** of export templates, not standard ones. .NET templates include .NET runtime in export.
 
 ## Common Export Settings
 
-Each preset has dozens of settings. The most important ones:
+Each preset has dozens of settings. Most important:
 
 ### Resources
 
-- **Export Mode**: `PCK Encrypted` for production builds (encrypts the data file). `PCK` for unencrypted (smaller, faster, but inspectable). `ZIP` for some hosting scenarios.
+- **Export Mode**: `PCK Encrypted` for production builds (encrypts data file). `PCK` for unencrypted (smaller, faster, inspectable). `ZIP` for some hosting scenarios.
 - **Filters to export non-resource files**: explicitly include or exclude files. Useful for modding support or excluding dev-only files.
 
 ### Features
 
-- **Custom features**: a list of feature tags this export should include. Use `OS.HasFeature("...")` to check at runtime. Useful for "demo build" vs "full build" or "server" vs "client" builds.
+- **Custom features**: list of feature tags export should include. Use `OS.HasFeature("...")` to check at runtime. Useful for "demo build" vs "full build" or "server" vs "client" builds.
 
 ### Renderer
 
 Per-platform renderer choice. Generally:
 
-- **Desktop**: Forward+ (the default; full features)
+- **Desktop**: Forward+ (default; full features)
 - **Mobile**: Mobile (lighter; fewer features)
 - **Web**: Compatibility (most compatible)
 - **Lower-end desktop**: Mobile or Compatibility
 
-You can override per-export-preset.
+Can override per-export-preset.
 
 ### Encryption
 
-If you're worried about reverse engineering or want to obfuscate game data, enable PCK encryption. Set an encryption key in the project settings; the engine uses it to encrypt the resource file. **The key is in the binary** so this is mild obfuscation, not real security — but it stops casual extraction.
+Worried about reverse engineering or want to obfuscate game data → enable PCK encryption. Set encryption key in project settings; engine uses it to encrypt resource file. **Key is in binary** — mild obfuscation, not real security — but stops casual extraction.
 
 ## Per-Platform Export
 
 ### Windows Desktop
 
-- **Output**: `.exe` plus a `.pck` (the data file). The PCK can be embedded into the EXE for a single-file build.
-- **Code signing**: signing the EXE prevents Windows SmartScreen warnings. Use `signtool.exe` with a code-signing certificate.
-- **Icon**: set in the export preset; auto-applied to the EXE.
-- **Console window**: by default, the game shows a console window in debug builds. For release, disable it.
+- **Output**: `.exe` plus `.pck` (data file). PCK can be embedded into EXE for single-file build.
+- **Code signing**: signing EXE prevents Windows SmartScreen warnings. Use `signtool.exe` with code-signing certificate.
+- **Icon**: set in export preset; auto-applied to EXE.
+- **Console window**: default shows console window in debug builds. Release: disable it.
 
 ### Linux
 
-- **Output**: an `.x86_64` binary plus a `.pck`.
+- **Output**: `.x86_64` binary plus `.pck`.
 - **Distribution formats**: tar.gz, AppImage, Flatpak, Snap. Each has different requirements.
-- **AppImage** is the easiest cross-distribution format — bundles everything into a single executable file.
-- **Steam** packages Linux builds via the depot system; just put the binary and PCK in the depot.
+- **AppImage** easiest cross-distribution format — bundles everything into single executable file.
+- **Steam** packages Linux builds via depot system; just put binary and PCK in depot.
 
 ### macOS
 
-- **Output**: an `.app` bundle.
-- **Code signing**: required for distribution. Without it, users get a "developer cannot be verified" warning.
-- **Notarization**: for distribution outside the App Store, Apple requires notarization (an automated security scan). Use `xcrun notarytool` after signing.
+- **Output**: `.app` bundle.
+- **Code signing**: required for distribution. Without it, users get "developer cannot be verified" warning.
+- **Notarization**: distribution outside App Store, Apple requires notarization (automated security scan). Use `xcrun notarytool` after signing.
 - **Universal binary**: macOS now requires Apple Silicon support. Godot 4's export supports both Intel and Apple Silicon (universal builds).
 - **App Store**: requires meeting App Store guidelines, providing screenshots, etc. Significant overhead.
 
-The signing/notarization workflow can be automated:
+Signing/notarization workflow automatable:
 
 ```bash
 # After Godot exports to MyGame.app:
@@ -94,41 +94,41 @@ xcrun stapler staple MyGame.app
 
 ### Android
 
-- **Output**: an APK (Android Package) or AAB (Android App Bundle, required for Google Play).
+- **Output**: APK (Android Package) or AAB (Android App Bundle, required for Google Play).
 - **Requirements**: Android SDK + Java JDK + Gradle. Configure paths in **Editor Settings → Export → Android**.
-- **Signing**: Android requires a keystore. Generate one with `keytool` and configure in the export preset.
-- **Permissions**: declare needed permissions in the export preset (Internet, Storage, etc.).
-- **Min/target SDK version**: set in the preset. Google Play requires updating target SDK periodically.
-- **Architectures**: ARMv7, ARMv8, x86, x86_64. ARMv8 is the modern default. Including more architectures bloats the APK.
+- **Signing**: Android requires keystore. Generate with `keytool`, configure in export preset.
+- **Permissions**: declare needed permissions in export preset (Internet, Storage, etc.).
+- **Min/target SDK version**: set in preset. Google Play requires updating target SDK periodically.
+- **Architectures**: ARMv7, ARMv8, x86, x86_64. ARMv8 modern default. More architectures bloat APK.
 
-A few mobile-specific things:
+Mobile-specific things:
 
-- **Use the Mobile renderer**, not Forward+.
+- **Use Mobile renderer**, not Forward+.
 - **Texture compression**: ASTC for modern devices, ETC2 for compatibility.
-- **Test on real low-end hardware**, not the latest flagship phone.
-- **Battery and thermal throttling**: a long session will throttle the CPU/GPU. Plan for it.
+- **Test on real low-end hardware**, not latest flagship phone.
+- **Battery and thermal throttling**: long session throttles CPU/GPU. Plan for it.
 
 ### iOS
 
-- **Output**: an Xcode project. You then build it in Xcode and submit via App Store Connect.
+- **Output**: Xcode project. Build in Xcode, submit via App Store Connect.
 - **Requirements**: macOS, Xcode, Apple Developer account.
 - **Provisioning profiles**: required for any iOS deployment. Set up in Apple's developer portal.
-- **App Store guidelines**: review them before designing the game. Some monetization patterns are forbidden; some content is restricted; some features (parental controls, accessibility) are required.
+- **App Store guidelines**: review before designing game. Some monetization patterns forbidden; some content restricted; some features (parental controls, accessibility) required.
 - **Performance**: similar concerns to Android — test on real low-end iOS devices.
 
 ### Web
 
-- **Output**: HTML, JS, WASM, and a PCK file.
-- **Requirements**: a web server to serve the files. Local file:// URLs don't work.
-- **Specific server requirements**: Godot's web export uses `SharedArrayBuffer`, which requires the server to send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` headers.
-- **Initial load size**: the WASM file is several megabytes; the PCK is project-dependent. Web games should be under ~50MB total for reasonable load times.
+- **Output**: HTML, JS, WASM, PCK file.
+- **Requirements**: web server to serve files. Local file:// URLs don't work.
+- **Specific server requirements**: Godot's web export uses `SharedArrayBuffer`, requiring server to send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` headers.
+- **Initial load size**: WASM file several megabytes; PCK project-dependent. Web games under ~50MB total for reasonable load times.
 - **Memory limit**: ~2GB hard limit; less in practice. Trim assets aggressively.
-- **No threading** (mostly): web has limited threading. Some Godot features that depend on threads don't work.
+- **No threading** (mostly): web has limited threading. Some Godot features depending on threads don't work.
 - **Audio quirks**: web audio has known issues with Godot. Test thoroughly.
 - **No file system access**: `user://` is browser local storage; no real file I/O.
-- **Use the Compatibility renderer** for the broadest compatibility.
+- **Use Compatibility renderer** for broadest compatibility.
 
-A typical web hosting setup:
+Typical web hosting setup:
 
 ```nginx
 # nginx config snippet for hosting a Godot web export
@@ -145,24 +145,24 @@ server {
 }
 ```
 
-The `Cross-Origin-*` headers are required; without them, the game won't load.
+`Cross-Origin-*` headers required; without them, game won't load.
 
 ### Dedicated server
 
-For online multiplayer games, you'll want a server build that:
+Online multiplayer games: want server build that:
 
 - Has no rendering, audio, or input.
 - Runs headless on Linux.
 - Uses minimal resources.
 
-Set up a dedicated-server export preset:
+Set up dedicated-server export preset:
 
 - **Platform**: Linux/X11
 - **Custom features**: `dedicated_server` (or your own tag)
-- **Templates**: use the `linux_server.x86_64` template if available, or the standard Linux template
-- **Run as headless**: pass `--headless` on the command line
+- **Templates**: use `linux_server.x86_64` template if available, or standard Linux template
+- **Run as headless**: pass `--headless` on command line
 
-In your code, branch on the feature:
+In code, branch on feature:
 
 ```csharp
 public override void _Ready()
@@ -178,11 +178,11 @@ public override void _Ready()
 }
 ```
 
-Strip out client-only assets (textures, audio, models) from the server build via export filters to make the server binary smaller.
+Strip client-only assets (textures, audio, models) from server build via export filters to make server binary smaller.
 
 ## Asset Import Settings
 
-The biggest performance lever for many projects is **asset import settings**. These are configured per-asset in the import dock.
+Biggest performance lever for many projects: **asset import settings**. Configured per-asset in import dock.
 
 ### Textures
 
@@ -194,11 +194,11 @@ The biggest performance lever for many projects is **asset import settings**. Th
   - `Nearest` for pixel art.
   - `Linear` for everything else.
 - **Mipmaps**: generate for 3D textures and zoomed-out 2D; skip for fixed-size UI.
-- **Detect 3D**: when on, Godot warns if you use a 2D-imported texture in 3D. Helpful default.
+- **Detect 3D**: when on, Godot warns if you use 2D-imported texture in 3D. Helpful default.
 
 ### Models
 
-- **Materials**: keep external materials (separate `.tres` files) for tweaking. Use embedded materials for one-off models.
+- **Materials**: keep external materials (separate `.tres` files) for tweaking. Embedded materials for one-off models.
 - **Mesh compression**: enable for smaller files.
 - **Generate LODs**: Godot 4 can auto-generate Level-of-Detail meshes for distance-based simplification. Big win for 3D performance.
 - **Generate tangents**: required for normal mapping.
@@ -207,27 +207,27 @@ The biggest performance lever for many projects is **asset import settings**. Th
 ### Audio
 
 - **Loop**: for looping music or ambient.
-- **Compression**: OGG Vorbis is the default and works well. WAV for short SFX where the file size doesn't matter.
+- **Compression**: OGG Vorbis default, works well. WAV for short SFX where file size doesn't matter.
 - **Trim**: silent leading/trailing audio.
 
 ### Fonts
 
-- **Antialiasing**: smoother text but blurrier pixel art.
+- **Antialiasing**: smoother text, blurrier pixel art.
 - **Subpixel positioning**: better text quality.
-- **Multichannel signed distance field**: for fonts that need to scale to many sizes; bigger texture, better quality.
+- **Multichannel signed distance field**: fonts needing to scale to many sizes; bigger texture, better quality.
 
 ## Build Pipeline
 
-For any non-trivial project, set up an automated build pipeline. The basic flow:
+Non-trivial project: set up automated build pipeline. Basic flow:
 
 1. **CI triggers** on push or release tag.
-2. **Build the project** via `godot --headless --export "Preset Name" output_file`.
-3. **Sign and package** for the target platform.
+2. **Build project** via `godot --headless --export "Preset Name" output_file`.
+3. **Sign and package** for target platform.
 4. **Upload** to distribution (Steam, Itch.io, Google Play, App Store, etc.).
 
-This deserves a real engineering setup; treat it as a CI/CD concern outside this skill.
+Deserves real engineering setup; treat as CI/CD concern outside this skill.
 
-A simple GitHub Actions example for a Linux build:
+Simple GitHub Actions example for Linux build:
 
 ```yaml
 name: Build Linux
@@ -259,19 +259,19 @@ jobs:
           path: build/linux
 ```
 
-For multi-platform builds, you'll likely want a matrix strategy or separate jobs per platform. Some platforms (macOS, iOS) require macOS runners; Android requires the Android SDK; web requires the right server config for testing.
+Multi-platform builds: matrix strategy or separate jobs per platform. Some platforms (macOS, iOS) require macOS runners; Android requires Android SDK; web requires right server config for testing.
 
 ## Distribution Channels
 
-A few common channels and their requirements:
+Common channels and requirements:
 
 ### Steam (Steamworks)
 
 - **Steam Direct fee**: one-time $100 per game.
-- **Steamworks SDK**: integrate via the Steamworks API. Several Godot bindings exist (e.g., GodotSteam).
+- **Steamworks SDK**: integrate via Steamworks API. Several Godot bindings exist (e.g., GodotSteam).
 - **Depots**: organize files into depots; upload via SteamPipe.
-- **Achievements, leaderboards, cloud saves**: integrate via the Steamworks API.
-- **Reviews and approval**: Steam doesn't curate heavily, but they do basic review.
+- **Achievements, leaderboards, cloud saves**: integrate via Steamworks API.
+- **Reviews and approval**: Steam doesn't curate heavily, but basic review.
 
 ### Itch.io
 
@@ -295,24 +295,24 @@ A few common channels and their requirements:
 ### App Store
 
 - **$99/year** Apple Developer fee.
-- **App Review** is a real process; expect multiple rounds.
-- **Strict content guidelines** — some monetization, gambling, and content are forbidden.
+- **App Review** is real process; expect multiple rounds.
+- **Strict content guidelines** — some monetization, gambling, content forbidden.
 - **iOS-specific features** (iCloud, GameCenter) require integration.
 
 ### Console (Switch, PlayStation, Xbox)
 
-- **Closed platforms**: requires applying for a developer license.
-- **NDAs**: most details are under NDA.
-- **SDK requirements**: each platform has its own SDK and requires platform-specific code.
-- **Out of scope** for this skill; engage a porting partner if you need console releases.
+- **Closed platforms**: requires applying for developer license.
+- **NDAs**: most details under NDA.
+- **SDK requirements**: each platform has own SDK, requires platform-specific code.
+- **Out of scope** for this skill; engage porting partner if console releases needed.
 
 ## Versioning Builds
 
-Every released build should be uniquely identified. The pattern:
+Every released build uniquely identified. Pattern:
 
-- **Semantic version** in the project settings (`config/version` or your own).
-- **Build number** that increments per build.
-- **Git commit hash** baked into the binary.
+- **Semantic version** in project settings (`config/version` or your own).
+- **Build number** incrementing per build.
+- **Git commit hash** baked into binary.
 
 ```csharp
 public partial class VersionInfo : Node
@@ -328,40 +328,40 @@ public partial class VersionInfo : Node
 }
 ```
 
-CI substitutes the placeholders before building. Display the version somewhere in the UI (settings menu, splash screen) for bug reports.
+CI substitutes placeholders before building. Display version somewhere in UI (settings menu, splash screen) for bug reports.
 
 ## Telemetry and Crash Reporting
 
-Once a game is in players' hands, you need to know what's happening. Options:
+Game in players' hands: need to know what's happening. Options:
 
-- **Crash reporting**: Sentry, Bugsnag, Backtrace, etc. There are Godot integrations or you can wire it up via HTTP.
-- **Analytics**: PostHog, GameAnalytics, Unity Analytics (yes, even for Godot games), or your own backend.
-- **Player feedback**: in-game feedback button that submits to a backend or email.
+- **Crash reporting**: Sentry, Bugsnag, Backtrace, etc. Godot integrations exist or wire up via HTTP.
+- **Analytics**: PostHog, GameAnalytics, Unity Analytics (yes, even for Godot games), or own backend.
+- **Player feedback**: in-game feedback button submitting to backend or email.
 
 Whatever you use, **be transparent and let players opt out**. Some jurisdictions require consent.
 
 ## Anti-Patterns
 
-- **Testing only on dev machine.** Mobile, web, and low-end hardware will surface problems.
-- **No automated build pipeline.** Manual builds are slow, error-prone, and hard to reproduce.
+- **Testing only on dev machine.** Mobile, web, low-end hardware surface problems.
+- **No automated build pipeline.** Manual builds slow, error-prone, hard to reproduce.
 - **One mega-export-preset for all platforms.** Different platforms need different settings.
-- **Same renderer for all platforms.** Forward+ on mobile is too heavy.
-- **Same texture compression for all platforms.** Use BCn on desktop, ASTC/ETC on mobile.
-- **No version info in builds.** Bug reports come in for an unknown version.
+- **Same renderer for all platforms.** Forward+ on mobile too heavy.
+- **Same texture compression for all platforms.** BCn on desktop, ASTC/ETC on mobile.
+- **No version info in builds.** Bug reports come in for unknown version.
 - **No code signing.** Windows SmartScreen blocks; macOS shows scary warnings.
-- **No automated update system.** Players have to manually download new versions.
-- **Web builds without the right CORS headers.** Game doesn't load.
-- **iOS/Android without testing on a low-end device.** Performance disasters at launch.
-- **No telemetry or crash reporting.** Can't tell what's broken in the wild.
-- **Mixing client and server in the same build** without a feature flag. Server has rendering and audio it doesn't need.
+- **No automated update system.** Players manually download new versions.
+- **Web builds without right CORS headers.** Game doesn't load.
+- **iOS/Android without testing on low-end device.** Performance disasters at launch.
+- **No telemetry or crash reporting.** Can't tell what's broken in wild.
+- **Mixing client and server in same build** without feature flag. Server has rendering and audio it doesn't need.
 - **Forgetting to update target SDK** for Android. Google Play eventually rejects old SDKs.
 - **Forgetting to renew Apple Developer account.** Builds expire.
 - **Forgetting to renew code-signing certificates.** Builds stop signing.
 - **Including dev-only files in release builds.** `*.tmp`, `*.bak`, debug logs.
-- **PCK encryption with the key checked into version control.** Defeats the purpose.
+- **PCK encryption with key checked into version control.** Defeats purpose.
 - **Hardcoded test URLs.** Production server URL still points to dev.
 - **No way to debug release builds.** No log file, no remote logging, no in-game console.
-- **Releasing without a beta phase.** Bugs that beta would have caught hit everyone.
+- **Releasing without beta phase.** Bugs beta would have caught hit everyone.
 
 ## Related
 

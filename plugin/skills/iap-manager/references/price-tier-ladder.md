@@ -1,6 +1,6 @@
 # Price-tier ladder
 
-The set of price points a game offers. Each tier serves a segment and a moment. Healthy catalogs populate every tier with at least one compelling SKU; gaps in the ladder leave money on the table.
+Set of price points a game offers. Each tier serves a segment and a moment. Healthy catalogs populate every tier with ≥1 compelling SKU; gaps leave money on the table.
 
 ## The standard tiers (USD)
 
@@ -18,72 +18,72 @@ The set of price points a game offers. Each tier serves a segment and a moment. 
 
 ## Tier psychology
 
-Different tiers feel different to players:
+Tiers feel different:
 
 - **$0.99** — "free-but-paying"; lowest commitment; useful for "try the IAP" moment
-- **$2.99 / $4.99** — "small impulse"; feels free relative to a coffee; minimal regret
-- **$9.99** — the "premium app price" anchor; people compare to apps and games they've bought
+- **$2.99 / $4.99** — "small impulse"; feels free relative to coffee; minimal regret
+- **$9.99** — "premium app price" anchor; compared to apps and games bought before
 - **$19.99 / $49.99** — "deliberate purchase"; players think before clicking
 - **$99.99** — "I'm investing in this game"; serious whale signal
 
-Pricing at $4.99 vs $5.99 isn't 20% — it's the difference between "small impulse" and "I'm thinking about this." Anchor to the psychology, not the linear price.
+$4.99 vs $5.99 isn't 20% — it's "small impulse" vs "I'm thinking about this." Anchor to psychology, not linear price.
 
 ## Coverage rules
 
-- **Every tier T2–T6 should have at least one SKU.** If T2 is missing, minnows have no entry; if T5 is missing, whales hit a ceiling and stop.
-- **No more than 3 SKUs per tier on display at once.** More than that is choice paralysis.
-- **The ladder should *progress in value*.** Tier 3 should give better value-per-dollar than Tier 2 *only if it has more content*. Don't punish minnows by making the small pack a worse deal.
+- **Every tier T2–T6 ≥1 SKU.** T2 missing → minnows have no entry; T5 missing → whales hit ceiling, stop.
+- **Max 3 SKUs per tier on display at once.** More = choice paralysis.
+- **Ladder *progresses in value*.** Tier 3 gives better value-per-dollar than Tier 2 *only if more content*. Don't punish minnows with a worse-deal small pack.
 
 ## Common gaps
 
 ### Mid-tier vacuum
 
-The catalog has $0.99–$4.99 entry SKUs and $49.99+ whale SKUs, but nothing in the $9.99–$19.99 band. Dolphins (the bulk of payers) have nowhere to land. Conversion to dolphin-tier spend stalls.
+Catalog has $0.99–$4.99 entry SKUs and $49.99+ whale SKUs, nothing in $9.99–$19.99. Dolphins (bulk of payers) have nowhere to land. Dolphin-tier conversion stalls.
 
 **Fix:** add 1–2 SKUs at $9.99 (season pass, mid-currency bundle) and 1 at $19.99 (premium bundle).
 
 ### Top-tier vacuum
 
-The catalog has $0.99–$19.99 SKUs but nothing above. Whales hit the ceiling and stop spending.
+Catalog has $0.99–$19.99 SKUs, nothing above. Whales hit ceiling, stop spending.
 
-**Fix:** add a $49.99 currency pack and a $99.99 named bundle / founders.
+**Fix:** add $49.99 currency pack and $99.99 named bundle / founders.
 
 ### Bottom-tier vacuum
 
-The catalog starts at $9.99. Free-to-minnow conversion is poor because the entry friction is too high.
+Catalog starts at $9.99. Free-to-minnow conversion poor — entry friction too high.
 
-**Fix:** add a $2.99 ad-removal or $4.99 starter pack.
+**Fix:** add $2.99 ad-removal or $4.99 starter pack.
 
 ## Per-platform tier maps
 
-The platforms do not all use linear prices.
+Platforms don't all use linear prices.
 
 ### App Store
 
-App Store tiers are numbered (T1, T3, T5, T10, T20...). Apple maintains a tier-map document that translates between tiers and local prices for each region. The mapping is **not** a flat exchange rate — it's anchored to local price psychology.
+App Store tiers numbered (T1, T3, T5, T10, T20...). Apple maintains tier-map document translating tiers to local prices per region. Mapping is **not** flat exchange rate — anchored to local price psychology.
 
 - T1: $0.99 / ¥120 / £0.99 / €0.99
 - T5: $4.99 / ¥610 / £4.49 / €4.99
 - T10: $9.99 / ¥1,220 / £9.99 / €9.99
 - T20: $19.99 / ¥2,440 / £18.99 / €19.99
 
-Use Apple's tier — don't invent local prices. Apple's psychology research is doing work for you.
+Use Apple's tier — don't invent local prices. Apple's psychology research works for you.
 
 ### Google Play
 
-Similar structure (price tier maps); broadly aligned with App Store. Verify the exact mapping for new SKUs.
+Similar structure (price tier maps); broadly aligned with App Store. Verify exact mapping for new SKUs.
 
 ### Steam
 
-Steam allows custom prices but has regional pricing recommendations. Use the recommendations as a baseline and adjust. Round to .99 / .49 conventions.
+Custom prices allowed; regional pricing recommendations provided. Use recommendations as baseline, adjust. Round to .99 / .49 conventions.
 
 ### Web (Stripe)
 
-Arbitrary pricing supported. Use the same psychology as platform tiers. Avoid weird prices like $4.27 — players read them as "untrusted."
+Arbitrary pricing. Same psychology as platform tiers. Avoid weird prices like $4.27 — players read as "untrusted."
 
 ### Web3 marketplaces
 
-Token-priced SKUs depend on chain-native token. NFT mints are typically priced in chain-native. Disclose any wrapper / fiat conversion clearly.
+Token-priced SKUs depend on chain-native token. NFT mints typically priced in chain-native. Disclose wrapper / fiat conversion clearly.
 
 ## Refresh cadence
 

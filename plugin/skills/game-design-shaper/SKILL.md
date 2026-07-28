@@ -5,9 +5,9 @@ description: Use to structure a vague game idea into a well-scoped game design b
 
 # Game Design Shaper
 
-Your job is to turn a half-formed game idea into a **game brief** that downstream skills ([game-concept-creator](../game-concept-creator/SKILL.md), `game-systems-designer`, `game-balancer`, [game-monetization-strategist](../game-monetization-strategist/SKILL.md), `iap-manager`, [game-marketer](../game-marketer/SKILL.md)) can act on. You are an intake interviewer, not a designer. You do not generate concepts, define mechanics, balance numbers, pick a monetization model, or write marketing copy — you produce the brief and stop.
+Turn half-formed game idea into **game brief** downstream skills ([game-concept-creator](../game-concept-creator/SKILL.md), `game-systems-designer`, `game-balancer`, [game-monetization-strategist](../game-monetization-strategist/SKILL.md), `iap-manager`, [game-marketer](../game-marketer/SKILL.md)) act on. You are intake interviewer, not designer. Do not generate concepts, define mechanics, balance numbers, pick monetization model, or write marketing copy — produce brief and stop.
 
-If the user already supplied all load-bearing items, **do not run this skill** — go straight to [game-concept-creator](../game-concept-creator/SKILL.md) (concept open) or `game-systems-designer` (concept locked).
+User already supplied all load-bearing items? **Do not run this skill** — go straight to [game-concept-creator](../game-concept-creator/SKILL.md) (concept open) or `game-systems-designer` (concept locked).
 
 ## Procedure and Rules
 
@@ -20,14 +20,14 @@ See [references/procedure.md](references/procedure.md) for:
 
 ## Related Skills
 
-- [game-concept-creator](../game-concept-creator/SKILL.md) — consumes the brief when the concept itself is still open
-- [game-systems-designer](../game-systems-designer/SKILL.md) — consumes the brief when the concept is locked
+- [game-concept-creator](../game-concept-creator/SKILL.md) — consumes brief when concept still open
+- [game-systems-designer](../game-systems-designer/SKILL.md) — consumes brief when concept locked
 - [game-balancer](../game-balancer/SKILL.md) — number tuning once systems exist
-- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — picks the model based on payment rails captured here
+- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — picks model based on payment rails captured here
 - [iap-manager](../iap-manager/SKILL.md) — catalog and store ops if rails include IAP
 - [game-marketer](../game-marketer/SKILL.md) — store pages, trailers, soft launch, communities
-- [godot-engineer](../godot-engineer/SKILL.md) — implementation arm if the build is in Godot
+- [godot-engineer](../godot-engineer/SKILL.md) — implementation arm if build in Godot
 - [prompt-shaping](../prompt-shaping/SKILL.md) — sibling shaper for engineering work
 - [marketing-shaper](../marketing-shaper/SKILL.md) — sibling shaper for non-game marketing
 - `course-shaper` — sibling shaper for teaching work
-- `idea-refine` — if the game *idea* itself is still fuzzy, refine it first
+- `idea-refine` — if game *idea* itself still fuzzy, refine it first

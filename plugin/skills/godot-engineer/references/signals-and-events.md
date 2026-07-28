@@ -1,16 +1,16 @@
 # Signals and Events
 
-Signals are Godot's event system, and they're the single most important architectural tool the engine gives you. Used well, they let nodes communicate without knowing about each other; the result is a project where scenes are reusable, refactoring is safe, and adding features doesn't require touching unrelated code.
+Signals are Godot's event system, single most important architectural tool engine gives you. Used well, nodes communicate without knowing about each other; result is project where scenes reusable, refactoring safe, adding features doesn't require touching unrelated code.
 
-Used badly — or not at all — Godot projects collapse into spaghetti where every node holds direct references to every other node. The codebase becomes impossible to refactor and impossible to test.
+Used badly — or not at all — Godot projects collapse into spaghetti where every node holds direct references to every other node. Codebase becomes impossible to refactor, impossible to test.
 
-This file is about signal patterns in C# Godot 4: when to use them, how to structure them, and when to reach for an autoload event bus instead.
+File is about signal patterns in C# Godot 4: when to use them, how to structure them, when to reach for autoload event bus instead.
 
 ## What a Signal Is
 
-A signal is an event a node can *emit*. Other nodes can *connect* to that event and receive a callback when it fires. The emitter doesn't know who's listening; the listener has a typed connection to the emitter.
+Signal is event node can *emit*. Other nodes can *connect* to event, receive callback when it fires. Emitter doesn't know who's listening; listener has typed connection to emitter.
 
-In C# Godot 4, signals are declared as delegate types with the `[Signal]` attribute, ending in `EventHandler` (this naming is required by the source generator):
+In C# Godot 4, signals declared as delegate types with `[Signal]` attribute, ending in `EventHandler` (naming required by source generator):
 
 ```csharp
 public partial class Health : Node
@@ -49,21 +49,21 @@ public partial class Health : Node
 }
 ```
 
-A few patterns:
+Patterns:
 
-- **`SignalName.Damaged`** is a generated constant for the signal name. Preferable to the raw string `"Damaged"` because typos are caught at compile time.
-- **Multiple parameters** are passed in `EmitSignal` after the signal name.
-- **The same emitter can emit different signals** for different events.
+- **`SignalName.Damaged`** is generated constant for signal name. Preferable to raw string `"Damaged"` — typos caught at compile time.
+- **Multiple parameters** passed in `EmitSignal` after signal name.
+- **Same emitter can emit different signals** for different events.
 
 ## Connecting Signals
 
-Two ways: in the editor, or in code.
+Two ways: in editor, or in code.
 
 ### In the editor
 
-Select the emitter node, look at the **Node** panel (next to Inspector), find the signal in the list, double-click. Pick the receiver node and the method name.
+Select emitter node, look at **Node** panel (next to Inspector), find signal in list, double-click. Pick receiver node and method name.
 
-This is convenient for quick connections and for connections that should be visible to designers. The downside: the connection lives in the `.tscn` file rather than in code, so it's not greppable and a refactor of the receiver method name doesn't update the connection.
+Convenient for quick connections, connections that should be visible to designers. Downside: connection lives in `.tscn` file rather than code — not greppable; refactor of receiver method name doesn't update connection.
 
 ### In code (the C# 4 idiom)
 
@@ -106,18 +106,18 @@ public partial class HUD : CanvasLayer
 }
 ```
 
-This is the right pattern for new code. It's:
+Right pattern for new code. It's:
 
-- **Type-safe** — the compiler checks the parameter types match.
-- **Refactor-friendly** — renaming the method updates the reference.
-- **Greppable** — finding all connections to a signal is easy.
-- **Idiomatic C#** — uses `+=` like every other event in the .NET world.
+- **Type-safe** — compiler checks parameter types match.
+- **Refactor-friendly** — renaming method updates reference.
+- **Greppable** — finding all connections to signal easy.
+- **Idiomatic C#** — uses `+=` like every other event in .NET world.
 
-The older string-based approach (`Connect("Damaged", new Callable(this, nameof(OnPlayerDamaged)))`) still works but you should avoid it in new code.
+Older string-based approach (`Connect("Damaged", new Callable(this, nameof(OnPlayerDamaged)))`) still works but avoid in new code.
 
 ## Disconnecting Signals
 
-Always disconnect signals when the connection is no longer needed. The standard place is `_ExitTree`.
+Always disconnect signals when connection no longer needed. Standard place is `_ExitTree`.
 
 ```csharp
 public override void _ExitTree()
@@ -129,11 +129,11 @@ public override void _ExitTree()
 }
 ```
 
-The `IsInstanceValid` check is defensive: if the emitter has been freed first, the connection auto-cleans, and trying to disconnect from a freed object errors.
+`IsInstanceValid` check defensive: emitter freed first → connection auto-cleans; disconnecting from freed object errors.
 
-If both the emitter and the listener are freed at the same time (because they're in the same scene that gets unloaded), no manual disconnect is needed. But if their lifetimes can differ (e.g., one is in an autoload and the other is in a temporary scene), disconnect explicitly.
+Both emitter and listener freed at same time (same scene unloaded) → no manual disconnect needed. Lifetimes can differ (one in autoload, other in temporary scene) → disconnect explicitly.
 
-A useful rule of thumb: **always disconnect what you connect**, in the symmetric lifecycle method:
+Useful rule of thumb: **always disconnect what you connect**, in symmetric lifecycle method:
 
 | Connect in | Disconnect in |
 |---|---|
@@ -145,7 +145,7 @@ A useful rule of thumb: **always disconnect what you connect**, in the symmetric
 
 ### Pattern 1: Child Emits, Parent Listens
 
-The most common pattern. A child node emits a signal when something happens. The parent script connects to it and decides what to do (often passing the information to other children).
+Most common pattern. Child node emits signal when something happens. Parent script connects, decides what to do (often passing information to other children).
 
 ```
 Player (Node2D)
@@ -177,11 +177,11 @@ public partial class Player : Node2D
 }
 ```
 
-The Health node has no idea anyone is listening. The HealthBar has no idea where its updates come from. The Player wires them together. Each child can be removed or replaced without touching the others.
+Health node has no idea anyone listening. HealthBar has no idea where updates come from. Player wires them together. Each child removable or replaceable without touching others.
 
 ### Pattern 2: Sibling-to-Sibling via Parent
 
-Same as above, but the wiring is between specific siblings rather than parent-and-child. The parent is the matchmaker.
+Same as above, but wiring between specific siblings rather than parent-and-child. Parent is matchmaker.
 
 ```csharp
 public override void _Ready()
@@ -193,22 +193,22 @@ public override void _Ready()
 }
 ```
 
-The enemy doesn't know about loot dropping. The loot dropper doesn't know about enemies. The level wires them together — and could just as easily wire a *different* loot dropper to a *different* enemy.
+Enemy doesn't know about loot dropping. Loot dropper doesn't know about enemies. Level wires them together — could just as easily wire *different* loot dropper to *different* enemy.
 
 ### Pattern 3: Lambda Connections for Simple Cases
 
-For one-off connections that don't need disconnecting, lambdas are concise:
+One-off connections not needing disconnect: lambdas are concise:
 
 ```csharp
 GetNode<Button>("StartButton").Pressed += () => GetTree().ChangeSceneToFile("res://levels/level_1.tscn");
 GetNode<Button>("QuitButton").Pressed += () => GetTree().Quit();
 ```
 
-The downside: lambdas can't be disconnected by reference (you'd need to store the lambda first). For long-lived connections that need explicit disconnect, use named methods.
+Downside: lambdas can't be disconnected by reference (need to store lambda first). Long-lived connections needing explicit disconnect: use named methods.
 
 ### Pattern 4: Signal Bus (Autoload Event Bus)
 
-When events are *truly global* and don't fit a parent-child structure, an autoload event bus is the right tool. Examples: "the player died" (everything in the game might want to know), "the level was completed", "an achievement was unlocked".
+Events *truly global*, not fitting parent-child structure: autoload event bus is right tool. Examples: "player died" (everything in game might want to know), "level completed", "achievement unlocked".
 
 ```csharp
 // EventBus.cs (set as autoload "EventBus")
@@ -222,7 +222,7 @@ public partial class EventBus : Node
 }
 ```
 
-Anywhere in the game, emit:
+Anywhere in game, emit:
 
 ```csharp
 GetNode<EventBus>("/root/EventBus").EmitSignal(EventBus.SignalName.PlayerDied);
@@ -247,7 +247,7 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-Anywhere else in the game, listen:
+Anywhere else in game, listen:
 
 ```csharp
 public override void _Ready()
@@ -257,15 +257,15 @@ public override void _Ready()
 }
 ```
 
-The event bus is a powerful pattern. It's also the most-abused. The temptation is to put *every* signal through it because it's easy. The result is a god-singleton — a single file that lists hundreds of signals, every node depending on it for everything.
+Event bus powerful pattern. Also most-abused. Temptation: put *every* signal through it because easy. Result: god-singleton — single file listing hundreds of signals, every node depending on it for everything.
 
-**Use the bus only for events that are genuinely global** (cross-cut multiple unrelated systems, no clear parent-child relationship, or need to be received by code in completely different scenes). Local communication should use direct signal connections.
+**Use bus only for events genuinely global** (cross-cut multiple unrelated systems, no clear parent-child relationship, or need to be received by code in completely different scenes). Local communication: direct signal connections.
 
-A useful test: if the signal logically belongs to one specific node (the player's health, an enemy's death, a button press), it should be on that node. If the signal is a *fact about the world* that many systems might react to (the player died, the level changed), it might belong on the bus.
+Useful test: signal logically belongs to one specific node (player's health, enemy's death, button press) → on that node. Signal is *fact about world* many systems might react to (player died, level changed) → might belong on bus.
 
 ### Pattern 5: Signal With Awaiter
 
-C# in Godot supports `await`-ing signals via `ToSignal`. This is great for sequenced logic.
+C# in Godot supports `await`-ing signals via `ToSignal`. Great for sequenced logic.
 
 ```csharp
 public async void StartTutorial()
@@ -291,11 +291,11 @@ public async void StartTutorial()
 }
 ```
 
-This pattern is much cleaner than chains of nested signal callbacks for sequenced events. Use it for tutorials, cutscenes, dialogue trees, multi-step animations, anything that's "do this, then wait, then do the next thing."
+Much cleaner than chains of nested signal callbacks for sequenced events. Use for tutorials, cutscenes, dialogue trees, multi-step animations, anything "do this, then wait, then do next thing."
 
 ## Direct Method Calls vs Signals
 
-A frequent question: when should I use a signal vs. just calling a method directly?
+Frequent question: when to use signal vs. just calling method directly?
 
 | Use a method call when... | Use a signal when... |
 |---|---|
@@ -319,11 +319,11 @@ playerHealth.Damaged += FlashScreen;      // Player doesn't know about screen fl
 playerHealth.Damaged += LogToTelemetry;   // Player doesn't know about telemetry
 ```
 
-The discipline: methods for *commands*, signals for *events*. When you want to tell a specific node "do this thing," call its method. When you want to announce "this thing happened," emit a signal.
+Discipline: methods for *commands*, signals for *events*. Want to tell specific node "do this thing"? Call its method. Want to announce "this thing happened"? Emit signal.
 
 ## Custom Resource as Event Carrier
 
-For complex events with many parameters, consider a custom resource as the event payload:
+Complex events with many parameters: consider custom resource as event payload:
 
 ```csharp
 [GlobalClass]
@@ -339,17 +339,17 @@ public partial class DamageEvent : Resource
 [Signal] public delegate void DamageDealtEventHandler(DamageEvent ev);
 ```
 
-This is more verbose than passing individual parameters but it's:
+More verbose than individual parameters but it's:
 
-- **Extensible**: adding a new field doesn't break existing handlers.
-- **Self-documenting**: the type is the schema.
-- **Reusable**: the same event type can be used by multiple signals.
+- **Extensible**: adding new field doesn't break existing handlers.
+- **Self-documenting**: type is schema.
+- **Reusable**: same event type usable by multiple signals.
 
-Use it when the event has more than ~3 parameters or when the parameters might grow.
+Use when event has more than ~3 parameters or parameters might grow.
 
 ## Signal Chains and Order
 
-If multiple handlers are connected to the same signal, they're called in the order they were connected. Don't depend on this order — it's fragile. If you need ordering, use intermediate signals or explicit sequencing.
+Multiple handlers connected to same signal: called in order connected. Don't depend on order — fragile. Need ordering? Use intermediate signals or explicit sequencing.
 
 ```csharp
 // Fragile: depends on connection order
@@ -364,13 +364,13 @@ EmitSignal("DamageHandled");
 this.DamageHandled += OnDamageHandler2;
 ```
 
-For most cases, just don't depend on order. Each handler should be self-contained.
+Most cases: just don't depend on order. Each handler self-contained.
 
 ## Signal Propagation
 
-Godot signals don't propagate up the tree automatically. If a child emits a signal, only nodes that have explicitly *connected* to that signal receive it. This is different from DOM events in web programming.
+Godot signals don't propagate up tree automatically. Child emits signal → only nodes explicitly *connected* receive it. Different from DOM events in web programming.
 
-If you want a "bubble up" pattern, you have to wire it manually: the parent listens to the child's signal, then re-emits its own signal that grandparents can listen to.
+Want "bubble up" pattern? Wire manually: parent listens to child's signal, re-emits own signal grandparents can listen to.
 
 ```csharp
 // Child:
@@ -386,26 +386,26 @@ public override void _Ready()
 [Signal] public delegate void ChildButtonClickedEventHandler();
 ```
 
-This is verbose. For most cases, a direct connection from the grandparent to the child (using `[Export]` references or scene-unique names) is cleaner. Only re-emit when the grandparent really shouldn't know about the child.
+Verbose. Most cases: direct connection from grandparent to child (using `[Export]` references or scene-unique names) cleaner. Only re-emit when grandparent really shouldn't know about child.
 
 ## Anti-Patterns
 
-- **String-based connection** (`Connect("name", ...)`) when typed `+=` is available. Loses compile-time checking.
-- **Forgetting to disconnect** when the listener might outlive the emitter. Memory leaks.
-- **Disconnecting in the wrong place.** `_Ready` connects, `_ExitTree` disconnects. Don't connect twice without disconnecting.
-- **God event bus.** Every signal goes through one autoload. Hides which node owns which event; coupling pretends to be decoupling.
-- **Signals as a substitute for direct calls.** When a parent commands a child, use a method call. Signals are for *events*, not for indirection for its own sake.
-- **Direct method calls when a signal would do.** When a child needs to tell a parent something, emit a signal — don't call up the tree.
-- **`GetParent<T>()` to call a method up the tree.** Couples the child to the parent's type.
-- **Lambda connections to long-lived nodes** without storing the lambda. Can't disconnect later.
-- **Connecting to a node in `_EnterTree` instead of `_Ready`.** The node's children might not be ready yet.
-- **Multiple connections to the same handler.** Easy to do accidentally; produces duplicate calls. Disconnect first if reconnecting.
-- **Signal with too many parameters.** If you're passing 6 things, make a resource event payload.
+- **String-based connection** (`Connect("name", ...)`) when typed `+=` available. Loses compile-time checking.
+- **Forgetting to disconnect** when listener might outlive emitter. Memory leaks.
+- **Disconnecting in wrong place.** `_Ready` connects, `_ExitTree` disconnects. Don't connect twice without disconnecting.
+- **God event bus.** Every signal through one autoload. Hides which node owns which event; coupling pretends to be decoupling.
+- **Signals as substitute for direct calls.** Parent commanding child? Use method call. Signals are for *events*, not indirection for its own sake.
+- **Direct method calls when signal would do.** Child needs to tell parent something? Emit signal — don't call up tree.
+- **`GetParent<T>()` to call method up tree.** Couples child to parent's type.
+- **Lambda connections to long-lived nodes** without storing lambda. Can't disconnect later.
+- **Connecting to node in `_EnterTree` instead of `_Ready`.** Node's children might not be ready yet.
+- **Multiple connections to same handler.** Easy accidentally; produces duplicate calls. Disconnect first if reconnecting.
+- **Signal with too many parameters.** Passing 6 things? Make resource event payload.
 - **Depending on connection order.** Fragile.
-- **Propagating signals manually up many levels.** If you need it, restructure: the listener probably wants direct access via `[Export]` or scene-unique name.
-- **Using signals where a method call is fine, just because "decoupling is good".** Signals have a small overhead; for hot paths, direct method calls are faster and clearer.
-- **Forgetting the `EventHandler` suffix on the delegate.** Won't compile.
-- **Forgetting `[Signal]`.** It's just a delegate type, not a signal.
+- **Propagating signals manually up many levels.** Need it? Restructure: listener probably wants direct access via `[Export]` or scene-unique name.
+- **Using signals where method call is fine, just because "decoupling is good".** Signals have small overhead; hot paths: direct method calls faster and clearer.
+- **Forgetting `EventHandler` suffix on delegate.** Won't compile.
+- **Forgetting `[Signal]`.** Just delegate type, not signal.
 
 ## Related
 

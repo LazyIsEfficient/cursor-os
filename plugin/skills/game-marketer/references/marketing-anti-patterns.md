@@ -1,72 +1,72 @@
 # Marketing anti-patterns
 
-The most common ways game marketing fails. Most are recoverable; trust-break ones are harder.
+Most common game-marketing failures. Most recoverable; trust-break ones harder.
 
 ## 1. Generic-product framing
 
-Treating the game like a B2B SaaS product. "Increase engagement," "value props," "feature checklist." Players bounce because games convert on *fantasy* and *play*, not features.
+Treating game like B2B SaaS product. "Increase engagement," "value props," "feature checklist." Players bounce — games convert on *fantasy* and *play*, not features.
 
-**Fix:** lead with the fantasy and the verb. Features are decoration.
+**Fix:** lead with fantasy and verb. Features are decoration.
 
 ## 2. Overselling
 
-The marketing promises depth / scope / freedom the game doesn't deliver. Reviews call this out within hours of launch. Refund spike; review-bombing; trust break.
+Marketing promises depth / scope / freedom game doesn't deliver. Reviews call it out within launch hours. Refund spike; review-bombing; trust break.
 
-**Fix:** match the marketing to the actual game. Underpromise → players are surprised by depth. Overpromise → players are angry.
+**Fix:** match marketing to actual game. Underpromise → players surprised by depth. Overpromise → players angry.
 
 ## 3. Tone mismatch
 
-Slick AAA trailer for an indie cozy game. Cozy trailer for a hardcore action game. Wrong audience shows up; retention craters.
+Slick AAA trailer for indie cozy game. Cozy trailer for hardcore action game. Wrong audience shows up; retention craters.
 
-**Fix:** the marketing's tone should match the game's aesthetic. Pick the tone deliberately and hold it across surfaces.
+**Fix:** marketing tone matches game aesthetic. Pick tone deliberately; hold across surfaces.
 
 ## 4. Logo-first openings
 
-The trailer opens with "STUDIO presents." 3 seconds wasted. Player scrolls. Trailer unwatched.
+Trailer opens with "STUDIO presents." 3 seconds wasted. Player scrolls. Trailer unwatched.
 
-**Fix:** game first, logo last. Hook in the first 5 seconds; logo at the end.
+**Fix:** game first, logo last. Hook in first 5 seconds; logo at end.
 
 ## 5. Feature-list copy
 
-"47 ships, 200 quests, 5 factions, deep skill tree, dynamic world." Reads like a spreadsheet. Doesn't position; doesn't sell fantasy.
+"47 ships, 200 quests, 5 factions, deep skill tree, dynamic world." Reads like spreadsheet. Doesn't position; doesn't sell fantasy.
 
-**Fix:** features are the proof; fantasy is the headline. Lead with what the player *does and feels*, not the count of items.
+**Fix:** features are proof; fantasy is headline. Lead with what player *does and feels*, not item counts.
 
 ## 6. Comp-title overstatement
 
-"The next *Zelda*." Sets unmeetable expectations. Audience disappointed even if the game is great on its own terms.
+"The next *Zelda*." Unmeetable expectations. Audience disappointed even if game great on own terms.
 
 **Fix:** comps signal genre and audience, not equivalence. "Inspired by *Zelda*" lands; "the next *Zelda*" doesn't.
 
 ## 7. Position by negation
 
-"Not like other games." Players want to know what the game *is*, not what it isn't.
+"Not like other games." Players want what game *is*, not what it isn't.
 
 **Fix:** position by affirmation. "We're the only game that lets you ___" beats "we're not like the others."
 
 ## 8. Going silent during controversy
 
-Crisis hits (bug, monetization issue, balance complaint). Team goes silent. Community fills the silence with worst-case interpretations. Trust drops.
+Crisis hits (bug, monetization issue, balance complaint). Team goes silent. Community fills silence with worst-case interpretations. Trust drops.
 
 **Fix:** acknowledge fast. Even "we're investigating" beats nothing.
 
 ## 9. Defensive responses to critique
 
-Player critiques the game on Reddit / X. Studio replies defensively. Escalation. Critique amplifies.
+Player critiques game on Reddit / X. Studio replies defensively. Escalation. Critique amplifies.
 
-**Fix:** acknowledge the critique. Don't dunk on critics. Sometimes the critic is right.
+**Fix:** acknowledge critique. Don't dunk on critics. Sometimes critic is right.
 
 ## 10. Astroturfing
 
-Studio posts as fake "fans" on Reddit / Discord / Steam. Detected within days. Trust break harder to recover from than almost any other.
+Studio posts as fake "fans" on Reddit / Discord / Steam. Detected within days. Trust break harder to recover than almost any other.
 
 **Fix:** never. Real community engagement only.
 
 ## 11. Press / influencer cold outreach
 
-Reaching out to top creators with no relationship. Generic pitches. Low conversion. The studio becomes "annoying" in creator inboxes.
+Top creators, no relationship. Generic pitches. Low conversion. Studio becomes "annoying" in creator inboxes.
 
-**Fix:** build relationships over time. Personal outreach. Tier-1 creators have direct contact; tier-2 use creator network; tier-3 use ambassador programs.
+**Fix:** build relationships over time. Personal outreach. Tier-1 creators get direct contact; tier-2 use creator network; tier-3 use ambassador programs.
 
 ## 12. Ignoring localized markets
 
@@ -76,33 +76,33 @@ JP / KR / BR / TR / IN players see English-only content; localized communities f
 
 ## 13. Discord as broadcast
 
-Server is announcement-only. Devs never appear. Mods enforce rules without engaging. Becomes a fire-hose of marketing.
+Server announcement-only. Devs never appear. Mods enforce without engaging. Marketing fire-hose.
 
 **Fix:** scheduled dev presence. Active community management. Discord as community, not broadcast channel.
 
 ## 14. Single-creative UA
 
-Buying ad media on a single trailer / creative. No A/B. Performance plateaus; no learning.
+Ad media bought on single trailer / creative. No A/B. Performance plateaus; no learning.
 
 **Fix:** multiple concepts × multiple variants. Refresh weekly. Scale winners; kill losers.
 
 ## 15. CPI-only optimization
 
-Optimizing only for cost-per-install. Cheap installs flood in but don't pay back. ROAS collapses.
+Optimizing only for cost-per-install. Cheap installs flood in, don't pay back. ROAS collapses.
 
-**Fix:** optimize for ROAS or LTV. A more expensive install with strong retention beats a cheap install with bad retention.
+**Fix:** optimize for ROAS or LTV. Expensive install with strong retention beats cheap install with bad retention.
 
 ## 16. Patch notes as data dump
 
 50 numerical changes listed. No context. Players can't tell what matters. Discord guesses; misinformation spreads.
 
-**Fix:** lead with the why. Group changes by intent. Highlight 3–5 most-impactful changes; list the rest at bottom.
+**Fix:** lead with why. Group changes by intent. Highlight 3–5 most-impactful; rest at bottom.
 
 ## 17. Roadmap over-promising
 
 "In Q1 we'll ship X, Y, Z, A, B, C." Q1 ships X. Players angry about Y / Z / A / B / C. Trust drops.
 
-**Fix:** conservative roadmaps. Under-promise; over-deliver. Announce delays clearly when they happen.
+**Fix:** conservative roadmaps. Under-promise; over-deliver. Announce delays clearly.
 
 ## 18. Silent monetization changes
 
@@ -112,15 +112,15 @@ Catalog re-priced; bundles changed; subscriptions altered without comms. Players
 
 ## 19. Web3 mint-and-disappear
 
-Primary mint sells out. Team's energy drops post-mint. Secondary market collapses. Holders feel abandoned.
+Primary mint sells out. Team energy drops post-mint. Secondary market collapses. Holders feel abandoned.
 
-**Fix:** post-mint marketing is *more* important than pre-mint. Roadmap of utility, content, events, holder engagement.
+**Fix:** post-mint marketing *more* important than pre-mint. Roadmap of utility, content, events, holder engagement.
 
 ## 20. Studio-voice marketing
 
-"We at <Studio> are committed to delivering value to our customers." Reads like institutional comms; players bounce.
+"We at <Studio> are committed to delivering value to our customers." Institutional comms; players bounce.
 
-**Fix:** the *game's* voice is the marketing voice, not the studio's. The game is the brand; the studio is the facilitator.
+**Fix:** *game's* voice is marketing voice, not studio's. Game is brand; studio is facilitator.
 
 ## 21. Forgetting the post-launch beat
 
@@ -130,24 +130,24 @@ Launch marketing peaks; then nothing for 4 weeks. Audience attention dissipates.
 
 ## 22. Ignoring critical reviews in launch week
 
-"It'll blow over." Sometimes; sometimes the critic is the leading indicator. Bad early reviews compound through algorithmic distribution.
+"It'll blow over." Sometimes; sometimes critic is leading indicator. Bad early reviews compound through algorithmic distribution.
 
-**Fix:** address legitimate critique. Hotfix what can be fixed. Communicate what can't be (yet). Don't dismiss.
+**Fix:** address legitimate critique. Hotfix what's fixable. Communicate what can't be (yet). Don't dismiss.
 
-## 23. Treating community as a sales funnel
+## 23. Treating community as sales funnel
 
-"Discord users convert at X% — let's push promo every day." Community converts because it's a community, not a funnel. Over-extracting destroys the goose.
+"Discord users convert at X% — push promo daily." Community converts because it's community, not funnel. Over-extracting destroys the goose.
 
-**Fix:** community as relationship. Marketing happens in community, but the community isn't *only* marketing.
+**Fix:** community as relationship. Marketing happens in community; community isn't *only* marketing.
 
 ## 24. Tonal whiplash across patches
 
-Patch notes formal one month, witty the next, defensive the next. Players notice; reads as institutional confusion.
+Patch notes formal one month, witty next, defensive next. Players notice; reads as institutional confusion.
 
-**Fix:** consistent voice. Pick the tone; staff for it; review patch notes for voice consistency.
+**Fix:** consistent voice. Pick tone; staff for it; review patch notes for voice consistency.
 
 ## 25. Generic-product-marketing applied to live ops
 
-"This week's event has 30% increased engagement." Players don't care about the studio's metrics. Players care about *what's in the event for them*.
+"This week's event has 30% increased engagement." Players don't care about studio metrics. Players care about *what's in event for them*.
 
 **Fix:** comms describe player experience, not studio KPIs. "New cosmetics, double XP, themed map" beats "engagement-optimized weekend campaign."

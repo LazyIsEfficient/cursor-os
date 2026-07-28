@@ -1,10 +1,10 @@
 # Launch week
 
-The 7-day window around launch is the highest-attention moment the game gets. Most games' lifetime revenue is meaningfully shaped by what happens in this week.
+7-day window around launch = highest-attention moment game gets. Most games' lifetime revenue meaningfully shaped by this week.
 
 ## T-30 to T-1
 
-See `assets/launch-plan-template.md` for the full pre-launch timeline. Headlines:
+See `assets/launch-plan-template.md` for full pre-launch timeline. Headlines:
 
 - **T-30:** assets locked, press kit out, embargo coverage scheduled, soft-launch data → global UA plan
 - **T-14:** trailer drop, press lifts (or T-7), creator videos scheduled, Discord pre-launch event
@@ -14,7 +14,7 @@ See `assets/launch-plan-template.md` for the full pre-launch timeline. Headlines
 ## Launch day (T-0)
 
 ### Hour 0
-- **Release goes live** at the chosen launch hour (10am PT typical for global)
+- **Release goes live** at chosen launch hour (10am PT typical for global)
 - **Launch trailer** pinned across all channels
 - **Social posts** simultaneous (X, TikTok, Instagram, Discord, Reddit)
 - **Email blast** to wishlist / mailing list
@@ -33,7 +33,7 @@ See `assets/launch-plan-template.md` for the full pre-launch timeline. Headlines
 ### Hours 4–24
 - **Hotfix capability** ready (with `godot-engineer`)
 - **First-day numbers** report against KPI floors
-- **Influencer reactions** monitored — top creators' coverage drives the next 24h
+- **Influencer reactions** monitored — top creators' coverage drives next 24h
 - **Press review aggregation** — what's the consensus
 - **Discord moderation** intensified (high-traffic moderation needs are real)
 
@@ -46,29 +46,29 @@ See `assets/launch-plan-template.md` for the full pre-launch timeline. Headlines
 - Per-channel ROAS
 
 ### Daily community engagement
-- Devs in channel on Discord (more than usual; high-attention week)
+- Devs in Discord channel (more than usual; high-attention week)
 - Reply-to on social
-- AMAs / livestreams during the week
+- AMAs / livestreams during week
 
 ### Creative refresh on UA
-- A creative can decay fast at launch from oversaturation
-- Refresh creatives mid-week if performance drops
+- Creative decays fast at launch from oversaturation
+- Refresh creatives mid-week on performance drop
 - Scale spend on winners
 
 ### Press / influencer follow-up
-- "Day of" coverage  → "what's next" coverage
+- "Day of" coverage → "what's next" coverage
 - Reach out for follow-up reviews and content
-- Compile press / influencer reaction for shareable content
+- Compile press / influencer reactions for shareable content
 
 ### First patch (T+3 to T+7)
 - Bug fixes from launch-day reports
-- *Not* balance changes (don't react to launch-day complaints with balance; data isn't stable)
+- *Not* balance changes (don't react to launch-day complaints with balance; data unstable)
 - Hotfix communication on Discord, X, Reddit
 
 ### First content tease
 - "Here's what's coming next month"
 - Roadmap teaser (light)
-- Pre-establish the post-launch cadence
+- Pre-establish post-launch cadence
 
 ## Post-launch beat (T+8 onwards)
 
@@ -76,35 +76,35 @@ See `assets/launch-plan-template.md` for the full pre-launch timeline. Headlines
 - **First major content event** (T+14 to T+30) — "we shipped, here's more"
 - **Re-engagement campaign** for D7 lapsers (with `iap-manager`)
 - **Player survey** for qualitative feedback (coordinate with `ux-research`)
-- **Long-term roadmap reveal** for the season / quarter / year
+- **Long-term roadmap reveal** for season / quarter / year
 - **Live-ops cadence locks in** (with `game-monetization-strategist`)
 
 ## What launch week does (and doesn't do)
 
 **Does:**
-- Set the *trajectory* of the game's first 90 days
-- Establish the studio's reputation (review-bombing or critical love both stick)
-- Burn through the wishlist / hype audience (these convert during this window)
-- Provide real KPI signal at scale (first time post-soft-launch the model meets reality)
+- Set *trajectory* of game's first 90 days
+- Establish studio reputation (review-bombing or critical love both stick)
+- Burn through wishlist / hype audience (converts during this window)
+- Provide real KPI signal at scale (first post-soft-launch model-reality meeting)
 
 **Doesn't:**
-- Determine the game's lifetime revenue (the first 90 days, the first season, and the first year of live ops do)
-- Give the team time to react to balance complaints (data isn't stable yet; resist over-reacting)
-- Replace the need for live ops (a strong launch + weak live ops = 6-month decay)
+- Determine lifetime revenue (first 90 days, first season, first year of live ops do)
+- Give team time to react to balance complaints (data unstable; resist over-reacting)
+- Replace live ops (strong launch + weak live ops = 6-month decay)
 
 ## Hand-off after launch week
 
 - **`game-monetization-strategist`:** model updates from real data; live-ops KPI floors finalized
-- **`iap-manager`:** catalog adjustments based on first-week data
+- **`iap-manager`:** catalog adjustments from first-week data
 - **`game-balancer`:** first emergency re-tune if needed (after data stabilizes ~T+14)
-- **`game-systems-designer`:** any system issue that surfaces (re-route here)
+- **`game-systems-designer`:** surfacing system issues (re-route here)
 - **`godot-engineer`:** ongoing hotfix queue
 - **`site-reliability-engineering`:** SLI / alerting locked in; on-call rotation
 
 ## Anti-patterns
 
-- **Pre-emptive balance changes** in launch week (data isn't stable; risk over-correcting)
+- **Pre-emptive balance changes** in launch week (data unstable; over-correcting risk)
 - **Going silent after launch day** ("phew, shipped" reads as abandonment to community)
-- **Creative spend frozen** at launch-day allocations (winners need scaling, losers need killing)
-- **Ignoring critical reviews** in week 1 ("it'll blow over" — sometimes; sometimes it's the leading indicator)
-- **Skipping the post-launch beat planning** before launch happens (no momentum after launch week)
+- **Creative spend frozen** at launch-day allocations (winners need scaling, losers killing)
+- **Ignoring critical reviews** in week 1 ("it'll blow over" — sometimes; sometimes leading indicator)
+- **Skipping post-launch beat planning** before launch happens (no momentum after launch week)

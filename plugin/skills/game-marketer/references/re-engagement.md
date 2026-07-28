@@ -1,20 +1,20 @@
 # Re-engagement
 
-Re-engaging lapsed players is some of the highest-ROI marketing in a live game's lifecycle. Lapsed players know the game; the cost is reactivation, not acquisition.
+Re-engaging lapsed players = highest-ROI marketing in live game lifecycle. Lapsed players know the game; cost is reactivation, not acquisition.
 
 ## Defining lapsed
 
-Per-game, but typical thresholds:
+Per-game, typical thresholds:
 
-- **D14 lapsed** — hasn't played in 14 days. First re-engagement trigger.
-- **D30 lapsed** — hasn't played in 30 days. Second trigger; harder to bring back.
+- **D14 lapsed** — no play in 14 days. First re-engagement trigger.
+- **D30 lapsed** — no play in 30 days. Second trigger; harder to bring back.
 - **D90+ lapsed** — long-tail; bring back via content events, not generic "we miss you" comms.
 
-Different segments lapse for different reasons:
+Segments lapse for different reasons:
 - **Whales** — content drought, status loss, paid item nerf, competitor migration
 - **Dolphins** — content cadence slowdown, pass burnout
-- **Minnows** — natural single-purchase path; many minnows are forever-lapsed by design
-- **Free** — natural decay; ad fatigue; game wasn't sticky enough
+- **Minnows** — natural single-purchase path; many forever-lapsed by design
+- **Free** — natural decay; ad fatigue; game not sticky enough
 
 Tactics differ by segment.
 
@@ -35,12 +35,12 @@ Tactics differ by segment.
 ### Paid retargeting
 - Custom audiences on Meta / Google / TikTok built from lapsed user IDs
 - Best for: lapsed cohorts large enough to build audience (typically 10,000+)
-- Cost per reactivation typically lower than CPI (the player already played; reactivation is cheaper)
+- Cost per reactivation typically lower than CPI (player already played; reactivation cheaper)
 - Coordinate with privacy policies (some jurisdictions restrict this)
 
 ### In-app (for installed-but-inactive)
 - Local notifications, in-app banners on next open
-- Best for: returning players who bounce off "what's new" — surface event / pass / content immediately
+- Best for: returning players bouncing off "what's new" — surface event / pass / content immediately
 
 ## Re-engagement triggers (when to act)
 
@@ -49,20 +49,20 @@ Tactics differ by segment.
 - **Content drop** (new heroes / characters / levels)
 - **Welcome-back bundle** available (with `iap-manager`)
 - **Friend / clan activity** (if game has social hooks)
-- **Birthday / anniversary** of the player's account
+- **Birthday / anniversary** of player's account
 
-The best campaigns combine multiple triggers ("season start + welcome-back bundle for D14+ lapsed players").
+Best campaigns combine triggers ("season start + welcome-back bundle for D14+ lapsed players").
 
 ## Welcome-back bundles (with `iap-manager`)
 
-A *one-time* bundle offered to returning players:
+*One-time* bundle offered to returning players:
 
 - **Heavy discount** (often 80% off equivalent)
-- **Mix of currency + cosmetic + utility** (similar to starter pack composition)
+- **Mix of currency + cosmetic + utility** (starter-pack-like composition)
 - **Time-limited** (48–72 hours after first surface)
 - **One-time per account** (no v2)
 
-Welcome-back bundles convert at 8–15% for D14–D30 lapsed players who return — much higher than starter packs because the player has invested time already.
+Welcome-back bundles convert at 8–15% for D14–D30 lapsed returners — much higher than starter packs; player already invested time.
 
 ## Comms templates
 
@@ -127,7 +127,7 @@ If you're curious, your account is still there. <CTA>
 
 ### Dolphins
 - Standard welcome-back bundle ($9.99–$19.99)
-- Season pass tease + free trial of the pass
+- Season pass tease + free pass trial
 - Themed event hooks
 
 ### Minnows
@@ -142,7 +142,7 @@ If you're curious, your account is still there. <CTA>
 
 ## Multi-channel orchestration
 
-The strongest reactivation campaigns coordinate channels:
+Strongest reactivation campaigns coordinate channels:
 
 1. **Day -3:** push notification ("Halloween starts in 3 days — your seat is held!")
 2. **Day -1:** email ("Halloween starts tomorrow")
@@ -150,20 +150,20 @@ The strongest reactivation campaigns coordinate channels:
 4. **Day 1:** retargeting ad served via Meta / TikTok
 5. **Day 3:** follow-up email if not yet returned
 
-Don't over-orchestrate (becomes spam). Cap touches at 3–5 per re-engagement window.
+Don't over-orchestrate (becomes spam). Cap at 3–5 touches per re-engagement window.
 
 ## KPIs
 
 - **Reactivation rate** — % of targeted lapsed who return
 - **D7 retention of reactivated** — did they stick?
 - **Per-segment ROAS of re-engagement spend** — paid retargeting + bundle revenue / cost
-- **Long-term value of reactivated cohort** — historically, reactivated players often *out-pay* new acquisitions
+- **Long-term value of reactivated cohort** — reactivated players often *out-pay* new acquisitions
 
 ## Anti-patterns
 
-- **Generic "we miss you"** with no hook — feels needy and ineffective
+- **Generic "we miss you"** with no hook — needy and ineffective
 - **Same comms for all segments** — minnow vs whale need different messages
 - **Over-frequency** — push 3× per day reads as harassment
-- **Welcome-back bundle without comms** — bundle exists but no one knows
-- **Re-engaging during a known content drought** — bringing players back to nothing burns trust
-- **Ignoring D90+ cohort** — long-tail can be reactivated at events, but most teams skip them
+- **Welcome-back bundle without comms** — bundle exists, nobody knows
+- **Re-engaging during known content drought** — bringing players back to nothing burns trust
+- **Ignoring D90+ cohort** — long-tail reactivatable at events; most teams skip them

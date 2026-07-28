@@ -1,18 +1,18 @@
 # Save / Load and Persistence
 
-Every non-trivial game needs to save and load state — the player's progress, settings, achievements, the current level. This is one of the most-failed parts of indie game development, because the saves must:
+Every non-trivial game needs to save and load state — player progress, settings, achievements, current level. One of most-failed parts of indie game development, because saves must:
 
-- **Survive game updates** without bricking the player's progress
+- **Survive game updates** without bricking player progress
 - **Be tamper-resistant** (some level of) for competitive features
 - **Handle errors gracefully** (corrupted file, partial write, missing file)
 - **Be fast enough** to autosave without hitching
 - **Be portable** across platforms (cloud saves, syncing, etc.)
 
-Most early-stage indie games skip the migration plan and ship a save format that breaks on the next update. Players lose hours of progress; reviews tank; the team scrambles. This file is about not doing that.
+Most early-stage indie games skip migration plan, ship save format breaking on next update. Players lose hours of progress; reviews tank; team scrambles. File is about not doing that.
 
 ## What to Persist
 
-A typical game persists several different kinds of data:
+Typical game persists several different kinds of data:
 
 | Data | Storage | Lifetime |
 |---|---|---|
@@ -23,18 +23,18 @@ A typical game persists several different kinds of data:
 | **Custom levels / mods** | User content folder | Per device |
 | **Cache / preloaded data** | Cache | Best effort |
 
-These often live in separate files because they have different lifetimes and different update strategies. Don't put settings inside the save file (the player would lose their settings on a new game); don't put per-save progress in the settings file (it'd persist across saves).
+Often live in separate files — different lifetimes, different update strategies. Don't put settings inside save file (player loses settings on new game); don't put per-save progress in settings file (persists across saves).
 
 ## Where to Save
 
-Godot's `user://` path is the cross-platform location for save data. It maps to:
+Godot's `user://` path is cross-platform location for save data. Maps to:
 
 - **Windows**: `%APPDATA%\Godot\app_userdata\<project_name>\`
 - **macOS**: `~/Library/Application Support/Godot/app_userdata/<project_name>/`
 - **Linux**: `~/.local/share/godot/app_userdata/<project_name>/`
 - **Mobile / web**: platform-specific persistent storage
 
-Use `user://` for everything that should survive a game update. Don't write to `res://` (that's the project's resources, read-only at runtime).
+Use `user://` for everything surviving game update. Don't write to `res://` (project's resources, read-only at runtime).
 
 ```csharp
 // Right
@@ -45,7 +45,7 @@ var path = "res://saves/save_1.dat";  // Read-only at runtime; doesn't work
 var path = "C:/Users/.../saves";       // Platform-specific; doesn't work
 ```
 
-For multi-slot saves, use a folder structure:
+Multi-slot saves: folder structure:
 
 ```
 user://
@@ -57,7 +57,7 @@ user://
     └── slot_3.dat
 ```
 
-Create the saves directory if it doesn't exist:
+Create saves directory if not existing:
 
 ```csharp
 if (!DirAccess.DirExistsAbsolute("user://saves"))
@@ -68,11 +68,11 @@ if (!DirAccess.DirExistsAbsolute("user://saves"))
 
 ## Save Format Options
 
-Godot offers several built-in mechanisms for saving data. Pick based on the use case.
+Godot offers several built-in mechanisms for saving data. Pick based on use case.
 
 ### `ConfigFile` — for settings and small structured data
 
-`ConfigFile` is the easiest path. It's an INI-like format with sections and key-value pairs. Built into Godot, no external libraries needed, human-readable.
+`ConfigFile` is easiest path. INI-like format with sections and key-value pairs. Built into Godot, no external libraries, human-readable.
 
 ```csharp
 public partial class Settings : Node
@@ -118,23 +118,23 @@ public partial class Settings : Node
 }
 ```
 
-`ConfigFile` is good for:
+`ConfigFile` good for:
 
 - Settings (audio, video, controls)
 - Small flat data
-- Things you want to be human-readable for debugging or modding
+- Things you want human-readable for debugging or modding
 
-It's not good for:
+Not good for:
 
 - Large binary data
 - Complex nested structures (technically possible but awkward)
-- Save files that need tamper resistance
+- Save files needing tamper resistance
 
 ### JSON — for structured save data
 
-For save data with nested structure, JSON is the natural fit. C# in Godot has access to all of .NET, so you can use `System.Text.Json` (built-in) or `Newtonsoft.Json` (NuGet).
+Save data with nested structure: JSON natural fit. C# in Godot has access to all of .NET — use `System.Text.Json` (built-in) or `Newtonsoft.Json` (NuGet).
 
-`System.Text.Json` is built into .NET 8 and works well for most cases:
+`System.Text.Json` built into .NET 8, works well for most cases:
 
 ```csharp
 using System.Text.Json;
@@ -212,23 +212,23 @@ public partial class SaveSystem : Node
 }
 ```
 
-JSON is good for:
+JSON good for:
 
 - Most save data
-- Files you might want to inspect manually
-- Cross-language interop (e.g., a backend that reads saves)
+- Files you might inspect manually
+- Cross-language interop (e.g., backend reading saves)
 
-It's not good for:
+Not good for:
 
-- Binary data (textures, audio); you'd encode them as base64 which is bloated
-- Tamper resistance (it's plain text and easy to edit)
-- Very large saves where binary format would be smaller
+- Binary data (textures, audio); base64 encoding bloated
+- Tamper resistance (plain text, easy to edit)
+- Very large saves where binary format smaller
 
-Note on `Vector2`: Godot's `Vector2` is a struct that doesn't serialize cleanly to JSON by default. Either implement a converter or use a wrapper class like `Vector2Save` above.
+Note on `Vector2`: Godot's `Vector2` is struct not serializing cleanly to JSON by default. Either implement converter or use wrapper class like `Vector2Save` above.
 
 ### Binary `FileAccess` — for compact or tamper-resistant saves
 
-For binary save formats, use `FileAccess` directly:
+Binary save formats: use `FileAccess` directly:
 
 ```csharp
 public void SaveBinary(int slot, SaveData data)
@@ -277,23 +277,23 @@ public SaveData LoadBinary(int slot)
 }
 ```
 
-Binary is good for:
+Binary good for:
 
 - Compact storage (smaller files than JSON)
-- Some tamper resistance (not real security but raises the bar)
+- Some tamper resistance (not real security but raises bar)
 - Speed (faster to read/write than JSON for large data)
 
-It's not good for:
+Not good for:
 
-- Debugging (can't read it manually)
-- Save format evolution (need to manage byte layout carefully)
+- Debugging (can't read manually)
+- Save format evolution (manage byte layout carefully)
 - Cross-language sharing
 
-For most indie projects, **JSON is the right default**. Reach for binary only when JSON's downsides bite.
+Most indie projects: **JSON is right default**. Reach for binary only when JSON's downsides bite.
 
 ### `Resource.Save` — for Godot-native resources
 
-Godot's `ResourceSaver` and `ResourceLoader` can save and load any `Resource`, including custom ones:
+Godot's `ResourceSaver` and `ResourceLoader` save/load any `Resource`, including custom ones:
 
 ```csharp
 [GlobalClass]
@@ -328,24 +328,24 @@ public SaveData LoadGame(int slot)
 }
 ```
 
-`Resource`-based saves are convenient because:
+`Resource`-based saves convenient because:
 
 - Native Godot serialization (handles `Vector2`, `Color`, etc.)
-- The save data is just a `Resource` you can edit in the inspector
+- Save data just `Resource` editable in inspector
 - Type-safe in C#
 - No JSON converters needed for Godot types
 
-The downsides:
+Downsides:
 
-- Files are in Godot's `.tres` text format (or binary `.res`); harder to inspect than JSON
+- Files in Godot's `.tres` text format (or binary `.res`); harder to inspect than JSON
 - Less portable to other systems
-- Loading bypasses the `Resource` cache, which can cause issues with reused references
+- Loading bypasses `Resource` cache, can cause issues with reused references
 
-For most save data, JSON is more flexible. Use `Resource.Save` when the save data is genuinely just Godot objects.
+Most save data: JSON more flexible. Use `Resource.Save` when save data genuinely just Godot objects.
 
 ## Save Versioning (Critical)
 
-**Every save format must have a version number.** Without one, you cannot evolve the save format without breaking existing saves. This is non-negotiable.
+**Every save format must have version number.** Without one, cannot evolve save format without breaking existing saves. Non-negotiable.
 
 ```csharp
 public class SaveData
@@ -390,25 +390,25 @@ private SaveData MigrateSave(SaveData data)
 
 Two important rules:
 
-1. **Migrations are step-by-step.** v1 → v2 → v3, not v1 → v3 directly. If you skip steps, you can't add a v4 cleanly later.
-2. **Migrations only go forward.** Don't try to make new saves work with old versions of the game.
+1. **Migrations are step-by-step.** v1 → v2 → v3, not v1 → v3 directly. Skip steps → can't add v4 cleanly later.
+2. **Migrations only go forward.** Don't try to make new saves work with old versions of game.
 
 What needs migration:
 
-- New fields with defaults (the migration sets the default)
-- Renamed fields (the migration copies the old value to the new name)
-- Changed structure (the migration restructures the data)
-- Removed fields (the migration ignores them)
+- New fields with defaults (migration sets default)
+- Renamed fields (migration copies old value to new name)
+- Changed structure (migration restructures data)
+- Removed fields (migration ignores them)
 
 ### When to bump the version
 
-Any change to the save format that's not purely additive with sensible defaults. If the game can read v1 saves correctly without any code changes, the version doesn't need to bump. If it can't, bump it and write a migration.
+Any change to save format not purely additive with sensible defaults. Game can read v1 saves correctly without code changes → version doesn't need bump. Can't → bump it, write migration.
 
 Conservative rule: **bump on every meaningful change, even if you think it's compatible.** Easier to have many small migrations than one big "what changed" investigation.
 
 ### Version mismatch — too new
 
-If a save file has a version *higher* than the current game (the player downgraded?), don't try to load it. Show a clear message: "This save was made with a newer version of the game. Please update."
+Save file has version *higher* than current game (player downgraded?) → don't try to load. Show clear message: "This save was made with a newer version of the game. Please update."
 
 ```csharp
 if (data.Version > CurrentVersion)
@@ -421,7 +421,7 @@ if (data.Version > CurrentVersion)
 
 ## Autosave
 
-Most modern games autosave. The pattern:
+Most modern games autosave. Pattern:
 
 ```csharp
 public partial class AutoSaveManager : Node
@@ -449,17 +449,17 @@ public partial class AutoSaveManager : Node
 }
 ```
 
-A few rules:
+Rules:
 
-- **Don't autosave during action.** Save at safe points: between rooms, during pauses, when the player is idle.
-- **Show a brief indicator** when autosave happens, so the player knows.
-- **Don't block the main thread for long saves.** If the save is heavy, do it in a background thread.
-- **Have multiple autosave slots.** If autosave 1 corrupts, you can fall back to autosave 2.
-- **Combine with manual save slots.** Autosave is for safety; manual saves are for player control.
+- **Don't autosave during action.** Save at safe points: between rooms, during pauses, when player idle.
+- **Show brief indicator** when autosave happens, so player knows.
+- **Don't block main thread for long saves.** Save heavy? Do it in background thread.
+- **Have multiple autosave slots.** Autosave 1 corrupts → fall back to autosave 2.
+- **Combine with manual save slots.** Autosave for safety; manual saves for player control.
 
 ## Save Errors
 
-Saves fail. The disk is full; the file is locked; the game crashes mid-write. Handle errors gracefully:
+Saves fail. Disk full; file locked; game crashes mid-write. Handle errors gracefully:
 
 ```csharp
 public bool TrySave(int slot, SaveData data)
@@ -496,23 +496,23 @@ public bool TrySave(int slot, SaveData data)
 }
 ```
 
-The "write to temp, then rename" pattern prevents partial writes from corrupting the existing save. If the write fails or the game crashes, the existing save is untouched.
+"Write to temp, then rename" pattern prevents partial writes from corrupting existing save. Write fails or game crashes → existing save untouched.
 
-For really paranoid handling: **keep N backups**. Every save, rotate the previous file to `.bak.1`, `.bak.2`, etc. If the current save is corrupt, fall back.
+Really paranoid: **keep N backups**. Every save, rotate previous file to `.bak.1`, `.bak.2`, etc. Current save corrupt → fall back.
 
 ## Tamper Resistance
 
-For purely single-player games, full save security isn't needed — players can edit their own saves if they want. But if your game has competitive features (leaderboards, achievements, multiplayer), some tamper resistance is worth having.
+Purely single-player games: full save security not needed — players can edit own saves if they want. Game has competitive features (leaderboards, achievements, multiplayer)? Some tamper resistance worth having.
 
 Levels of protection:
 
-1. **None** — JSON in plain text. Anyone can edit it.
+1. **None** — JSON in plain text. Anyone can edit.
 2. **Obfuscation** — base64 encoding, simple XOR. Stops casual modification, doesn't stop motivated players.
-3. **Hashing** — include a hash of the data; reject saves where the hash doesn't match. Stops most edits but can be reverse-engineered.
-4. **Encryption** — encrypt with a key shipped in the binary. Stops most players but the key can be extracted.
-5. **Server-side validation** — the authoritative save lives on a server; the client never has the unencrypted data. The only real protection.
+3. **Hashing** — include hash of data; reject saves where hash doesn't match. Stops most edits but reverse-engineerable.
+4. **Encryption** — encrypt with key shipped in binary. Stops most players but key extractable.
+5. **Server-side validation** — authoritative save lives on server; client never has unencrypted data. Only real protection.
 
-For a single-player game with leaderboards, hashing is usually enough:
+Single-player game with leaderboards: hashing usually enough:
 
 ```csharp
 private string ComputeHash(string data)
@@ -550,23 +550,23 @@ public SaveData LoadWithHash(string wrappedJson)
 }
 ```
 
-This isn't real security — the salt is in the binary and can be extracted — but it stops casual tampering.
+Not real security — salt in binary, extractable — but stops casual tampering.
 
 ## Cloud Saves
 
-For Steam, Epic, GOG, mobile stores, etc., the platform usually provides cloud save sync. Configure it in:
+Steam, Epic, GOG, mobile stores, etc.: platform usually provides cloud save sync. Configure in:
 
-- **Steam**: Steamworks settings; configure Steam Cloud quota and file paths. Save files in `user://` are typically picked up.
+- **Steam**: Steamworks settings; configure Steam Cloud quota and file paths. Save files in `user://` typically picked up.
 - **Epic / GOG**: similar mechanisms.
 - **iOS / Android**: platform-specific APIs (Game Center, Google Play Games).
 
-For most desktop stores, cloud sync is automatic if you save to `user://`. Verify on each platform.
+Most desktop stores: cloud sync automatic if saving to `user://`. Verify on each platform.
 
 ## Common Save Patterns
 
 ### Profile system
 
-A profile is the player's identity (name, settings, achievements). Save slots are individual game runs by that profile.
+Profile is player's identity (name, settings, achievements). Save slots are individual game runs by that profile.
 
 ```
 user://
@@ -583,7 +583,7 @@ user://
 
 ### Save metadata
 
-Each save has metadata visible in the load menu — playtime, level, screenshot, save date. Store this in a way that can be loaded *without* loading the entire save:
+Each save has metadata visible in load menu — playtime, level, screenshot, save date. Store loadable *without* loading entire save:
 
 ```csharp
 public class SaveMetadata
@@ -597,33 +597,33 @@ public class SaveMetadata
 }
 ```
 
-The metadata file is small and quick to load. The full save data is loaded only when the player picks a slot.
+Metadata file small, quick to load. Full save data loaded only when player picks slot.
 
 ### Atomic level saves
 
-If the game has discrete "levels" or "rooms", save the state of each one separately. When the player leaves a room, save its state to its own file. When they return, load it. This makes saves smaller and avoids re-saving the entire world every time.
+Game has discrete "levels" or "rooms"? Save state of each separately. Player leaves room → save its state to own file. Return → load it. Makes saves smaller; avoids re-saving entire world every time.
 
 ## Anti-Patterns
 
-- **No version field.** First time you change the save format, every existing save breaks.
-- **No migration code.** Bumped the version but didn't write a migration. Old saves crash on load.
-- **Saving during gameplay** without considering the cost. Frame hitches when the disk write is slow.
-- **Direct write to the real file.** If the game crashes mid-write, the save is corrupted. Use temp + rename.
+- **No version field.** First time you change save format, every existing save breaks.
+- **No migration code.** Bumped version but didn't write migration. Old saves crash on load.
+- **Saving during gameplay** without considering cost. Frame hitches when disk write slow.
+- **Direct write to real file.** Game crashes mid-write → save corrupted. Use temp + rename.
 - **Saving everything in one giant file.** Slow to read/write; corruption risk; can't load partial state.
-- **Plain-text saves with leaderboard scores.** Players will edit them and submit fake scores.
-- **Saving raw `Vector2` to JSON without a converter.** Doesn't serialize correctly with `System.Text.Json`.
+- **Plain-text saves with leaderboard scores.** Players edit them, submit fake scores.
+- **Saving raw `Vector2` to JSON without converter.** Doesn't serialize correctly with `System.Text.Json`.
 - **Loading without error handling.** Corrupted file → unhandled exception → game crash.
-- **`res://` instead of `user://`.** Doesn't work; `res://` is read-only at runtime.
+- **`res://` instead of `user://`.** Doesn't work; `res://` read-only at runtime.
 - **No autosave at all.** Player loses progress on crash.
-- **Autosave so frequent it hitches the game.** Save at safe points, not every frame.
+- **Autosave so frequent it hitches game.** Save at safe points, not every frame.
 - **No backups.** One corrupt file = lost progress. Keep at least one previous save.
-- **Saving editor-only state.** Some properties are editor-only and don't make sense at runtime.
+- **Saving editor-only state.** Some properties editor-only, don't make sense at runtime.
 - **Cross-platform incompatible serialization.** `BinaryFormatter` is .NET-specific; .NET 8 even refuses to use it.
-- **Saving `Node` references directly.** They don't serialize; you need to save IDs and reconstruct.
-- **Migration code that's not idempotent.** Running it twice produces different results.
-- **No way to tell which version a save is.** Hidden in the binary; debugging is impossible.
+- **Saving `Node` references directly.** Don't serialize; save IDs, reconstruct.
+- **Migration code not idempotent.** Running twice produces different results.
+- **No way to tell which version save is.** Hidden in binary; debugging impossible.
 - **Cloud sync conflicts not handled.** Two devices write different saves; no resolution strategy.
-- **Save format coupled to scene structure.** Refactoring the scene breaks every existing save.
+- **Save format coupled to scene structure.** Refactoring scene breaks every existing save.
 
 ## Related
 

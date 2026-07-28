@@ -1,8 +1,8 @@
 # Animation and Tweens
 
-Godot has three different ways to animate things, and the most common Godot mistake is picking the wrong one. Each tool has a specific job; using `AnimationPlayer` when a `Tween` would do is overengineering, and using a `Tween` when `AnimationTree` is the right call is underengineering.
+Godot has three different ways to animate things; most common Godot mistake is picking wrong one. Each tool has specific job; using `AnimationPlayer` when `Tween` would do is overengineering; using `Tween` when `AnimationTree` is right call is underengineering.
 
-This file is the practical guide to picking the right animation tool and using each one well.
+File is practical guide to picking right animation tool, using each well.
 
 ## The Three Tools
 
@@ -12,17 +12,17 @@ This file is the practical guide to picking the right animation tool and using e
 | **`AnimationPlayer`** | Authored animations: sprite frames, complex movements, cutscenes, anything you'd want a designer to edit | Lives in the scene; visual editor; reusable |
 | **`AnimationTree`** | State-machine-driven animation playback: character animation with states (idle, run, jump, attack) and blending | Wraps `AnimationPlayer`; handles transitions |
 
-The decision tree:
+Decision tree:
 
-1. **Is this a one-shot effect triggered by code (a button hover, a damage flash, a panel sliding in)?** → `Tween`.
-2. **Is this an authored animation that should be edited in the editor (a cutscene, a complex sequence, a sprite animation)?** → `AnimationPlayer`.
-3. **Is this a character with multiple animation states that need to blend (idle → walk → run, with crossfades)?** → `AnimationTree` driving an `AnimationPlayer`.
+1. **One-shot effect triggered by code (button hover, damage flash, panel sliding in)?** → `Tween`.
+2. **Authored animation edited in editor (cutscene, complex sequence, sprite animation)?** → `AnimationPlayer`.
+3. **Character with multiple animation states needing blending (idle → walk → run, with crossfades)?** → `AnimationTree` driving `AnimationPlayer`.
 
-When in doubt: start with `Tween`. It's the simplest and you can always upgrade later.
+In doubt: start with `Tween`. Simplest; upgrade later.
 
 ## `Tween`
 
-A `Tween` interpolates a property from its current value to a target value over time. It's the right tool for code-driven animation.
+`Tween` interpolates property from current value to target value over time. Right tool for code-driven animation.
 
 ### Basic usage
 
@@ -34,17 +34,17 @@ public override void _Ready()
 }
 ```
 
-This creates a tween that moves the node's position from its current value to (500, 300) over 1 second.
+Creates tween moving node's position from current value to (500, 300) over 1 second.
 
-A few things to notice:
+Things to notice:
 
-- **`CreateTween()`** is a method on `Node`. It returns a `Tween` parented to this node, which auto-frees when the node is freed.
-- **`TweenProperty(target, property, value, duration)`** is the most common method. The property name is a string ("position", "modulate", "scale").
-- **The tween runs immediately** — no `Play()` call needed.
+- **`CreateTween()`** is method on `Node`. Returns `Tween` parented to this node, auto-frees when node freed.
+- **`TweenProperty(target, property, value, duration)`** most common method. Property name is string ("position", "modulate", "scale").
+- **Tween runs immediately** — no `Play()` call needed.
 
 ### Easing and transitions
 
-By default, the tween uses linear interpolation. For more natural animations, set the easing curve and transition type:
+Default: linear interpolation. More natural animations: set easing curve and transition type:
 
 ```csharp
 var tween = CreateTween();
@@ -53,13 +53,13 @@ tween.TweenProperty(this, "position", target, 1.0f)
     .SetTrans(Tween.TransitionType.Cubic);
 ```
 
-The available transition types: `Linear`, `Sine`, `Quint`, `Quart`, `Quad`, `Expo`, `Elastic`, `Cubic`, `Circ`, `Bounce`, `Back`, `Spring`. Each can be combined with an easing direction (`In`, `Out`, `InOut`).
+Available transition types: `Linear`, `Sine`, `Quint`, `Quart`, `Quad`, `Expo`, `Elastic`, `Cubic`, `Circ`, `Bounce`, `Back`, `Spring`. Each combinable with easing direction (`In`, `Out`, `InOut`).
 
-A useful default for most game animations is `EaseType.Out` with `TransitionType.Cubic` — feels snappy but natural.
+Useful default for most game animations: `EaseType.Out` with `TransitionType.Cubic` — snappy but natural.
 
 ### Sequencing and parallel
 
-Tweens can chain steps:
+Tweens chain steps:
 
 ```csharp
 var tween = CreateTween();
@@ -69,7 +69,7 @@ tween.TweenProperty(panel, "modulate:a", 0, 0.3f);     // Fade out
 tween.TweenCallback(Callable.From(() => panel.QueueFree())); // Cleanup
 ```
 
-By default, steps run sequentially. To run in parallel, mark the tween as parallel or use `Parallel()`:
+Default: steps run sequentially. Parallel: mark tween as parallel or use `Parallel()`:
 
 ```csharp
 var tween = CreateTween();
@@ -91,7 +91,7 @@ tween.TweenProperty(node, "scale", new Vector2(2, 2), 0.5f); // Sequential after
 
 ### Sub-properties
 
-You can tween a sub-property of a property using a colon:
+Tween sub-property of property using colon:
 
 ```csharp
 tween.TweenProperty(sprite, "modulate:a", 0.0f, 1.0f); // Fade alpha to 0
@@ -101,7 +101,7 @@ tween.TweenProperty(sprite, "scale:y", 2.0f, 0.3f);    // Scale only Y
 
 ### Awaiting tweens
 
-Tweens emit a `Finished` signal when they complete. With `await`, you can wait for them:
+Tweens emit `Finished` signal when complete. With `await`, wait for them:
 
 ```csharp
 public async void DoSequence()
@@ -117,7 +117,7 @@ public async void DoSequence()
 
 ### Callbacks
 
-`TweenCallback` lets you call a method as part of the sequence:
+`TweenCallback` calls method as part of sequence:
 
 ```csharp
 tween.TweenProperty(door, "rotation", Mathf.Pi / 2, 1.0f);
@@ -128,11 +128,11 @@ tween.TweenCallback(Callable.From(() => doorOpened = true));
 
 ### Killing tweens
 
-If a node is freed mid-tween, the tween is auto-freed too (because `CreateTween` parents it to the calling node). For explicit cleanup, you can `tween.Kill()`.
+Node freed mid-tween → tween auto-freed too (`CreateTween` parents it to calling node). Explicit cleanup: `tween.Kill()`.
 
-A common pitfall: if you call `CreateTween()` repeatedly (e.g., on every button press) without killing previous tweens, you stack tweens and they all try to set the same property. The result is jittery or wrong animation.
+Common pitfall: calling `CreateTween()` repeatedly (e.g., every button press) without killing previous tweens → stack tweens, all try to set same property. Result: jittery or wrong animation.
 
-The fix:
+Fix:
 
 ```csharp
 private Tween _currentTween;
@@ -208,20 +208,20 @@ public override void _Ready()
 
 ## `AnimationPlayer`
 
-`AnimationPlayer` plays *authored* animations — animations created in the editor's animation panel. The animations can target any property of any node, with keyframes, curves, and even method calls.
+`AnimationPlayer` plays *authored* animations — created in editor's animation panel. Animations can target any property of any node, with keyframes, curves, even method calls.
 
 ### When to use
 
-- **Sprite frame animations** (though `AnimatedSprite2D` is often easier)
-- **Complex movement sequences** (a chest opening, a flag waving, a NPC's idle gestures)
+- **Sprite frame animations** (though `AnimatedSprite2D` often easier)
+- **Complex movement sequences** (chest opening, flag waving, NPC's idle gestures)
 - **Cutscenes** with multiple things happening
-- **Anything you want a non-coder to edit**
+- **Anything you want non-coder to edit**
 
 ### Setting up
 
-Add an `AnimationPlayer` node as a child of whatever you want to animate. Open the animation panel (the bottom of the editor; click the `AnimationPlayer` node first to enable it). Click "Animation → New" to create an animation.
+Add `AnimationPlayer` node as child of whatever you want to animate. Open animation panel (bottom of editor; click `AnimationPlayer` node first to enable it). Click "Animation → New" to create animation.
 
-Then, while recording is enabled (the red dot button on the animation panel), tweak properties of nodes in the scene. Each tweak creates a keyframe.
+While recording enabled (red dot button on animation panel), tweak properties of nodes in scene. Each tweak creates keyframe.
 
 ### Playing animations from code
 
@@ -247,15 +247,15 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-`Play("name")` is idempotent — calling it repeatedly with the same name doesn't restart the animation. To force a restart, use `Stop()` then `Play()`, or `Seek(0); Play()`.
+`Play("name")` is idempotent — calling repeatedly with same name doesn't restart animation. Force restart: `Stop()` then `Play()`, or `Seek(0); Play()`.
 
 ### Method tracks
 
-`AnimationPlayer` can call methods on nodes as part of an animation. This is how you trigger sound effects, particle spawns, or anything else at a specific moment in an animation.
+`AnimationPlayer` can call methods on nodes as part of animation. How you trigger sound effects, particle spawns, anything else at specific moment in animation.
 
-In the animation panel, right-click → "Add Track" → "Method Call Track" → pick the node and method.
+Animation panel: right-click → "Add Track" → "Method Call Track" → pick node and method.
 
-This is useful for things like "play hit sound at frame 5 of the attack animation" — the timing is authored in the animation, not hardcoded in script.
+Useful for "play hit sound at frame 5 of attack animation" — timing authored in animation, not hardcoded in script.
 
 ### Awaiting animations
 
@@ -265,32 +265,32 @@ await ToSignal(_anim, AnimationPlayer.SignalName.AnimationFinished);
 GD.Print("Attack animation finished");
 ```
 
-This is great for cutscene-style sequencing.
+Great for cutscene-style sequencing.
 
 ### Animation libraries
 
-For projects with many animations across many characters, `AnimationLibrary` lets you organize animations into reusable libraries that can be assigned to multiple `AnimationPlayer`s. Useful for a project with 20 enemy types that share an animation set.
+Projects with many animations across many characters: `AnimationLibrary` organizes animations into reusable libraries assignable to multiple `AnimationPlayer`s. Useful for project with 20 enemy types sharing animation set.
 
 ## `AnimationTree`
 
-`AnimationTree` is the state-machine-driven layer on top of `AnimationPlayer`. It handles transitions between animations with blending, parameters, and a visual state machine editor.
+`AnimationTree` is state-machine-driven layer on top of `AnimationPlayer`. Handles transitions between animations with blending, parameters, visual state machine editor.
 
 ### When to use
 
-- **Character animation with multiple states**: idle, walk, run, jump, attack, hurt, die — with smooth blending between them.
+- **Character animation with multiple states**: idle, walk, run, jump, attack, hurt, die — smooth blending between them.
 - **Animations parameterized by inputs**: blend between walk-forward, walk-left, walk-right based on input direction.
-- **Complex animation logic** that would be a mess of `if/else` calls to `AnimationPlayer.Play()`.
+- **Complex animation logic** that would be mess of `if/else` calls to `AnimationPlayer.Play()`.
 
 ### Setting up
 
-1. Add an `AnimationPlayer` with all your individual animations (idle, walk, etc.).
-2. Add an `AnimationTree` node as a sibling.
-3. Set the `AnimationTree`'s `Anim Player` to point at the `AnimationPlayer`.
-4. Set the `Tree Root` to a new `AnimationNodeStateMachine`.
+1. Add `AnimationPlayer` with all individual animations (idle, walk, etc.).
+2. Add `AnimationTree` node as sibling.
+3. Set `AnimationTree`'s `Anim Player` to point at `AnimationPlayer`.
+4. Set `Tree Root` to new `AnimationNodeStateMachine`.
 5. Click `Active → True`.
-6. Open the `AnimationTree` in the editor (the tree icon at the bottom). You see a visual state machine editor.
+6. Open `AnimationTree` in editor (tree icon at bottom). See visual state machine editor.
 
-In the state machine editor, add states (each state plays an animation), connect them with transitions, set transition conditions and parameters.
+In state machine editor: add states (each state plays animation), connect with transitions, set transition conditions and parameters.
 
 ### Playing states from code
 
@@ -318,13 +318,13 @@ public partial class Enemy : CharacterBody2D
 }
 ```
 
-`Travel("state_name")` tells the state machine to transition to the named state, going through any intermediate states required by the transition graph. `Start("state_name")` immediately starts the state without transitions.
+`Travel("state_name")` tells state machine to transition to named state, going through intermediate states required by transition graph. `Start("state_name")` immediately starts state without transitions.
 
 ### Blend trees
 
-Within a state, you can use blend trees to mix animations based on parameters. The most common: a `BlendSpace2D` for directional blending.
+Within state, use blend trees to mix animations based on parameters. Most common: `BlendSpace2D` for directional blending.
 
-Example: a 2D blend space with `idle` at the center, `walk_up`, `walk_down`, `walk_left`, `walk_right` at the edges. Set the blend position based on input:
+Example: 2D blend space with `idle` at center, `walk_up`, `walk_down`, `walk_left`, `walk_right` at edges. Set blend position based on input:
 
 ```csharp
 public override void _PhysicsProcess(double delta)
@@ -336,11 +336,11 @@ public override void _PhysicsProcess(double delta)
 }
 ```
 
-The animation smoothly blends between the directional animations as the input changes.
+Animation smoothly blends between directional animations as input changes.
 
 ### `AnimationTree` vs hand-rolled state machine
 
-If you have a hand-rolled state machine (see [nodes-and-architecture.md](nodes-and-architecture.md)) that drives an `AnimationPlayer`, you might wonder whether to switch to `AnimationTree`.
+Have hand-rolled state machine (see [nodes-and-architecture.md](nodes-and-architecture.md)) driving `AnimationPlayer`? Wonder whether to switch to `AnimationTree`.
 
 | Use `AnimationTree` when... | Use hand-rolled when... |
 |---|---|
@@ -349,28 +349,28 @@ If you have a hand-rolled state machine (see [nodes-and-architecture.md](nodes-a
 | Blending between animations matters | Discrete animation playback is fine |
 | The state machine is complex enough to benefit from a graph | The state machine is simple |
 
-Many games use both: a hand-rolled state machine for gameplay state, an `AnimationTree` for animation state, with the gameplay state machine telling the `AnimationTree` what to do.
+Many games use both: hand-rolled state machine for gameplay state, `AnimationTree` for animation state, gameplay state machine telling `AnimationTree` what to do.
 
 ## Other Animation Patterns
 
 ### `AnimatedSprite2D`
 
-For simple sprite-frame animations (a 4-frame walk cycle, a 6-frame idle), `AnimatedSprite2D` with `SpriteFrames` is the easiest path. No `AnimationPlayer` needed.
+Simple sprite-frame animations (4-frame walk cycle, 6-frame idle): `AnimatedSprite2D` with `SpriteFrames` is easiest path. No `AnimationPlayer` needed.
 
 ```csharp
 var sprite = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
 sprite.Play("walk");
 ```
 
-The frames are configured in the inspector with the `SpriteFrames` editor.
+Frames configured in inspector with `SpriteFrames` editor.
 
 ### `Particles2D` and `Particles3D`
 
-For particle effects, use the particle nodes. They're not animations exactly but they handle large numbers of moving sprites efficiently.
+Particle effects: use particle nodes. Not animations exactly but handle large numbers of moving sprites efficiently.
 
 ### Manual interpolation
 
-For trivial cases, you can interpolate manually:
+Trivial cases: interpolate manually:
 
 ```csharp
 public override void _Process(double delta)
@@ -379,23 +379,23 @@ public override void _Process(double delta)
 }
 ```
 
-This is fine for simple smoothing (camera follow, UI smoothing). For anything more complex, prefer `Tween`.
+Fine for simple smoothing (camera follow, UI smoothing). Anything more complex: prefer `Tween`.
 
 ## Animation Anti-Patterns
 
 - **Using `Tween` for sprite frame animation.** Use `AnimatedSprite2D` or `AnimationPlayer`.
 - **Using `AnimationPlayer` for hit flashes and screen shake.** Overkill — `Tween` is right.
-- **Hand-coding state transitions** when `AnimationTree` would handle them with a visual editor.
-- **Calling `Play("idle")` every frame.** It's idempotent for the same animation, but if you flip rapidly between two animations, the playback state is unpredictable.
-- **Stacking tweens on the same property** without killing the previous one. Jittery results.
-- **Tweens not parented to a node.** If you do `var tween = new Tween()` instead of `CreateTween()`, you have to add it to the tree manually and free it manually.
+- **Hand-coding state transitions** when `AnimationTree` would handle them with visual editor.
+- **Calling `Play("idle")` every frame.** Idempotent for same animation, but flipping rapidly between two animations → unpredictable playback state.
+- **Stacking tweens on same property** without killing previous one. Jittery results.
+- **Tweens not parented to node.** `var tween = new Tween()` instead of `CreateTween()` → must add to tree manually, free manually.
 - **Interpolating in `_PhysicsProcess` for visual effects.** Use `_Process` for visuals.
-- **Animation method tracks calling methods that don't exist.** Silent failure; the animation looks broken.
-- **`AnimationPlayer` for cutscenes that never re-play.** Sometimes a `Tween` sequence in code is fine.
+- **Animation method tracks calling methods that don't exist.** Silent failure; animation looks broken.
+- **`AnimationPlayer` for cutscenes that never re-play.** Sometimes `Tween` sequence in code is fine.
 - **Forgetting to set `AnimationTree.Active = true`.** Nothing plays.
-- **Mixing `Tween` and `AnimationPlayer` on the same property.** They fight; the result is unpredictable.
-- **Not awaiting animations** when sequencing matters. Async/await with `ToSignal` is much cleaner than callback chains.
-- **Hardcoding animation timing in code** when it should be in the animation file. Designers can't tweak it without bothering an engineer.
+- **Mixing `Tween` and `AnimationPlayer` on same property.** They fight; result unpredictable.
+- **Not awaiting animations** when sequencing matters. Async/await with `ToSignal` much cleaner than callback chains.
+- **Hardcoding animation timing in code** when it should be in animation file. Designers can't tweak without bothering engineer.
 
 ## Related
 
