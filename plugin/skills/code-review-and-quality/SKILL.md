@@ -1,6 +1,6 @@
 ---
 name: code-review-and-quality
-description: Method and standards for multi-axis code review across correctness, readability, architecture, security, and performance — the review axes, finding tiers, and the ship-ready bar. Loaded inline when reviewing a diff yourself, before merging a change, after a feature or bug fix, when evaluating code produced by another agent, or when refactoring. Triggers on "review my PR", "review this diff", "code review", "is this ready to merge". For a dispatched read-only review in an isolated context against a cold-context brief, run after local verification and in parallel with security review — use the code-reviewer agent. Not for cross-stack security audit method — use security-engineering, whose dispatched counterpart is the security-reviewer agent.
+description: Method and standards for multi-axis code review — correctness, readability, architecture, security, performance; review axes, finding tiers, ship-ready bar. Loaded inline when reviewing a diff, before merge, after a feature or bug fix, evaluating code from another agent, or refactoring. Triggers on "review my PR", "review this diff", "code review", "is this ready to merge". For dispatched read-only review in isolated context against cold-context brief, after local verification, in parallel with security review — use code-reviewer agent. Not for cross-stack security audit — use security-engineering (dispatched counterpart: security-reviewer agent).
 ---
 
 # Code Review and Quality

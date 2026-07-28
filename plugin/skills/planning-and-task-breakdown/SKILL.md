@@ -1,6 +1,6 @@
 ---
 name: planning-and-task-breakdown
-description: Decomposes an approved OpenSpec change proposal into dependency-aware tasks on disk — tasks.md, spec deltas, and per-task dispatch briefs. Use when work spans multiple changes, agents, or verification stages.
+description: Decomposes approved OpenSpec change proposal into dependency-aware tasks on disk — tasks.md, spec deltas, per-task dispatch briefs. Use when work spans multiple changes, agents, or verification stages.
 ---
 
 # Planning and task breakdown

@@ -1,6 +1,6 @@
 ---
 name: web3-smart-contract-engineering
-description: Use when writing, reviewing, or deploying Solidity smart contracts — token contracts, signature-gated claim systems, merkle-gated staking vaults, allocation modules, role-based proxies, or factory patterns. Triggers on edits to `*.sol` files, `hardhat.config.*`, `foundry.toml`, deploy scripts, or mentions of "smart contract", "Solidity", "Web3", "EVM", "Hardhat", "Foundry", "ERC20/721/1155", "merkle", "staking", or "on-chain". For security audits and adversarial review see security-engineering.
+description: Use when writing, reviewing, or deploying Solidity smart contracts — token contracts, signature-gated claim systems, merkle-gated staking vaults, allocation modules, role-based proxies, factory patterns. Triggers on `*.sol`, `hardhat.config.*`, `foundry.toml`, deploy scripts, or mentions of "smart contract", "Solidity", "Web3", "EVM", "Hardhat", "Foundry", "ERC20/721/1155", "merkle", "staking", "on-chain". For security audits and adversarial review see security-engineering.
 ---
 
 # Web3 / Smart Contract Engineering

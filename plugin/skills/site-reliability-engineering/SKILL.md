@@ -1,6 +1,6 @@
 ---
 name: site-reliability-engineering
-description: "Use when operating production systems — defining and tracking SLIs/SLOs, tuning alerts, running on-call, leading incidents, writing postmortems, authoring runbooks, reducing toil, managing capacity at runtime, or running resilience exercises. Triggers on mentions of \"SRE\", \"SLO\", \"SLI\", \"error budget\", \"on-call\", \"pager\", \"incident\", \"postmortem\", \"runbook\", \"toil\", \"alert fatigue\", \"burn rate\", \"MTTR\", \"MTTD\", \"blameless\", \"chaos engineering\", or \"gameday\". For *designing* fault tolerance, observability, and capacity at architecture time see system-architect; for CI/CD release mechanics see deployment-pipelines; for security incidents see security-engineering."
+description: "Use when operating production systems — defining and tracking SLIs/SLOs, tuning alerts, on-call, leading incidents, postmortems, runbooks, reducing toil, managing capacity at runtime, resilience exercises. Triggers on \"SRE\", \"SLO\", \"SLI\", \"error budget\", \"on-call\", \"pager\", \"incident\", \"postmortem\", \"runbook\", \"toil\", \"alert fatigue\", \"burn rate\", \"MTTR\", \"MTTD\", \"blameless\", \"chaos engineering\", \"gameday\". For *designing* fault tolerance, observability, capacity at architecture time see system-architect; for CI/CD release mechanics see deployment-pipelines; for security incidents see security-engineering."
 ---
 
 # Site Reliability Engineering

@@ -29,18 +29,14 @@ describe('RoleBasedProxy', function () {
   it('should submit and execute a proposal', async function () {
     const selector = target.interface.getFunction('doSomething').selector
 
-    // Setup permissions
     await proxy.setAllowedMethod(ROLE, selector, await target.getAddress(), true)
     await proxy.setApprovalThreshold(ROLE, selector, 1)
 
-    // Submit proposal
     const callData = target.interface.encodeFunctionData('doSomething', [42])
     const tx = await proxy.submitProposal(ROLE, await target.getAddress(), callData)
 
-    // Execute
     await proxy.executeProposal(1)
 
-    // Verify
     expect(await target.value()).to.equal(42)
   })
 
@@ -62,7 +58,6 @@ const currentTime = await helpers.time.latest()
 await helpers.time.increase(3600) // 1 hour
 await helpers.time.increaseTo(currentTime + 86400) // specific timestamp
 
-// Mine blocks
 await helpers.mine(10)
 ```
 
