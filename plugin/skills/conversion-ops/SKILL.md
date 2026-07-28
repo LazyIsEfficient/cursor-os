@@ -1,6 +1,6 @@
 ---
 name: conversion-ops
-description: AI-powered conversion rate optimization: landing page audits, CRO scoring, survey segmentation, and lead magnet generation. Use when asked to audit a landing page, run a CRO analysis, segment survey responses, or generate lead magnets. For content quality scoring see content-ops.
+description: AI-powered conversion rate optimization: landing page audits, CRO scoring, survey segmentation, lead magnet generation. Use when asked to audit landing page, run CRO analysis, segment survey responses, or generate lead magnets. For content quality scoring see content-ops.
 ---
 
 # AI Conversion Ops

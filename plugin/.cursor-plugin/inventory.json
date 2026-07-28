@@ -12,7 +12,7 @@
       "id": "adversarial-claims-reviewer",
       "kind": "agent",
       "path": "plugin/agents/adversarial-claims-reviewer.md",
-      "sha256": "8ef698099d7990cc9c214a17a88a5e7ec2fbf25865145e691c2aed9b9362d2d4"
+      "sha256": "a6308c60a32a5bdcb61553bfb9e380ff32f58cab063dbbab3fe45082b16fddc1"
     },
     {
       "id": "capability-probe",
@@ -24,25 +24,25 @@
       "id": "code-reviewer",
       "kind": "agent",
       "path": "plugin/agents/code-reviewer.md",
-      "sha256": "e02bf447ea41a5836fc44788dab4f804dfd1a5918af7f17eb8df2dc1668bc068"
+      "sha256": "733cbc33092d42b74f84d260ab97c63d292f50702552287234945b3c47751612"
     },
     {
       "id": "data-model-documenter",
       "kind": "agent",
       "path": "plugin/agents/data-model-documenter.md",
-      "sha256": "66a9991d91eb63868c696802f99259a1557fe552fb2e81da63e828643c367d2f"
+      "sha256": "04f1fe6d5522c58801e2906a8ece42c1e833cbc32c297ae7c666e7ecb9a6155a"
     },
     {
       "id": "data-model-verifier",
       "kind": "agent",
       "path": "plugin/agents/data-model-verifier.md",
-      "sha256": "54e0f16c2f6a0a38975024c8112623d8ecf93169c222039045b0ea1da7e76b6a"
+      "sha256": "835f386bc9c1d3f16522d7ddfe0d21cc94e2325d5ecff2b02aa8697f62f398f1"
     },
     {
       "id": "devops-engineer",
       "kind": "agent",
       "path": "plugin/agents/devops-engineer.md",
-      "sha256": "d83c9d436b53779fe84afa99daecc8fff2e1e888ec85da59ea5d45ad3a9cbcd9"
+      "sha256": "284b7349690533ff8447eda0df17310c758efeb548e69f29e61233a7fe652826"
     },
     {
       "id": "engineer",
@@ -54,61 +54,61 @@
       "id": "game-design-shaper",
       "kind": "agent",
       "path": "plugin/agents/game-design-shaper.md",
-      "sha256": "b6bd359b51bbefef6f5ff7176bc8c2b5d28894bac56b1dd12aa5fb98cdea7516"
+      "sha256": "29fc7e3f32703fa57ad8ffcb146c46836df3f801d740bb3af2bf38fe81147b6a"
     },
     {
       "id": "godot-engineer",
       "kind": "agent",
       "path": "plugin/agents/godot-engineer.md",
-      "sha256": "b61f542e4e8f138f1dc55e772ed3297a31341f23efa68741553be10847c3d7bf"
+      "sha256": "528ba7de6eee84c739f3ce761112f41b0ef6f208410142d625a6c902a30a9cd8"
     },
     {
       "id": "library-investigator",
       "kind": "agent",
       "path": "plugin/agents/library-investigator.md",
-      "sha256": "32303857b2d435abf94aab2c87bd4c084bf5ec2161261b277e37a165b0186f16"
+      "sha256": "61a4c07861b147fdc102ede150bb166b4ba665d0ecfa6b34f3fb87bc7a7e96f9"
     },
     {
       "id": "library-reviewer",
       "kind": "agent",
       "path": "plugin/agents/library-reviewer.md",
-      "sha256": "de7dd9d341e293ae7710f0ce5f993ed37d1e764d88a48dc822f6b5fe1e947655"
+      "sha256": "3e81085602d6d4060e2c91fee9dcb88833142e6c1237142bbb12171f9f19f9af"
     },
     {
       "id": "marketer",
       "kind": "agent",
       "path": "plugin/agents/marketer.md",
-      "sha256": "2f61f210b76f640f2ae9544b5a5e718f3eac1c236ed9ac0b12efe3219c4155f8"
+      "sha256": "459f555ec6aef83041fc67ce31c305478c9e8f86a8a2afa0d196e9669217e633"
     },
     {
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
-      "sha256": "67cee9a79cad82971ccd9d94c13dc5faee5f609075f67d350f5281d18ae5db47"
+      "sha256": "197b16c9dd2da5962e3512ce43b818fbffedda6ae84a13e0e27dd72cba8d2cf4"
     },
     {
       "id": "rust-engineer",
       "kind": "agent",
       "path": "plugin/agents/rust-engineer.md",
-      "sha256": "03d6a8e8af279594a9486067e9c1ea75d63057cd186d471ba6c7e02e7dc17202"
+      "sha256": "15130d4519042a3ce86ae5fc45b3af3ca3fa4b209560fe82c8aaa90d2ca4af02"
     },
     {
       "id": "security-reviewer",
       "kind": "agent",
       "path": "plugin/agents/security-reviewer.md",
-      "sha256": "0623021a85238eacd2562ebdc25c426573cd723c6f5eabfe1b39b79313356cd7"
+      "sha256": "196ef4428fd626a010428e9dd99c279ce371fe6f0b9727e01c020425514e9fbd"
     },
     {
       "id": "technical-pm",
       "kind": "agent",
       "path": "plugin/agents/technical-pm.md",
-      "sha256": "748646156a01c3da37232191b4b8b278f15327a416dccea2581898fc644a48cb"
+      "sha256": "1ed03de6dc7b80f5a5f668dab01df90fb92e4faf6dc218bdd11d8dda963bbeef"
     },
     {
       "id": "web3-engineer",
       "kind": "agent",
       "path": "plugin/agents/web3-engineer.md",
-      "sha256": "8b817ac9c61f9308442a9136567795273bc938cfe8de69f9c32fff643247dd21"
+      "sha256": "313ee87eb9359f46e262468a8df0e83bf9d6c0ad29437822da630ed2c4fd5d6e"
     },
     {
       "id": "agent-new",
@@ -282,7 +282,7 @@
       "id": "dispatch-gate-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-lib.mjs",
-      "sha256": "6ff60938ec33ef5e66dffef6b184c83f63ae5210f7ac75cb066906f90de00f04"
+      "sha256": "94192e6508f40389a35765d98dfe75f74a9b4782befe1592a7077daaaf5a5ea6"
     },
     {
       "id": "dispatch-gate-plan-lib",
@@ -330,7 +330,7 @@
       "id": "adversarial-claims-reviewer",
       "kind": "skill",
       "path": "plugin/skills/adversarial-claims-reviewer/SKILL.md",
-      "sha256": "92d407118ff0363cde9dfbd7e2f8ac4ffe05e9e77a76e9e1bb9bc47200953e9d"
+      "sha256": "98a4d733413003d85ae994a2ffb83a36cc7a28483d3e83d8b75fd4628b3a8412"
     },
     {
       "id": "skills-adversarial-claims-reviewer-assets-report-template",
@@ -348,7 +348,7 @@
       "id": "autoresearch",
       "kind": "skill",
       "path": "plugin/skills/autoresearch/SKILL.md",
-      "sha256": "d91a10c36a8ba4a1664edd20ba6d8c41b6b20ea438b32c2973682bad3d0b1fe2"
+      "sha256": "38f895ab2320ab7a7c60f276fbdcf06bf56e5629aef3661e1b34829536e43264"
     },
     {
       "id": "skills-autoresearch-readme",
@@ -378,7 +378,7 @@
       "id": "browser-testing-with-devtools",
       "kind": "skill",
       "path": "plugin/skills/browser-testing-with-devtools/SKILL.md",
-      "sha256": "c23a129b9967293863f2fc75f645260f43954ae2e4888ce79b57e69a98dc9fbe"
+      "sha256": "27041caa42e99e005c566707543700855c0b3cb9bbf6e52af41183df5115a9dc"
     },
     {
       "id": "skills-browser-testing-with-devtools-references-debugging-workflows",
@@ -402,7 +402,7 @@
       "id": "code-review-and-quality",
       "kind": "skill",
       "path": "plugin/skills/code-review-and-quality/SKILL.md",
-      "sha256": "bcfb46208ca66157a3e15d0e3283d32ef4c25ff3fc3604082afee72981a6b960"
+      "sha256": "613691b5fdd897cf479068a70f7883b0de2fdbc4b629281d3b45d6ffc384bbef"
     },
     {
       "id": "skills-code-review-and-quality-references-performance-checklist",
@@ -432,7 +432,7 @@
       "id": "codebase-cost-estimator",
       "kind": "skill",
       "path": "plugin/skills/codebase-cost-estimator/SKILL.md",
-      "sha256": "b86d3af58b34ceedb4f7123fa7cc3cc59dae01971532fcb7453e93df5a08f367"
+      "sha256": "cd31dc8bbf08fce71af40bbe6a5dcff8242ae2b4b06189f64ef4f4d28fd48b85"
     },
     {
       "id": "skills-codebase-cost-estimator-assets-output-template",
@@ -444,7 +444,7 @@
       "id": "skills-codebase-cost-estimator-readme",
       "kind": "reference",
       "path": "plugin/skills/codebase-cost-estimator/readme.md",
-      "sha256": "4be657ce08db06a23ce62bbb1d2c413ef371f82845cf381dc4a9257f14f4624b"
+      "sha256": "384beb2630d9f870e0c1727f5cd905d5fac095c8a1378765170e46b9bbcb47d2"
     },
     {
       "id": "skills-codebase-cost-estimator-references-claude-roi",
@@ -474,7 +474,7 @@
       "id": "content-ops",
       "kind": "skill",
       "path": "plugin/skills/content-ops/SKILL.md",
-      "sha256": "71c63890d06d5d0cc1366ada4210ebb38f8cc009f4e307132337cb1d49215ddb"
+      "sha256": "0d549ebf4c50cc2c91cb773c32d36e3124038a077151371e24d57c70c8b54867"
     },
     {
       "id": "skills-content-ops-experts-humanizer",
@@ -588,7 +588,7 @@
       "id": "content-pipeline",
       "kind": "skill",
       "path": "plugin/skills/content-pipeline/SKILL.md",
-      "sha256": "cb8406321140686f53abf5ee3c0f0716576d3650597bea4da019861c67cb6491"
+      "sha256": "7582f08ef0273fff9805523e52a02cc1ea0acb7b9e8aa257eae2f9faafd93c86"
     },
     {
       "id": "skills-content-pipeline-readme",
@@ -600,7 +600,7 @@
       "id": "conversion-ops",
       "kind": "skill",
       "path": "plugin/skills/conversion-ops/SKILL.md",
-      "sha256": "902b16721051f0f4e91effc663fd4d042211ca7151cdd819ebc4d8aef3f1d2bc"
+      "sha256": "96fe4b343dbb4f32011ea94c33433c59f099b106dd8e8c29c0afa2d8fa73bf5d"
     },
     {
       "id": "skills-conversion-ops-readme",
@@ -630,7 +630,7 @@
       "id": "data-model-documentation",
       "kind": "skill",
       "path": "plugin/skills/data-model-documentation/SKILL.md",
-      "sha256": "deaa6f449f98e0e6f27cd6b5b342d37b5bf53507c66846bf63442cd3708006cd"
+      "sha256": "048b2e427300954ebaf721f96a879b2031e0f079417f649ceb7827bae4889a1a"
     },
     {
       "id": "skills-data-model-documentation-assets-data-model-template",
@@ -654,7 +654,7 @@
       "id": "data-model-verification",
       "kind": "skill",
       "path": "plugin/skills/data-model-verification/SKILL.md",
-      "sha256": "928ca19ddbea8afe04c3536cd820e4577c65ea4e50c9eb457458be071da7e7c4"
+      "sha256": "e2a27c350763fd92ab97119c0613424960c5ecdf17494c7fd1ee18982e32b684"
     },
     {
       "id": "skills-data-model-verification-assets-report-template",
@@ -666,7 +666,7 @@
       "id": "deployment-pipelines",
       "kind": "skill",
       "path": "plugin/skills/deployment-pipelines/SKILL.md",
-      "sha256": "3f2d2ddb2e5c80cf8cf9398ac7c22837f402890126d7f9b8579b4af46b78db51"
+      "sha256": "078e86ac6cdf8c7fb68aa388383e4a412fd93f01f026f844df398650b6d8508b"
     },
     {
       "id": "skills-deployment-pipelines-references-caching-and-artifacts",
@@ -714,7 +714,7 @@
       "id": "devops-engineer",
       "kind": "skill",
       "path": "plugin/skills/devops-engineer/SKILL.md",
-      "sha256": "a8c381cecac84a8d9dcec45730a5890e01a2c1b45595ef2900ac18862a55652f"
+      "sha256": "bfb1c04be4932154a8a75b5ffbeb383b21aeab08375fb4b63dc30cf76fc268b2"
     },
     {
       "id": "skills-devops-engineer-references-cicd-pipelines",
@@ -750,7 +750,7 @@
       "id": "game-balancer",
       "kind": "skill",
       "path": "plugin/skills/game-balancer/SKILL.md",
-      "sha256": "6c8d006df4a2a499eab886f0288af452437c5e03c5c6520cee2ad29f4da1fb28"
+      "sha256": "f1a882b1659b90544847b83657cf627d4009ddc8e916f364208ca4f9fc3d9bf5"
     },
     {
       "id": "skills-game-balancer-assets-balance-pass-checklist",
@@ -834,7 +834,7 @@
       "id": "game-concept-creator",
       "kind": "skill",
       "path": "plugin/skills/game-concept-creator/SKILL.md",
-      "sha256": "740288008d6ef0b4b6ca5a8da30ef3232eb4a482b6f14f4f7e6a8f77014d77a6"
+      "sha256": "64680672cc6d0287f710f19a7d545edd2e4cf64cf7e9e4c02a27dc43bfc4b654"
     },
     {
       "id": "skills-game-concept-creator-assets-concept-batch-template",
@@ -870,7 +870,7 @@
       "id": "game-design-shaper",
       "kind": "skill",
       "path": "plugin/skills/game-design-shaper/SKILL.md",
-      "sha256": "1b465b330fd1124720458e201c6b0e3de6ce6f9cba9283c9dbf5f0f547a8503a"
+      "sha256": "5fd6d5864f3ee58947d9433ceb77fcf8d433da7dc549442dde07f143ab0631f2"
     },
     {
       "id": "skills-game-design-shaper-assets-full-game-template",
@@ -912,7 +912,7 @@
       "id": "game-marketer",
       "kind": "skill",
       "path": "plugin/skills/game-marketer/SKILL.md",
-      "sha256": "cdee6b7d05af7a8c5a8cf8893d5754262194fd57786f8bdbf3259dc8a611f6ce"
+      "sha256": "baf548f970ad2528fc45ca0254622f201f23bb18956870aee0f13e8e0c643fdc"
     },
     {
       "id": "skills-game-marketer-assets-comms-cadence-template",
@@ -1020,7 +1020,7 @@
       "id": "game-monetization-strategist",
       "kind": "skill",
       "path": "plugin/skills/game-monetization-strategist/SKILL.md",
-      "sha256": "1b82191b3cb3dd3386560b96cb6e07121557a12e67c7d8f3cf29ec43f2ff5f1f"
+      "sha256": "6ef26253c0f2f9092486097da193f34810ad960dc196c41114ba4b68ea1c793d"
     },
     {
       "id": "skills-game-monetization-strategist-assets-monetization-strategy-template",
@@ -1092,7 +1092,7 @@
       "id": "game-systems-designer",
       "kind": "skill",
       "path": "plugin/skills/game-systems-designer/SKILL.md",
-      "sha256": "b67032f071566fd95ff1b94831950442edb085fcfffa858fafa8eee60dab31be"
+      "sha256": "c5b3200480504312edf800780f3b88b2503717b06c20c4ab00ff181ac0ccfc7c"
     },
     {
       "id": "skills-game-systems-designer-assets-design-doc-template",
@@ -1158,7 +1158,7 @@
       "id": "godot-engineer",
       "kind": "skill",
       "path": "plugin/skills/godot-engineer/SKILL.md",
-      "sha256": "411e0c35f02ef460768401f520110c6525daeed9ebf3e278a569a47e6e379dd8"
+      "sha256": "408bd9948f73a1325b5f18f9fa9711acb266a76e77c8fdc7c85a036a39a18fe4"
     },
     {
       "id": "skills-godot-engineer-assets-feature-checklist",
@@ -1176,13 +1176,13 @@
       "id": "skills-godot-engineer-references-animation-and-tweens",
       "kind": "reference",
       "path": "plugin/skills/godot-engineer/references/animation-and-tweens.md",
-      "sha256": "9b3461a4064b088451c3c2ee88aa29702d0b24dbb6c84bb60b453525e6d122f0"
+      "sha256": "c56ce39f131da48f471f134cf6aa7dc087636f172e314bb5a7db9ceb8fcee4fe"
     },
     {
       "id": "skills-godot-engineer-references-exporting-and-platforms",
       "kind": "reference",
       "path": "plugin/skills/godot-engineer/references/exporting-and-platforms.md",
-      "sha256": "24450fea5424ec30d4687130511d7a8beb93add0fc00acc3b20bcfb76638ef2c"
+      "sha256": "0d20d7517fd66a00d9d764792e9dbe46d04998640c0ddee6e50516cc22c03d68"
     },
     {
       "id": "skills-godot-engineer-references-gdscript-vs-csharp",
@@ -1206,7 +1206,7 @@
       "id": "skills-godot-engineer-references-input-and-controls",
       "kind": "reference",
       "path": "plugin/skills/godot-engineer/references/input-and-controls.md",
-      "sha256": "55ee343d0125c8f1784f8fce8d6c2e19608e7c3e9f85721ee5703aaa3bdebacf"
+      "sha256": "4d055626ef8eb5013987589a8dc07f04315f833eeee180e56a0ae8b9d81b5bb7"
     },
     {
       "id": "skills-godot-engineer-references-multiplayer-and-websockets",
@@ -1230,7 +1230,7 @@
       "id": "skills-godot-engineer-references-physics-and-collision",
       "kind": "reference",
       "path": "plugin/skills/godot-engineer/references/physics-and-collision.md",
-      "sha256": "b29fda8d14668223b12ef5e88b0722e07ad0f13e40640409684ecfc55eed0259"
+      "sha256": "4da26e34ea240ff48048c448e035de3230ad669d91dd25c866fdcbee901b2a85"
     },
     {
       "id": "skills-godot-engineer-references-rendering-and-shaders",
@@ -1248,7 +1248,7 @@
       "id": "skills-godot-engineer-references-scenes-and-instancing",
       "kind": "reference",
       "path": "plugin/skills/godot-engineer/references/scenes-and-instancing.md",
-      "sha256": "4a8c12456827bb397c6496c04310a7370e471815e3463a5b30927f8996362062"
+      "sha256": "6f5d3ec8b6f52673870959692a5ca105d83b4eadd325c51d12767711edcc418e"
     },
     {
       "id": "skills-godot-engineer-references-signals-and-events",
@@ -1266,7 +1266,7 @@
       "id": "growth-engine",
       "kind": "skill",
       "path": "plugin/skills/growth-engine/SKILL.md",
-      "sha256": "5490902714528a354a8dc75df958bdfade11b903ba9119d6bb1450a3add75c17"
+      "sha256": "6292eb49ded04fa9d64514d5f05255e0c1e6ea116a893a745ebec14eb2f6cfa0"
     },
     {
       "id": "skills-growth-engine-readme",
@@ -1290,7 +1290,7 @@
       "id": "iap-manager",
       "kind": "skill",
       "path": "plugin/skills/iap-manager/SKILL.md",
-      "sha256": "a2a305fd5dcd8767e8eba943fdbfb2bdfc4f42ad4c7f75e8057373848b48ed99"
+      "sha256": "060b2df11fe6af8a665916395119751be2fea688653013459d40c1b43b79f4bd"
     },
     {
       "id": "skills-iap-manager-assets-bundle-composition-template",
@@ -1392,7 +1392,7 @@
       "id": "library-investigator",
       "kind": "skill",
       "path": "plugin/skills/library-investigator/SKILL.md",
-      "sha256": "b5814b8a3c0c5e2363cf661adc0175cb2efc6d9fd127784d164778ca73681d12"
+      "sha256": "a2847452f6535391ad8ce6ff8c310e0f038d704e494b9e13d8712a7e7701f276"
     },
     {
       "id": "skills-library-investigator-assets-investigation-report-template",
@@ -1416,7 +1416,7 @@
       "id": "marketing-shaper",
       "kind": "skill",
       "path": "plugin/skills/marketing-shaper/SKILL.md",
-      "sha256": "9e8732538747893da706542a0b095c994b5d6c04bf2d46f9c39cb0c2ce6fbf65"
+      "sha256": "797867b0a93fe56c41fd4e188c689bbcd40699714de4785041a41eb8e6b77249"
     },
     {
       "id": "skills-marketing-shaper-assets-campaign-template",
@@ -1464,13 +1464,13 @@
       "id": "memory-extraction",
       "kind": "skill",
       "path": "plugin/skills/memory-extraction/SKILL.md",
-      "sha256": "4af57e69761971dd3da8ce2b0cfd1d2a257799eddf76bc75afb346ddd41ef855"
+      "sha256": "b0231bb544d218ac91ce0d8fa0c87d5834c917ee05fc41f7a0a63591d32244f0"
     },
     {
       "id": "openspec-planning",
       "kind": "skill",
       "path": "plugin/skills/openspec-planning/SKILL.md",
-      "sha256": "23777636179c00eab215473c126d3a3b19d940935be05a44c77149bb09615a9e"
+      "sha256": "5e8f3b25449fa3095345e2689428039eb4c28ab003ad84687daaf7b7c5a48402"
     },
     {
       "id": "skills-openspec-planning-references-change-lifecycle",
@@ -1488,7 +1488,7 @@
       "id": "outbound-engine",
       "kind": "skill",
       "path": "plugin/skills/outbound-engine/SKILL.md",
-      "sha256": "04541a645079680f770756a3737c3aee3a4d624c1817340dfeb9227f114b90f5"
+      "sha256": "94e0217171b2d55c66f1b509de414c38d50f3c39f33057dcae1a1bdfbcb62728"
     },
     {
       "id": "skills-outbound-engine-assets-icp-template",
@@ -1536,7 +1536,7 @@
       "id": "phaser-engineer",
       "kind": "skill",
       "path": "plugin/skills/phaser-engineer/SKILL.md",
-      "sha256": "03737e1ebd4d470c1feb2bde00e7a4fe0279bd298d716bb581628544e4099434"
+      "sha256": "b7284b9909e5b2162c438dadab438872ef95d2efbf4413d2115cd73294069246"
     },
     {
       "id": "skills-phaser-engineer-assets-feature-checklist",
@@ -1584,19 +1584,19 @@
       "id": "planning-and-task-breakdown",
       "kind": "skill",
       "path": "plugin/skills/planning-and-task-breakdown/SKILL.md",
-      "sha256": "7aff807325a0a1e6c0a563614aecdc1f9bcdef818230765a086837ca0b50e07c"
+      "sha256": "0cd690ce261da44cc5c2cf5ebc5ef53a88b811b4d1d92ce8ed4b5b2feafc0914"
     },
     {
       "id": "prompt-shaping",
       "kind": "skill",
       "path": "plugin/skills/prompt-shaping/SKILL.md",
-      "sha256": "affa0515d28e42c2d13b5b0051b362c3f4eafbbca5aef1811fbd8a92ee3adaf3"
+      "sha256": "84db65c84fb3e2e2a9ffa69da88e9c612b0140070bf4d98fdd892ccd0bd2ea57"
     },
     {
       "id": "release-manager",
       "kind": "skill",
       "path": "plugin/skills/release-manager/SKILL.md",
-      "sha256": "1320936e3409dab9791ded4f4291ab2fa54ae599e0e87f2fe774daca7cf6265d"
+      "sha256": "844d0050b504abb407a84514d334eb4cd173873a784edcd273f1728ed1348afa"
     },
     {
       "id": "skills-release-manager-references-release-cut-mechanics",
@@ -1608,13 +1608,13 @@
       "id": "revenue-intelligence",
       "kind": "skill",
       "path": "plugin/skills/revenue-intelligence/SKILL.md",
-      "sha256": "03bc0e8185d6abf7be1bb10f7f01101e2cc0718b62bd53d4aa60885963ed9e31"
+      "sha256": "085ddfd9fe6c0a3fcaea6adb725fab772ad14262577b06841164e0c2ac325cf6"
     },
     {
       "id": "skills-revenue-intelligence-readme",
       "kind": "reference",
       "path": "plugin/skills/revenue-intelligence/readme.md",
-      "sha256": "2e384fe29bb8a733e9cb77fd82053faeafd36e43c9b6a634947b111e4429dd59"
+      "sha256": "44ae4fb0484c827f7756b5eb48532af1a01010fd866954cbc01cccf37586d2d8"
     },
     {
       "id": "skills-revenue-intelligence-references-configuration",
@@ -1626,13 +1626,13 @@
       "id": "skills-revenue-intelligence-references-tool-reference",
       "kind": "reference",
       "path": "plugin/skills/revenue-intelligence/references/tool-reference.md",
-      "sha256": "4d3bc5031669bb7ee6bc60e5a04239c6ca2d689752a45ed414df796c4a15f730"
+      "sha256": "6b01899977050188aa200698ce20f90e20e51ce2364f1dd3fbe95da26c22a43e"
     },
     {
       "id": "rust-engineer",
       "kind": "skill",
       "path": "plugin/skills/rust-engineer/SKILL.md",
-      "sha256": "7a5add1a12ddeb16f21ee96940ef9e3eeb0004d4cfd0a149e9bb363dcb47bdd8"
+      "sha256": "082b7236840bb508908c826aa623d5bbee8b3347cd73e68fd9d3cd4b8a13f164"
     },
     {
       "id": "skills-rust-engineer-references-async-and-concurrency",
@@ -1668,7 +1668,7 @@
       "id": "skills-rust-engineer-references-testing-patterns",
       "kind": "reference",
       "path": "plugin/skills/rust-engineer/references/testing-patterns.md",
-      "sha256": "b114d34d0f61fd7a7d691714d26d74a0239813ff4df97fd6080b926392b03b67"
+      "sha256": "d450145f766cfcffd8fec9bf5840ea15ee8df3fa7a59902914d2e8dc9e4ac14b"
     },
     {
       "id": "skills-rust-engineer-references-toolchain-and-conventions",
@@ -1698,7 +1698,7 @@
       "id": "security-engineering",
       "kind": "skill",
       "path": "plugin/skills/security-engineering/SKILL.md",
-      "sha256": "88319b01ed16f1db3d4111aa40e887091a4554b37fd76257e0f5d8dcb77d53e7"
+      "sha256": "43586a6767db3113f1a12164970b5f0f4efa3d2ab2b656a5018ed28ba6547704"
     },
     {
       "id": "skills-security-engineering-references-agentic-ai-security",
@@ -1764,7 +1764,7 @@
       "id": "security",
       "kind": "skill",
       "path": "plugin/skills/security/SKILL.md",
-      "sha256": "39ed53019fae412e1b45c8897540f3f8432b2f7a86da11d5b294c750cbdaea53"
+      "sha256": "d2361b449f7b934f3af465d2452586b9ba779038314d9ede2fc0885b8a616059"
     },
     {
       "id": "skills-security-readme",
@@ -1776,13 +1776,13 @@
       "id": "seo-ops",
       "kind": "skill",
       "path": "plugin/skills/seo-ops/SKILL.md",
-      "sha256": "b95c44660e5eb2225d3150bbe2c9bb81df9724d6c982d9187a3efb1bec43acee"
+      "sha256": "483adcfc2ebd8ce713df52c97c52773a79aa6c17f826f76cdda90d5fbba3b39e"
     },
     {
       "id": "skills-seo-ops-readme",
       "kind": "reference",
       "path": "plugin/skills/seo-ops/readme.md",
-      "sha256": "d666e4a682618113292dabbc2705df189affd1f3d836c385b69175498d54c947"
+      "sha256": "2b1b493e44a80b448ab6dda836b5a0954dfa8180b072b9ecda1947ae011a2640"
     },
     {
       "id": "skills-seo-ops-references-configuration-and-scoring",
@@ -1794,19 +1794,19 @@
       "id": "skills-seo-ops-references-tool-reference",
       "kind": "reference",
       "path": "plugin/skills/seo-ops/references/tool-reference.md",
-      "sha256": "c3f6c2593fb11b9cf10edf58132c854f39be5dd56dafe52f5c1c0498da3b9ca8"
+      "sha256": "936dc8d02cf6b760df73e6637a3c2a0371f640a8e149bfc1f92d2579d25ca42b"
     },
     {
       "id": "session-state",
       "kind": "skill",
       "path": "plugin/skills/session-state/SKILL.md",
-      "sha256": "f84ab6f22063d45cd76671a48871b69539dfb248af4f3675c9d0f3d88b94d72f"
+      "sha256": "09c5e919dda954fbdd4ecf6ed4b6f81239cc193ee805b1b62ae8bf487a77d4ee"
     },
     {
       "id": "site-reliability-engineering",
       "kind": "skill",
       "path": "plugin/skills/site-reliability-engineering/SKILL.md",
-      "sha256": "36f1026fefdeeef7ed26184e51c7235e33082348c994deb301e52537309b2951"
+      "sha256": "ba454c0900a97b8411c71bcec03234140c0c5cc0262bd4999f27399fb977d19f"
     },
     {
       "id": "skills-site-reliability-engineering-assets-incident-template",
@@ -1884,7 +1884,7 @@
       "id": "skill-library-review",
       "kind": "skill",
       "path": "plugin/skills/skill-library-review/SKILL.md",
-      "sha256": "d51c308aedd598b91e0070a593ec887adbdd5b7de785c8180edde4d5c3475ead"
+      "sha256": "84cede83ba7fd6badeff2c9032e3d090a652d50ed1c91fb44f5a60498a24f33d"
     },
     {
       "id": "skills-skill-library-review-assets-review-template",
@@ -1932,7 +1932,7 @@
       "id": "telemetry",
       "kind": "skill",
       "path": "plugin/skills/telemetry/SKILL.md",
-      "sha256": "1f3da09fd0b3fb989abf8b5f6e3ee2b86bf770bda77b12e0ca61eacfe6692d06"
+      "sha256": "75ec0adb07611286406cc6c26cec2c7d343f12bf034e59b1d95cd4d47743b71e"
     },
     {
       "id": "skills-telemetry-readme",
@@ -1944,7 +1944,7 @@
       "id": "typescript-analytics",
       "kind": "skill",
       "path": "plugin/skills/typescript-analytics/SKILL.md",
-      "sha256": "3622714b72960db0d7e076067577b046ddfd5947de1c4d3ff9d75962afe3132d"
+      "sha256": "6c4b63cf8a6f9d61d9a82c7ba5b14886d22f2ddb883dd8cb3fc9292588cc1d49"
     },
     {
       "id": "skills-typescript-analytics-references-error-tracking",
@@ -1956,7 +1956,7 @@
       "id": "skills-typescript-analytics-references-event-tracking",
       "kind": "reference",
       "path": "plugin/skills/typescript-analytics/references/event-tracking.md",
-      "sha256": "63a3bf2bb2c558e0a988fefaacb287682f50e37f59048436e566d9d2f54b53bc"
+      "sha256": "f088a0be9265106c8edb6eedc69dfc070add5b2d31d973a81032c22ec5234ece"
     },
     {
       "id": "skills-typescript-analytics-references-feature-flags",
@@ -1986,13 +1986,13 @@
       "id": "skills-typescript-analytics-references-user-identification",
       "kind": "reference",
       "path": "plugin/skills/typescript-analytics/references/user-identification.md",
-      "sha256": "5e925318a2854adc8f02eab49cda594bf0598e8e5ec28394c47679af5ffd11c5"
+      "sha256": "961a523744121c5790456fe1cecc0fad824dc53bad2093db0f5b15223e4559cc"
     },
     {
       "id": "typescript-data-engineering",
       "kind": "skill",
       "path": "plugin/skills/typescript-data-engineering/SKILL.md",
-      "sha256": "93c2b2fc8443f47c572296b3a7b6bfac73bff970c77d1357a5618c5337385706"
+      "sha256": "827da1cade2ff15454fbbd2a9428ed40d0c2a73a60c405301bbdede8455b8f2f"
     },
     {
       "id": "skills-typescript-data-engineering-references-architecture",
@@ -2004,7 +2004,7 @@
       "id": "skills-typescript-data-engineering-references-bigquery",
       "kind": "reference",
       "path": "plugin/skills/typescript-data-engineering/references/bigquery.md",
-      "sha256": "ad7ae0f9acc877ca8164fbf86b618131eed3148bdaeef6b6e299d37dda1fbda8"
+      "sha256": "0901d749734100984d8e63f1033c1f7d585de229066f9130436b939323c8829f"
     },
     {
       "id": "skills-typescript-data-engineering-references-caching",
@@ -2040,7 +2040,7 @@
       "id": "skills-typescript-data-engineering-references-migrations-and-infra",
       "kind": "reference",
       "path": "plugin/skills/typescript-data-engineering/references/migrations-and-infra.md",
-      "sha256": "91e7ec679e685ecf33fc1de28c4e109d1291183c9676b21e32aa170b94abd752"
+      "sha256": "840322cc5fffd5c8ffb6888776cd51b670f61d0c72e680911e1a09bedafde442"
     },
     {
       "id": "skills-typescript-data-engineering-references-orms",
@@ -2052,19 +2052,19 @@
       "id": "skills-typescript-data-engineering-references-validation-and-cron",
       "kind": "reference",
       "path": "plugin/skills/typescript-data-engineering/references/validation-and-cron.md",
-      "sha256": "4c44e0a22fa64ec9887759f1137907276a6cb808e93266908893f8480c55ad9f"
+      "sha256": "a814677603d09d0b410e72d2692bcb1aa2a03aaa88eb57130b5a4e1443446526"
     },
     {
       "id": "typescript-testing-backend",
       "kind": "skill",
       "path": "plugin/skills/typescript-testing-backend/SKILL.md",
-      "sha256": "4993bc9b42916874985d9e1985612cd49090a40fd84e569c31115aac65a4f3cc"
+      "sha256": "6a76e3346ff829062878bb45fa5d5582a5133d91c271d676f8c755b771a97ead"
     },
     {
       "id": "skills-typescript-testing-backend-references-database-testing",
       "kind": "reference",
       "path": "plugin/skills/typescript-testing-backend/references/database-testing.md",
-      "sha256": "a4d23c3ff46d3afa7be7d1d85bcf8da9c4c11b02c47fbbb395beeae2f4d1debf"
+      "sha256": "eba5f975fc3ed758772cc9ce5e2bf319d17ed3f7e8f0b82b594efa58115922a8"
     },
     {
       "id": "skills-typescript-testing-backend-references-framework-and-structure",
@@ -2076,7 +2076,7 @@
       "id": "skills-typescript-testing-backend-references-integration-testing",
       "kind": "reference",
       "path": "plugin/skills/typescript-testing-backend/references/integration-testing.md",
-      "sha256": "a603aaca13185b4b00ef1d6f69192139a790541ba778d0f9a392e9a713fed388"
+      "sha256": "65323b2c00053a399ad345838e85ef25740724fe4fd7fd49696f509d06dc2864"
     },
     {
       "id": "skills-typescript-testing-backend-references-mock-policy-and-quality",
@@ -2094,7 +2094,7 @@
       "id": "typescript-testing-frontend",
       "kind": "skill",
       "path": "plugin/skills/typescript-testing-frontend/SKILL.md",
-      "sha256": "d4639bb53fe30dfde0a0077f5e93e8e9af63dbe75f777cd207216bb1cbd17deb"
+      "sha256": "0fe4944bd43e01edbb4600cecc4d62378d5e97407cda784308c72f9581ca4bd5"
     },
     {
       "id": "skills-typescript-testing-frontend-references-component-testing",
@@ -2124,7 +2124,7 @@
       "id": "skills-typescript-testing-frontend-references-mocking-patterns",
       "kind": "reference",
       "path": "plugin/skills/typescript-testing-frontend/references/mocking-patterns.md",
-      "sha256": "22e96f06674a0f5ea79ea168a2cdbcd7aaf7c0d85d28a39a39a2f41d150715f4"
+      "sha256": "aaabe1711d14b2ee46297c10a4a1eea05ed3a11fb9f61158ee74c7e1ccc35ecf"
     },
     {
       "id": "skills-typescript-testing-frontend-references-queries-and-async",
@@ -2148,7 +2148,7 @@
       "id": "web3-smart-contract-engineering",
       "kind": "skill",
       "path": "plugin/skills/web3-smart-contract-engineering/SKILL.md",
-      "sha256": "905e0a27ce9837e2e606af83e876d6a8d2a4e62f734b2e3d895917d395809acb"
+      "sha256": "bc4ccce2a9d8b2163f2151e346e1879ef36fb77fcefb21832230a06265a4bd5b"
     },
     {
       "id": "skills-web3-smart-contract-engineering-references-allocation-module",
@@ -2208,7 +2208,7 @@
       "id": "skills-web3-smart-contract-engineering-references-testing-patterns",
       "kind": "reference",
       "path": "plugin/skills/web3-smart-contract-engineering/references/testing-patterns.md",
-      "sha256": "e4affb2bbc37d55a437743e432512f2e07842a8bf82fb4ab6008f7c5983f059b"
+      "sha256": "a267012c06c145f4b7e9528f391233c73cc7b3e9125f86c12eced1aecfa5bf2f"
     },
     {
       "id": "skills-web3-smart-contract-engineering-references-token-contracts",

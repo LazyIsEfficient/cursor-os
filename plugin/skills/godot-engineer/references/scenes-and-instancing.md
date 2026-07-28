@@ -175,13 +175,10 @@ Most cases: scene-unique names are right call. Use for any node referenced from 
 Full machinery for runtime scene loading:
 
 ```csharp
-// Load a scene from disk into a PackedScene
 var scene = GD.Load<PackedScene>("res://scenes/levels/level_2.tscn");
 
-// Instantiate it
 var levelInstance = scene.Instantiate<Level>();
 
-// Add it to the tree
 GetTree().Root.AddChild(levelInstance);
 ```
 

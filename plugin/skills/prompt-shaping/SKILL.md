@@ -1,6 +1,6 @@
 ---
 name: prompt-shaping
-description: Turns an ambiguous engineering request into an OpenSpec change proposal on disk. Use before planning or delegation when scope, constraints, acceptance criteria, or repository impact are unclear.
+description: Turns ambiguous engineering request into OpenSpec change proposal on disk. Use before planning or delegation when scope, constraints, acceptance criteria, or repository impact unclear.
 ---
 
 # Prompt shaping

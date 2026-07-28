@@ -1,6 +1,6 @@
 ---
 name: game-concept-creator
-description: "Use to generate, evaluate, and refine pitch-quality game concepts — theme × mechanic × audience combinations expressed as one-pagers. Triggers on \"game concept\", \"concept pitch\", \"ideate a game\", \"what game should we make\", \"concept one-pager\", \"elevator pitch for a game\", \"remix this concept\", or when handed a filled brief from game-design-shaper with the concept still open. Produces a concept one-pager (logline, fantasy, hook, target player, 3 verbs, payment rails, comparable titles, risks) that game-systems-designer consumes. Stops at the pitch — does not design systems, balance, or write design docs. For systems design see game-systems-designer; for intake shaping see game-design-shaper; for generic ideation see idea-refine."
+description: "Use to generate, evaluate, refine pitch-quality game concepts — theme × mechanic × audience combinations as one-pagers. Triggers on \"game concept\", \"concept pitch\", \"ideate a game\", \"what game should we make\", \"concept one-pager\", \"elevator pitch for a game\", \"remix this concept\", or filled brief from game-design-shaper with concept still open. Produces concept one-pager (logline, fantasy, hook, target player, 3 verbs, payment rails, comparable titles, risks) consumed by game-systems-designer. Stops at pitch — no systems design, balance, design docs. For systems design see game-systems-designer; for intake shaping see game-design-shaper; for generic ideation see idea-refine."
 ---
 
 # Game Concept Creator

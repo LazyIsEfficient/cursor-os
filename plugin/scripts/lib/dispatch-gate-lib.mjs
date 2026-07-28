@@ -615,8 +615,6 @@ function loadCfg(root) {
   return loaded.status === "ok" ? loaded.cfg : null;
 }
 
-// ── Per-event handlers ─────────────────────────────────────────────────────
-
 export function dispatchGateHandleSessionInit(payload) {
   const root = dispatchGateProjectRoot(payload);
   if (!dispatchGateIsEnabled(root)) {

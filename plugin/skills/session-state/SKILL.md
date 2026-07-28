@@ -1,6 +1,6 @@
 ---
 name: session-state
-description: Maintains SESSION-STATE.md, the durable within-session memory that survives context compaction. Use when a constraint, decision, surveyed infrastructure, or open thread must outlive compaction within THIS session, and after any compaction to reload it. Not for facts a future cold session needs — that is memory-extraction.
+description: Maintains SESSION-STATE.md — durable within-session memory that survives context compaction. Use when a constraint, decision, surveyed infrastructure, or open thread must outlive compaction within THIS session, and after any compaction to reload. Not for facts a future cold session needs — that is memory-extraction.
 ---
 
 # Session state

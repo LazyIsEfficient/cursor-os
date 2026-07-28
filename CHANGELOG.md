@@ -42,9 +42,12 @@ here therefore corresponds to a single consistent version across the repository.
   `plugin/references/caveman-style.md`.
 - **Plugin skills (46) rewritten in caveman style** — all `SKILL.md` and
   `references/*.md` telegraphic per `plugin/references/caveman-style.md`;
-  frontmatter `name`/`description` unchanged (routing safe), normative
-  directives and code blocks preserved. 4 waves per
-  `openspec/changes/cavemen-style-rewrite/`.
+  normative directives and code logic preserved. 4 waves per
+  `openspec/changes/cavemen-style-rewrite/`. Pass 2 (contract override):
+  code-fence comments stripped to minimal (why-comments kept, code
+  byte-identical), frontmatter descriptions compressed with trigger
+  vocabulary verified preserved (routing safe), repo scripts minimal-comments
+  pass. Measured: skills+agents corpus −4.3% bytes, −7.7% words.
 - **`prompt-shaping` output artifact** is now
   `openspec/changes/<id>/proposal.md` (was a chat-YAML brief); the 7-field
   dispatchability gate survives as the proposal completeness check.

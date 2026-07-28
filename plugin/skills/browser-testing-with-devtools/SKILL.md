@@ -1,6 +1,6 @@
 ---
 name: browser-testing-with-devtools
-description: Tests in real browsers via Chrome DevTools MCP — debugging UI layout and interaction issues, inspecting the DOM, capturing console errors, analyzing network requests, profiling Core Web Vitals, and verifying a fix visually with real runtime data. Use when building or modifying anything that renders in a browser. Triggers on requests to check the UI in a browser, reproduce a visual or runtime bug, or profile page performance. Not for backend-only or CLI changes, and not for authoring the Jest + React Testing Library suite — use typescript-testing-frontend for that.
+description: Tests in real browsers via Chrome DevTools MCP — debugging UI layout and interaction issues, inspecting DOM, capturing console errors, analyzing network requests, profiling Core Web Vitals, verifying fixes visually with real runtime data. Use when building or modifying anything that renders in a browser. Triggers on requests to check UI in a browser, reproduce visual or runtime bugs, or profile page performance. Not for backend-only or CLI changes; not for authoring the Jest + React Testing Library suite — use typescript-testing-frontend.
 ---
 
 # Browser Testing with DevTools

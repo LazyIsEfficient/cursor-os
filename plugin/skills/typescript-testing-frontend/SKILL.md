@@ -1,6 +1,6 @@
 ---
 name: typescript-testing-frontend
-description: Writes and reviews TypeScript frontend tests — Jest unit and integration tests for React components and hooks with React Testing Library, Chakra UI, React Query, Zustand, and Next.js App Router. Use when adding or auditing coverage for React UI, component behavior, or a custom hook. Triggers on `*.test.tsx` files under `**/__tests__/`, custom render helpers, or any request to test React UI, component behavior, or a custom hook. Not for backend service or API tests (use typescript-testing-backend), and not for verifying the UI in a real browser (use browser-testing-with-devtools).
+description: Writes and reviews TypeScript frontend tests — Jest unit and integration tests for React components and hooks with React Testing Library, Chakra UI, React Query, Zustand, Next.js App Router. Use when adding or auditing coverage for React UI, component behavior, or custom hooks. Triggers on `*.test.tsx` under `**/__tests__/`, custom render helpers, or any request to test React UI, component behavior, or custom hooks. Not for backend service or API tests (use typescript-testing-backend); not for verifying UI in a real browser (use browser-testing-with-devtools).
 ---
 
 # TypeScript Testing — Frontend

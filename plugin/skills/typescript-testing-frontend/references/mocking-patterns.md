@@ -20,7 +20,6 @@ const mockState = (state: any) => {
   (mockUseUserStore as jest.Mock).mockImplementation((selector) => selector(state))
 }
 
-// In tests:
 mockState({
   isAuthenticated: true,
   user: { email: 'user@test.com' },
@@ -67,7 +66,6 @@ beforeEach(() => {
 ## Next.js Module Mocking
 
 ```typescript
-// Router & navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({ back: jest.fn(), push: jest.fn() })),
   usePathname: jest.fn(() => '/test-page'),

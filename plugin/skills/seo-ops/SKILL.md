@@ -1,6 +1,6 @@
 ---
 name: seo-ops
-description: AI-powered SEO operations: keyword intelligence, competitor gap analysis, Google Search Console optimization, and trend detection. Use when asked to research keywords, analyze competitor content gaps, audit GSC performance, or detect trending topics. For growth experiments see growth-engine; for content optimization see autoresearch.
+description: AI-powered SEO operations: keyword intelligence, competitor gap analysis, Google Search Console optimization, trend detection. Use when asked to research keywords, analyze competitor content gaps, audit GSC performance, or detect trending topics. For growth experiments see growth-engine; for content optimization see autoresearch.
 ---
 
 # AI SEO Ops

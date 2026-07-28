@@ -1,6 +1,6 @@
 ---
 name: content-ops
-description: Auto-assembles a domain-specific expert panel (7–10 experts), scores any content or strategy artifact against a typed rubric, and iterates until the aggregate hits 90+ (max 3 rounds). Use as a quality gate on copy, email sequences, landing-page drafts, strategy docs, charts, titles, or recruiting evaluations — or when another skill needs a final review gate on its output. Triggers on "expert panel this", "score this", "rate these variants", "quality check this", "panel review", "expert score", "evaluate this copy/strategy/page". For variant generation and multi-round conversion optimization see autoresearch; for live-URL CRO auditing see conversion-ops; for the scripted content-production pipeline see content-pipeline.
+description: Auto-assembles domain-specific expert panel (7–10 experts), scores any content or strategy artifact against typed rubric, iterates until aggregate hits 90+ (max 3 rounds). Use as quality gate on copy, email sequences, landing-page drafts, strategy docs, charts, titles, or recruiting evaluations — or when another skill needs final review gate on its output. Triggers on "expert panel this", "score this", "rate these variants", "quality check this", "panel review", "expert score", "evaluate this copy/strategy/page". For variant generation and multi-round conversion optimization see autoresearch; for live-URL CRO auditing see conversion-ops; for the scripted content-production pipeline see content-pipeline.
 ---
 
 # Expert Panel

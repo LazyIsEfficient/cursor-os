@@ -1,6 +1,6 @@
 ---
 name: outbound-engine
-description: Design, analyze, and optimize cold outbound email campaigns on Instantly. Handles end-to-end ICP definition, expert panel scoring (recursive to 90+), sequence copywriting, infrastructure audit, capacity planning, and an implementation/strategy doc for human review. Use when asked to build cold outbound sequences, optimize cold email, audit an outbound motion, write sales sequences, or design cold email campaigns. Supports "start from scratch" and "optimize existing" modes. Execution skill — it produces copy, math, and a doc; it does not auto-send. Requires Instantly for audit/send features.
+description: Design, analyze, optimize cold outbound email campaigns on Instantly. Handles end-to-end ICP definition, expert panel scoring (recursive to 90+), sequence copywriting, infrastructure audit, capacity planning, implementation/strategy doc for human review. Use when asked to build cold outbound sequences, optimize cold email, audit outbound motion, write sales sequences, or design cold email campaigns. Supports "start from scratch" and "optimize existing" modes. Execution skill — produces copy, math, doc; does not auto-send. Requires Instantly for audit/send features.
 ---
 
 # Outbound Engine
