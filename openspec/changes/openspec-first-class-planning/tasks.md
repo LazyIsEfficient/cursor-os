@@ -40,6 +40,6 @@ needed for this change; groups below ran in order.
 
 ## 7. Ship
 
-- [ ] 7.1 `npm test` + `node scripts/validate.mjs` green; verify ledger recorded
-- [ ] 7.2 Wave 1 reviews (code, security, library, data-model-documenter); Wave 2 data-model-verifier
+- [x] 7.1 `npm test` + `node scripts/validate.mjs` green; verify ledger recorded
+- [x] 7.2 Wave 1 reviews (code, security, library, data-model-documenter); Wave 2 data-model-verifier
 - [ ] 7.3 Push + PR "Make OpenSpec first-class for planning" (no merge, no version bump, no archive yet)
