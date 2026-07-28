@@ -205,7 +205,8 @@ a package.json dependency here or in consumer repos. Engineering planning
 artifacts live under `openspec/` in the consuming repository and are validated
 with `openspec validate <change-id> --strict`; see
 [`openspec-planning`](plugin/skills/openspec-planning/SKILL.md). The maintainer
-checks below do not require it.
+checks below do not require it. The CLI collects anonymous usage stats with a
+printed notice on every invocation — opt out with `export OPENSPEC_TELEMETRY=0`.
 
 ```sh
 npm ci --ignore-scripts

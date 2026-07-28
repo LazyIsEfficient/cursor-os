@@ -23,6 +23,7 @@ directory (see [openspec-planning](../openspec-planning/SKILL.md)).
 ```yaml
 id: T-<stable-slug>
 goal: <one complete outcome>
+subagent_type: <engineer or a stack specialist — optional, defaults to engineer>
 files_read:
   - <exact path or narrow pattern>
 files_write:

@@ -16,7 +16,9 @@ package.json dependency. Check `command -v openspec` (or
 `openspec --version`). If missing, tell the user to run
 `npm install -g @fission-ai/openspec` (requires Node >= 20.19) and stop until
 it is available. CLI validation is Tier 0 — never hand-validate artifact
-format.
+format. The CLI prints a telemetry notice on every invocation; it collects
+anonymous usage stats unless the user opts out with `OPENSPEC_TELEMETRY=0` —
+mention this when instructing the install.
 
 If the consumer repository has no `openspec/` directory, run
 `openspec init --tools cursor` there first. In THIS harness repository do not
@@ -37,9 +39,10 @@ the dogfooded tree is maintained by hand.
    and re-run until clean. Validation is whole-change and fails until at
    least one spec delta exists, so it becomes a hard gate after the plan step
    and before any dispatch.
-4. **Dispatch** — one Cursor `Task` per wave in dependency order; each Task
-   prompt is built from its `dispatch/<task-id>.md` file. Implementers check
-   off `tasks.md` items as they complete.
+4. **Dispatch** — one Cursor `Task` per task, dispatched as parallel calls
+   wave by wave in dependency order; each Task prompt is built from its
+   `dispatch/<task-id>.md` file. Implementers check off `tasks.md` items as
+   they complete.
 5. **Implement + gate** — the gate DAG and Task dispatch mechanics are
    unchanged ([gate-dag.md](../../references/gate-dag.md)).
 6. **Archive** — after the PR merges, `openspec archive <id> -y` merges deltas
@@ -51,8 +54,9 @@ the dogfooded tree is maintained by hand.
 Every dispatchable task in `tasks.md` references a brief file
 `openspec/changes/<id>/dispatch/<task-id>.md` containing the cold-context
 fields an implementation agent requires: goal, files_read, files_write,
-dependencies, conflicts, acceptance, verification. A `tasks.md` item without
-its brief file is not dispatchable.
+dependencies, conflicts, acceptance, verification — plus optional
+`subagent_type` (`engineer` or a stack specialist name; defaults to
+`engineer`). A `tasks.md` item without its brief file is not dispatchable.
 
 Formats and lifecycle detail:
 [references/spec-format.md](references/spec-format.md),

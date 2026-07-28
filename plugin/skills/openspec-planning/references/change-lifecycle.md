@@ -41,8 +41,10 @@ Verified against `openspec` CLI v1.6.0. The artifact DAG is
   >= 20.19) and stop. No silent fallback to chat planning.
 - **Validation fails** — read the CLI's "Next steps" output;
   `openspec show <id> --json --deltas-only` shows what the parser actually
-  extracted. The silent-failure classics: scenarios with three hashtags,
-  bullets instead of `#### Scenario:` blocks, MODIFIED with partial content.
+  extracted. The classic failure: a scenario at the wrong heading level
+  (three hashtags or bullets) is dropped from parsing — the CLI emits an INFO
+  that the header is ignored, then fails with `ADDED "<name>" must include at
+  least one scenario`. Also watch MODIFIED with partial content.
 - **No deltas warranted** (pure refactor, tooling) — the change still needs
   at least one delta to validate; if truly no requirement changes, document
   the work in `tasks.md` + `proposal.md` and archive later with

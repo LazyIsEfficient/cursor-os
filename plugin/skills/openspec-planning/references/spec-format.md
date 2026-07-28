@@ -60,10 +60,13 @@ Requirement format:
 ```
 
 Rules the CLI enforces: every requirement needs at least one scenario;
-scenarios MUST use exactly four hashtags (`####`) — three hashtags or bullets
-fail silently; a change MUST contain at least one delta or even plain
-`openspec validate <id>` fails. MODIFIED header text must match the existing
-requirement (whitespace-insensitive).
+scenarios MUST use exactly four hashtags (`####`); a change MUST contain at
+least one delta or even plain `openspec validate <id>` fails. MODIFIED header
+text must match the existing requirement (whitespace-insensitive). A scenario
+at the wrong heading level (e.g. three hashtags) is dropped from parsing —
+the CLI emits an INFO that the header is ignored, then validation fails with
+an explicit `ADDED "<name>" must include at least one scenario` ERROR and
+Next-steps guidance.
 
 ## tasks.md
 

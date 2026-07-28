@@ -12,9 +12,10 @@ Lifecycle: [change-lifecycle.md](../skills/openspec-planning/references/change-l
 ## Step 0 — guards
 
 1. `command -v openspec` — if missing, instruct `npm install -g @fission-ai/openspec` and stop.
-2. Confirm `openspec/changes/$1/` exists and is not already under `changes/archive/`.
-3. Confirm the implementing PR has **merged** (`gh pr view` / `gh pr list --state merged`). If it is still open, stop — never archive an unmerged change.
-4. Run this from an up-to-date `main` checkout after pulling the merge, so the archived spec state matches what shipped.
+2. Validate `$1` is kebab-case (`^[a-z0-9]+(-[a-z0-9]+)*$`); reject anything else before using it in paths or CLI calls.
+3. Confirm `openspec/changes/$1/` exists and is not already under `changes/archive/`.
+4. Confirm the implementing PR has **merged** (`gh pr view` / `gh pr list --state merged`). If it is still open, stop — never archive an unmerged change.
+5. Run this from an up-to-date `main` checkout after pulling the merge, so the archived spec state matches what shipped.
 
 ## Step 1 — archive
 
@@ -27,4 +28,4 @@ Lifecycle: [change-lifecycle.md](../skills/openspec-planning/references/change-l
 
 ## Step 2 — commit
 
-Commit the archive result on `main` through the normal PR path (ship gates apply per `scripts/gate-plan.sh`; `openspec/**` is docs-only there). Report the archived change id and which spec files were updated.
+Commit the archive result through the normal PR path from an up-to-date `main` checkout (ship gates apply per `scripts/gate-plan.sh`; `openspec/**` docs types are docs-only there). Report the archived change id and which spec files were updated.

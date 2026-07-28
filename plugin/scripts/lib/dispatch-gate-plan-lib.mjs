@@ -53,6 +53,12 @@ export function dispatchPlanClassifyPaths(changedRaw) {
       f === "SECURITY.md" ||
       f === "scripts/release.mjs" ||
       f.startsWith(".github/workflows/") ||
+      // OpenSpec dispatch briefs compile verbatim into implementation Task
+      // prompts (stored prompt-injection surface); openspec/specs/** is the
+      // merged source of truth mutated by archive PRs. Both sensitive.
+      // Keep in sync with scripts/lib/gate-plan-lib.sh.
+      (f.startsWith("openspec/changes/") && f.includes("/dispatch/")) ||
+      f.startsWith("openspec/specs/") ||
       f === ".cursor/dispatch-gate.json" ||
       f === "plugin/.cursor/dispatch-gate.json" ||
       f.startsWith("scripts/lib/dispatch-gate") ||
@@ -70,10 +76,13 @@ export function dispatchPlanClassifyPaths(changedRaw) {
     }
 
     // Docs / session churn — never reclassify as code (match gate-plan-lib.sh).
-    // openspec/** planning artifacts (markdown specs, config.yaml,
-    // .openspec.yaml) are docs-only — keep in sync with gate-plan-lib.sh.
+    // openspec/** markdown planning docs and .openspec.yaml are docs-only;
+    // dispatch/** and specs/** were flagged sensitive above and still gate;
+    // any other type under openspec/ fails closed to code. Keep in sync with
+    // gate-plan-lib.sh.
     if (
-      f.startsWith("openspec/") ||
+      (f.startsWith("openspec/") && /\.(md|mdc)$/u.test(f)) ||
+      f.endsWith("/.openspec.yaml") ||
       f.endsWith(".md") ||
       f.endsWith(".mdc") ||
       f === "LICENSE" ||

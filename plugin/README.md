@@ -85,6 +85,13 @@ consuming repository (`openspec init --tools cursor` scaffolds it) and are
 validated with `openspec validate <change-id> --strict`. Every other component
 works without it.
 
+**Telemetry:** the `openspec` CLI prints a notice on every invocation and
+collects anonymous usage stats unless you opt out:
+
+```sh
+export OPENSPEC_TELEMETRY=0
+```
+
 ## Scope and permissions
 
 This release targets local Cursor clients. Cloud Agent behavior is unsupported

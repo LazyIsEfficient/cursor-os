@@ -12,8 +12,9 @@ Execute the change named by `$1` (a kebab-case id under `openspec/changes/`). Th
 ## Step 0 — prerequisite and validation gate
 
 1. `command -v openspec` — if missing, instruct `npm install -g @fission-ai/openspec` and stop.
-2. Confirm `openspec/changes/$1/` exists; if not, stop and list active changes (`openspec list --changes`).
-3. Run `openspec validate $1 --strict`. Non-zero exit → do **not** dispatch; fix the artifacts first. A skipped or unavailable check is not a pass.
+2. Validate `$1` is kebab-case (`^[a-z0-9]+(-[a-z0-9]+)*$`); reject anything else before using it in paths or CLI calls.
+3. Confirm `openspec/changes/$1/` exists; if not, stop and list active changes (`openspec list --changes`).
+4. Run `openspec validate $1 --strict`. Non-zero exit → do **not** dispatch; fix the artifacts first. A skipped or unavailable check is not a pass.
 
 ## Step 1 — compute waves
 

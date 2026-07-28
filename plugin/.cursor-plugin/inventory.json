@@ -132,13 +132,13 @@
       "id": "openspec-apply",
       "kind": "command",
       "path": "plugin/commands/openspec-apply.md",
-      "sha256": "a499f6332ffaab4298467af5ede864eca251ac7d2dfa9cfe78508deb0f71ac78"
+      "sha256": "995bcdeb455b440ea73f32eb122fba9b31f773a32c63826b9684b18806e3c132"
     },
     {
       "id": "openspec-archive",
       "kind": "command",
       "path": "plugin/commands/openspec-archive.md",
-      "sha256": "fad291b8ba917ecbada510ef31eb83691ac27ff01a30b05b42c6b36e0d1ea677"
+      "sha256": "d58dfc03bc9eb9f825b5ffe8535fcc04b009187a064a25ce490b9e856f324845"
     },
     {
       "id": "openspec-propose",
@@ -288,7 +288,7 @@
       "id": "dispatch-gate-plan-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-plan-lib.mjs",
-      "sha256": "88c8844449e528538b16c4371c545df58b8f57e26eb51425f573b7aaab08ec7a"
+      "sha256": "4cc2cd25413565e20c96d9374d5441d473371b975047f364eeb1dda14dd97955"
     },
     {
       "id": "verify-ledger-lib",
@@ -1470,19 +1470,19 @@
       "id": "openspec-planning",
       "kind": "skill",
       "path": "plugin/skills/openspec-planning/SKILL.md",
-      "sha256": "e27003d3122a32adbcde7a0521584e0f3eb5c3fc4c55d7460090a6d04d1d6fc7"
+      "sha256": "5c2922f6e244ca3babc7e497356f27e4d32d954a5571bb3b31a5e0446be4e8f2"
     },
     {
       "id": "skills-openspec-planning-references-change-lifecycle",
       "kind": "reference",
       "path": "plugin/skills/openspec-planning/references/change-lifecycle.md",
-      "sha256": "253e596417548cf15f45f9c77d53cdb6767d406458a78cd08c72097587a1882d"
+      "sha256": "d622678b8bb9348b61725493144f859fec17e6235d1d934f43afd4554188ceb5"
     },
     {
       "id": "skills-openspec-planning-references-spec-format",
       "kind": "reference",
       "path": "plugin/skills/openspec-planning/references/spec-format.md",
-      "sha256": "2911f313baaf914014dbd4d5e23c54ce3ba57bc2f2a8209bedde01540393d913"
+      "sha256": "403522270123275a0ee09a76a6bcfdc212e05c1aaa635c755de28fac3dc10742"
     },
     {
       "id": "outbound-engine",
@@ -1584,7 +1584,7 @@
       "id": "planning-and-task-breakdown",
       "kind": "skill",
       "path": "plugin/skills/planning-and-task-breakdown/SKILL.md",
-      "sha256": "1d5d52c1687143c970a3d58d3bd52c6d27085a06b3ddddbddcdb79b45545eab0"
+      "sha256": "ef05c2036706263c6b5518fba6c0e614ee19dcecbb309cd40ab9e272c0d322e1"
     },
     {
       "id": "prompt-shaping",

@@ -10,7 +10,7 @@
 
 | Date | Run | Summary |
 |---|---|---|
-| 2026-07-28 | `feat/openspec-first-class` | Cataloged `OpenSpecChange` and `OpenSpecSpecDelta` — the on-disk planning layout under `openspec/` (proposal/design/tasks/dispatch briefs and spec deltas) plus the `openspec` CLI validation/archive route. |
+| 2026-07-28 | `feat/openspec-first-class` | Cataloged `OpenSpecChange` and `OpenSpecSpecDelta` — the on-disk planning layout under `openspec/` (proposal/design/tasks/dispatch briefs and spec deltas) plus the `openspec` CLI validation/archive route. G-data-document review pass verified every row against sources and CLI v1.6.0; corrected `design.md` section names and the RENAMED delta note. `GatePlanResult` updated: openspec docs-only allowlist, dispatch/specs sensitive classification, fail-closed residue. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | No data-contract changes in this run. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tier 1 hardening: profile coverage matchers reject post-peel `--help`/`-h`; `node-harness` validate accepts only repo-relative `scripts/validate.mjs` or `./scripts/validate.mjs` (not absolute paths ending in that suffix); `verifyCommandIsTrivial` treats `sh`/`bash`/… `-c SCRIPT` as trivial when unwrapped SCRIPT is trivial. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tightened `custom` profile coverage to a verification-shaped positive allowlist (closes `pwd`+`date` PR-gate bypass); expanded trivial/wrapper peeling; blanked `CURSOR_PROJECT_DIR` in record-verify test isolation. |
@@ -1082,7 +1082,7 @@ Malformed / oversized stdin: failClosed permission entries (`preToolUse`, `befor
 |---|---|---|---|
 | `skip_docs_only` | boolean | yes | `true` when the diff is docs-only (no code/library/sensitive triggers); planner emits empty waves and checkboxes |
 | `is_code_change` | boolean | yes | `true` for any non-allowlisted path, including `DATA_MODEL.md` |
-| `is_sensitive` | boolean | yes | `true` when paths match the sensitive allowlist (hooks, validate/install/release scripts, gate scripts, `plugin/rules/*`, `plugin/commands/*`, `plugin/references/*`, `SECURITY.md`, `.github/workflows/*`) |
+| `is_sensitive` | boolean | yes | `true` when paths match the sensitive allowlist (hooks, validate/install/release scripts, gate scripts, `plugin/rules/*`, `plugin/commands/*`, `plugin/references/*`, `SECURITY.md`, `.github/workflows/*`, `openspec/changes/*/dispatch/*`, `openspec/specs/*`) |
 | `is_library` | boolean | yes | `true` when any path is under `plugin/skills/` or `plugin/agents/` |
 | `has_data_model` | boolean | yes | `true` when `DATA_MODEL.md` is in the changed-path set |
 | `wave_1` | array<string> | yes | Ordered Wave 1 agent labels; empty when `skip_docs_only` |
@@ -1097,7 +1097,7 @@ Wave 1 membership (when not docs-only):
 | `is_code_change \|\| is_library \|\| is_sensitive` | `security-reviewer`, `data-model-documenter` |
 | `is_library` | `library-reviewer` |
 
-Docs-only path allowlist (skipped unless also library/sensitive): `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`. `DATA_MODEL.md` is never docs-only. Alternate formats: text `key=value` lines, `--checkboxes` (one label per line), `--skip-docs-only` (`true`\|`false` only). Checkbox matching is case-insensitive on the agent label with optional surrounding `**` after `- [x]` / `- [X]`. For non-docs-only PRs, `check-pr-ship-gates.sh` always requires an extra `- [x] impl-verified` line (template: local `.cursor/verify-ledger.json` recorded for branch HEAD via `npm run verify:record`); this label is outside `GatePlanResult.checkboxes`.
+Docs-only path allowlist (skipped unless also library/sensitive): `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`, plus OpenSpec planning docs — `openspec/*.md` / `openspec/*.mdc` (nested paths included; bash `*` matches `/`) and `*/.openspec.yaml`. OpenSpec paths under `openspec/changes/*/dispatch/*` and `openspec/specs/*` are sensitive (flagged, not skipped); any other file type under `openspec/` fails closed to `is_code_change`. `DATA_MODEL.md` is never docs-only. Alternate formats: text `key=value` lines, `--checkboxes` (one label per line), `--skip-docs-only` (`true`\|`false` only). Checkbox matching is case-insensitive on the agent label with optional surrounding `**` after `- [x]` / `- [X]`. For non-docs-only PRs, `check-pr-ship-gates.sh` always requires an extra `- [x] impl-verified` line (template: local `.cursor/verify-ledger.json` recorded for branch HEAD via `npm run verify:record`); this label is outside `GatePlanResult.checkboxes`.
 
 ### LocalInstallState
 
@@ -1538,6 +1538,7 @@ File entry:
 | `sha256` | string | yes | SHA-256 of the exact exported bytes, rechecked after the staged directory is atomically renamed |
 
 All manifest and file-entry objects reject undeclared properties. Raw and sanitized roots must resolve to distinct paths and cannot contain each other; the raw root must be a real non-symlink directory, and the exporter refuses a pre-existing destination. Only regular, non-symlink allowlisted files are selected. Before any output is published, every selected byte sequence is scanned for each supplied non-empty exact secret canary and for high-confidence private-key, named credential, GitHub token, AWS access-key, and bearer-token patterns. Any match removes staging and fails the export. Trial workspaces, `cursor-home` directories, evaluator homes, unselected artifacts, and raw run roots are never copied or listed. The authenticated workflow receives protected config-template and canary-file paths, runs this exporter, and uploads only the sanitized export root.
+
 ### OpenSpecChange
 
 | Field | Value |
@@ -1552,7 +1553,7 @@ All manifest and file-entry objects reject undeclared properties. Raw and saniti
 openspec/changes/<change-id>/
 ├── .openspec.yaml              # schema: spec-driven; created: <ISO date>
 ├── proposal.md                 # ## Why / ## What Changes / ## Capabilities / ## Impact
-├── design.md                   # optional — ## Context / ## Goals / ## Decisions / ## Risks
+├── design.md                   # optional — ## Context / ## Goals / Non-Goals / ## Decisions / ## Risks / Trade-offs
 ├── tasks.md                    # ## <n>. <group> headings; - [ ] <n>.<m> checkbox items
 ├── dispatch/<task-id>.md       # harness extension — per-task cold-context brief
 └── specs/<domain>/spec.md      # OpenSpecSpecDelta files
@@ -1567,7 +1568,7 @@ openspec/changes/<change-id>/
 | `proposal.md` | markdown | yes | Sections per spec-format reference; Capabilities names each kebab-case capability that becomes a spec delta |
 | `design.md` | markdown | no | Only for cross-cutting change, new external dependency, significant data model change, security/performance/migration complexity, or ambiguity |
 | `tasks.md` | markdown | yes | Every task is a `- [ ] X.Y` checkbox; apply tooling parses checkbox state (`- [x]` complete); items reference `dispatch/<task-id>.md` briefs |
-| `dispatch/<task-id>.md` | markdown | per task | Harness extension ignored by the CLI parser; carries goal, files_read, files_write, dependencies, conflicts, acceptance, verification; a tasks.md item without its brief is not dispatchable |
+| `dispatch/<task-id>.md` | markdown | per task | Harness extension ignored by the CLI parser; carries goal, files_read, files_write, dependencies, conflicts, acceptance, verification, and optional `subagent_type` (`engineer` or a stack specialist; defaults to `engineer`); a tasks.md item without its brief is not dispatchable |
 | `specs/<domain>/spec.md` | markdown | ≥1 delta | At least one delta file required for `openspec validate` (plain and strict) to pass |
 
 ### OpenSpecSpecDelta
@@ -1575,7 +1576,7 @@ openspec/changes/<change-id>/
 | Field | Value |
 |---|---|
 | **Kind** | `persistence` |
-| **Ingestion route** | Markdown delta file at `openspec/changes/<change-id>/specs/<domain>/spec.md`, authored by the `planning-and-task-breakdown` skill from the proposal's Capabilities section; parsed by `openspec validate <change-id> --strict` (each requirement MUST include at least one `#### Scenario:` block — exactly four hashtags; three hashtags or bullets fail silently); merged into `openspec/specs/<domain>/spec.md` by `openspec archive <id> -y` |
+| **Ingestion route** | Markdown delta file at `openspec/changes/<change-id>/specs/<domain>/spec.md`, authored by the `planning-and-task-breakdown` skill from the proposal's Capabilities section; parsed by `openspec validate <change-id> --strict` (each requirement MUST include at least one `#### Scenario:` block — exactly four hashtags; a wrong-level scenario header is dropped from parsing with an INFO, then validation fails with an explicit missing-scenario ERROR); merged into `openspec/specs/<domain>/spec.md` by `openspec archive <id> -y` |
 | **Source** | `plugin/skills/openspec-planning/references/spec-format.md`; `plugin/skills/openspec-planning/references/change-lifecycle.md`; `openspec/changes/openspec-first-class-planning/specs/planning/spec.md` (dogfooded instance); merge behavior verified against `openspec` CLI v1.6.0 |
 
 #### Shape
@@ -1597,7 +1598,7 @@ openspec/changes/<change-id>/
 |---|---|---|---|
 | delta header | `##` heading | yes | One of `## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`, `## RENAMED Requirements` |
 | requirement | `### Requirement: <name>` + text | ≥1 | Normative text uses SHALL/MUST (avoid should/may) |
-| scenario | `#### Scenario: <name>` + WHEN/THEN bullets | ≥1 per requirement | Exactly four hashtags — the CLI's silent-failure case |
+| scenario | `#### Scenario: <name>` + WHEN/THEN bullets | ≥1 per requirement | Exactly four hashtags; a scenario at the wrong heading level is dropped from parsing (CLI INFO), then validation fails with an explicit missing-scenario ERROR |
 | MODIFIED content | full requirement block | MODIFIED only | MUST copy the entire existing requirement and edit it; partial content loses detail at archive; header matches existing text whitespace-insensitively |
 | REMOVED metadata | `**Reason**` + `**Migration**` | REMOVED only | Both fields required on removed requirements |
-| RENAMED mapping | FROM:/TO: | RENAMED only | Name changes only |
+| RENAMED mapping | FROM:/TO: | RENAMED only | FROM:/TO: format only |
