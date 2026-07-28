@@ -16,6 +16,17 @@ Keep the main thread focused on decomposition, briefing, integration, and decisi
 - Integrate and verify returned work in the main thread; a subagent report is not proof of repository state.
 - Use only `Task` fields documented by the active Cursor environment. Do not assume undocumented fields or Cloud parity.
 
+## Pattern 1 — Shaper → OpenSpec proposal → planner → fan-out
+
+Engineering requests enter through the shaper and land on disk as OpenSpec artifacts ([openspec-planning](../skills/openspec-planning/SKILL.md)):
+
+1. `prompt-shaping` intake writes `openspec/changes/<id>/proposal.md` (+ `design.md` when warranted) — not a chat-YAML brief.
+2. `planning-and-task-breakdown` writes `tasks.md`, spec deltas, and per-task `dispatch/<task-id>.md` briefs.
+3. `openspec validate <id> --strict` passes before any dispatch — CLI validation is Tier 0.
+4. Fan out implementation as parallel `Task` waves, each built from its dispatch brief file.
+
+Domain shapers (game-design, marketing, blog, course) keep their own formats. Commands `/openspec-propose`, `/openspec-apply`, and `/openspec-archive` walk this lifecycle.
+
 ## Pattern 3 — Build + review pairing (mandatory)
 
 After any implementation beyond a trivial diff — before saying work is complete — execute the gate DAG in [gate-dag.md](../references/gate-dag.md):

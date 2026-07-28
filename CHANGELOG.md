@@ -14,6 +14,37 @@ here therefore corresponds to a single consistent version across the repository.
 
 ## [Unreleased]
 
+### Added
+
+- **OpenSpec first-class planning:** engineering planning artifacts now live
+  on disk under `openspec/` in the consuming repository, validated by the
+  external `openspec` CLI (`@fission-ai/openspec`, global prerequisite like
+  `git`/`gh`, Node >= 20.19 — no npm dependencies added). New skill
+  `openspec-planning` (contract, prerequisite hard-stop, lifecycle) and new
+  commands `/openspec-propose`, `/openspec-apply`, `/openspec-archive`.
+- **Dogfooded `openspec/` tree:** this repository maintains
+  `openspec/project.md` and `openspec/changes/openspec-first-class-planning/`
+  by hand (no `openspec init` — upstream tool files would collide with the
+  plugin layout).
+
+### Changed
+
+- **`prompt-shaping` output artifact** is now
+  `openspec/changes/<id>/proposal.md` (was a chat-YAML brief); the 7-field
+  dispatchability gate survives as the proposal completeness check.
+- **`planning-and-task-breakdown` output artifacts** are now `tasks.md`
+  (checkbox groups), delta `specs/<domain>/spec.md`, and per-task
+  `dispatch/<task-id>.md` cold-context briefs (was a chat-YAML DAG); stable
+  IDs, acyclicity, and symmetric-conflict rules are preserved.
+- **`orchestrator-first` rule** gains Pattern 1 (shaper → OpenSpec proposal →
+  planner → fan-out); **`anti-patterns`** forbids chat-only engineering
+  planning (domain shapers exempt).
+- **Gate planners classify `openspec/**` as docs-only** (decision: markdown
+  specs and `config.yaml`/`.openspec.yaml` without code changes need no ship
+  gates). `scripts/lib/gate-plan-lib.sh` and
+  `plugin/scripts/lib/dispatch-gate-plan-lib.mjs` updated in sync, with a
+  gate-plan fixture covering it.
+
 ### Fixed
 
 - **Telemetry probe / benchmark signal cleanup:** credential signal handlers

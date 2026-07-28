@@ -29,6 +29,13 @@ else
   fail "docs-only skip"
 fi
 
+out="$(SHIP_GATES_CHANGED_FILES="openspec/changes/foo/proposal.md openspec/config.yaml" bash "$PLAN")"
+if printf '%s' "$out" | grep -q 'skip_docs_only=true'; then
+  pass "openspec docs-only skip"
+else
+  fail "openspec docs-only skip"
+fi
+
 out="$(SHIP_GATES_CHANGED_FILES="scripts/validate.mjs" bash "$PLAN")"
 assert_contains "$out" "code-reviewer" "validate.mjs wave_1"
 assert_contains "$out" "security-reviewer" "validate.mjs wave_1"

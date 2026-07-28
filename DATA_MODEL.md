@@ -4,12 +4,13 @@
 > `data-model-documenter` agent after each implementation pass. Do not hand-edit unless
 > correcting agent error — prefer re-running the agent on the diff.
 
-**Last updated:** 2026-07-24
+**Last updated:** 2026-07-28
 
 ## Change log (recent)
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-07-28 | `feat/openspec-first-class` | Cataloged `OpenSpecChange` and `OpenSpecSpecDelta` — the on-disk planning layout under `openspec/` (proposal/design/tasks/dispatch briefs and spec deltas) plus the `openspec` CLI validation/archive route. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | No data-contract changes in this run. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tier 1 hardening: profile coverage matchers reject post-peel `--help`/`-h`; `node-harness` validate accepts only repo-relative `scripts/validate.mjs` or `./scripts/validate.mjs` (not absolute paths ending in that suffix); `verifyCommandIsTrivial` treats `sh`/`bash`/… `-c SCRIPT` as trivial when unwrapped SCRIPT is trivial. |
 | 2026-07-24 | `feat/verify-ledger-profiles` | Tightened `custom` profile coverage to a verification-shaped positive allowlist (closes `pwd`+`date` PR-gate bypass); expanded trivial/wrapper peeling; blanked `CURSOR_PROJECT_DIR` in record-verify test isolation. |
@@ -1537,3 +1538,66 @@ File entry:
 | `sha256` | string | yes | SHA-256 of the exact exported bytes, rechecked after the staged directory is atomically renamed |
 
 All manifest and file-entry objects reject undeclared properties. Raw and sanitized roots must resolve to distinct paths and cannot contain each other; the raw root must be a real non-symlink directory, and the exporter refuses a pre-existing destination. Only regular, non-symlink allowlisted files are selected. Before any output is published, every selected byte sequence is scanned for each supplied non-empty exact secret canary and for high-confidence private-key, named credential, GitHub token, AWS access-key, and bearer-token patterns. Any match removes staging and fails the export. Trial workspaces, `cursor-home` directories, evaluator homes, unselected artifacts, and raw run roots are never copied or listed. The authenticated workflow receives protected config-template and canary-file paths, runs this exporter, and uploads only the sanitized export root.
+### OpenSpecChange
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Directory-tree layout at `<consumer-repo>/openspec/changes/<change-id>/`, scaffolded by `openspec new change <id>` (writes `.openspec.yaml`), authored by the `prompt-shaping` skill (`proposal.md`, `design.md`) and the `planning-and-task-breakdown` skill (`tasks.md`, `specs/<domain>/spec.md`, `dispatch/<task-id>.md`); validated by `openspec validate <change-id> --strict` (Tier 0, whole-change; fails until at least one spec delta exists); archived by `openspec archive <id> -y` after merge, which moves the directory to `openspec/changes/archive/<date>-<id>/` and merges deltas into `openspec/specs/` |
+| **Source** | `plugin/skills/openspec-planning/SKILL.md`; `plugin/skills/openspec-planning/references/spec-format.md`; `plugin/skills/openspec-planning/references/change-lifecycle.md`; `plugin/skills/prompt-shaping/SKILL.md`; `plugin/skills/planning-and-task-breakdown/SKILL.md`; `plugin/commands/openspec-propose.md`; `plugin/commands/openspec-apply.md`; `plugin/commands/openspec-archive.md`; `openspec/changes/openspec-first-class-planning/` (dogfooded instance); format verified against `openspec` CLI v1.6.0 (`@fission-ai/openspec`) |
+
+#### Shape
+
+```text
+openspec/changes/<change-id>/
+├── .openspec.yaml              # schema: spec-driven; created: <ISO date>
+├── proposal.md                 # ## Why / ## What Changes / ## Capabilities / ## Impact
+├── design.md                   # optional — ## Context / ## Goals / ## Decisions / ## Risks
+├── tasks.md                    # ## <n>. <group> headings; - [ ] <n>.<m> checkbox items
+├── dispatch/<task-id>.md       # harness extension — per-task cold-context brief
+└── specs/<domain>/spec.md      # OpenSpecSpecDelta files
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| `<change-id>` | kebab-case string | yes | Directory name; stable identifier for validate/archive CLI calls |
+| `.openspec.yaml` | YAML map | yes | `schema: spec-driven`, `created: <date>`; written by `openspec new change` |
+| `proposal.md` | markdown | yes | Sections per spec-format reference; Capabilities names each kebab-case capability that becomes a spec delta |
+| `design.md` | markdown | no | Only for cross-cutting change, new external dependency, significant data model change, security/performance/migration complexity, or ambiguity |
+| `tasks.md` | markdown | yes | Every task is a `- [ ] X.Y` checkbox; apply tooling parses checkbox state (`- [x]` complete); items reference `dispatch/<task-id>.md` briefs |
+| `dispatch/<task-id>.md` | markdown | per task | Harness extension ignored by the CLI parser; carries goal, files_read, files_write, dependencies, conflicts, acceptance, verification; a tasks.md item without its brief is not dispatchable |
+| `specs/<domain>/spec.md` | markdown | ≥1 delta | At least one delta file required for `openspec validate` (plain and strict) to pass |
+
+### OpenSpecSpecDelta
+
+| Field | Value |
+|---|---|
+| **Kind** | `persistence` |
+| **Ingestion route** | Markdown delta file at `openspec/changes/<change-id>/specs/<domain>/spec.md`, authored by the `planning-and-task-breakdown` skill from the proposal's Capabilities section; parsed by `openspec validate <change-id> --strict` (each requirement MUST include at least one `#### Scenario:` block — exactly four hashtags; three hashtags or bullets fail silently); merged into `openspec/specs/<domain>/spec.md` by `openspec archive <id> -y` |
+| **Source** | `plugin/skills/openspec-planning/references/spec-format.md`; `plugin/skills/openspec-planning/references/change-lifecycle.md`; `openspec/changes/openspec-first-class-planning/specs/planning/spec.md` (dogfooded instance); merge behavior verified against `openspec` CLI v1.6.0 |
+
+#### Shape
+
+```markdown
+## ADDED Requirements
+
+### Requirement: <name>
+<normative SHALL/MUST text>
+
+#### Scenario: <name>
+- **WHEN** <condition>
+- **THEN** <expected outcome>
+```
+
+#### Properties
+
+| Name | Type | Required | Notes |
+|---|---|---|---|
+| delta header | `##` heading | yes | One of `## ADDED Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`, `## RENAMED Requirements` |
+| requirement | `### Requirement: <name>` + text | ≥1 | Normative text uses SHALL/MUST (avoid should/may) |
+| scenario | `#### Scenario: <name>` + WHEN/THEN bullets | ≥1 per requirement | Exactly four hashtags — the CLI's silent-failure case |
+| MODIFIED content | full requirement block | MODIFIED only | MUST copy the entire existing requirement and edit it; partial content loses detail at archive; header matches existing text whitespace-insensitively |
+| REMOVED metadata | `**Reason**` + `**Migration**` | REMOVED only | Both fields required on removed requirements |
+| RENAMED mapping | FROM:/TO: | RENAMED only | Name changes only |

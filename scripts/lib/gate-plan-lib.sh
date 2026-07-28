@@ -49,6 +49,10 @@ gate_plan_classify_paths() {
     esac
     case "$f" in
       DATA_MODEL.md) GATE_IS_CODE_CHANGE=true; GATE_HAS_DATA_MODEL=true; continue ;;
+      # OpenSpec planning artifacts (markdown specs, config.yaml, .openspec.yaml)
+      # are docs-only — no ship gates without accompanying code changes.
+      # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
+      openspec/*) continue ;;
       *.md|*.mdc|LICENSE|NOTICE) continue ;;
       docs/*) continue ;;
       .claude/memory/*) continue ;;

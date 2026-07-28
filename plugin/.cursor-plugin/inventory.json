@@ -129,6 +129,24 @@
       "sha256": "edab4ae6697d3409b0cc7da334758f6f2ea74b2b9a37eb7053db440559f14421"
     },
     {
+      "id": "openspec-apply",
+      "kind": "command",
+      "path": "plugin/commands/openspec-apply.md",
+      "sha256": "a499f6332ffaab4298467af5ede864eca251ac7d2dfa9cfe78508deb0f71ac78"
+    },
+    {
+      "id": "openspec-archive",
+      "kind": "command",
+      "path": "plugin/commands/openspec-archive.md",
+      "sha256": "fad291b8ba917ecbada510ef31eb83691ac27ff01a30b05b42c6b36e0d1ea677"
+    },
+    {
+      "id": "openspec-propose",
+      "kind": "command",
+      "path": "plugin/commands/openspec-propose.md",
+      "sha256": "df86bf5ea26d5338095d58ae9d99d414161f0c109ec6c936b1dca2bd14860178"
+    },
+    {
       "id": "review-gate",
       "kind": "command",
       "path": "plugin/commands/review-gate.md",
@@ -168,7 +186,7 @@
       "id": "anti-patterns",
       "kind": "rule",
       "path": "plugin/rules/anti-patterns.mdc",
-      "sha256": "894acde86991cc54f3d5fe63cbcc053d026a65c4fd64763c385e881c5982aec8"
+      "sha256": "6d57dd3a47b721f6dd6ecce88d5702c42541c8a57524468e304c30e32be75af8"
     },
     {
       "id": "briefing",
@@ -210,7 +228,7 @@
       "id": "orchestrator-first",
       "kind": "rule",
       "path": "plugin/rules/orchestrator-first.mdc",
-      "sha256": "401890f81ac5d1b8ae94333975c3495a3b7b973f3587f5d557c47446a9257ff6"
+      "sha256": "1235938fd6a8847cfe924f39a2ec7aaf644d1f213e87cca89ee40500e423dbd5"
     },
     {
       "id": "before-shell-execution",
@@ -270,7 +288,7 @@
       "id": "dispatch-gate-plan-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-plan-lib.mjs",
-      "sha256": "708b249d3212ebbe1ebccbee7a8fb0c546f2700cb82d5077d76f44a5f561e53f"
+      "sha256": "88c8844449e528538b16c4371c545df58b8f57e26eb51425f573b7aaab08ec7a"
     },
     {
       "id": "verify-ledger-lib",
@@ -1449,6 +1467,24 @@
       "sha256": "4cd00ac469d284966a66db4d43a64fc2a6337446a62c84ee11db06e836efcc22"
     },
     {
+      "id": "openspec-planning",
+      "kind": "skill",
+      "path": "plugin/skills/openspec-planning/SKILL.md",
+      "sha256": "e27003d3122a32adbcde7a0521584e0f3eb5c3fc4c55d7460090a6d04d1d6fc7"
+    },
+    {
+      "id": "skills-openspec-planning-references-change-lifecycle",
+      "kind": "reference",
+      "path": "plugin/skills/openspec-planning/references/change-lifecycle.md",
+      "sha256": "253e596417548cf15f45f9c77d53cdb6767d406458a78cd08c72097587a1882d"
+    },
+    {
+      "id": "skills-openspec-planning-references-spec-format",
+      "kind": "reference",
+      "path": "plugin/skills/openspec-planning/references/spec-format.md",
+      "sha256": "2911f313baaf914014dbd4d5e23c54ce3ba57bc2f2a8209bedde01540393d913"
+    },
+    {
       "id": "outbound-engine",
       "kind": "skill",
       "path": "plugin/skills/outbound-engine/SKILL.md",
@@ -1548,13 +1584,13 @@
       "id": "planning-and-task-breakdown",
       "kind": "skill",
       "path": "plugin/skills/planning-and-task-breakdown/SKILL.md",
-      "sha256": "5b7aa9a54c99210e24b82d531b669687c8570f5a5f56fe6acd0b56b0ae5e0b46"
+      "sha256": "1d5d52c1687143c970a3d58d3bd52c6d27085a06b3ddddbddcdb79b45545eab0"
     },
     {
       "id": "prompt-shaping",
       "kind": "skill",
       "path": "plugin/skills/prompt-shaping/SKILL.md",
-      "sha256": "602f25e984c64e04c3accb3f2d000c96810a9f357d1127056cd9a609958bfb2c"
+      "sha256": "9fa442d56a24347d4e6992e86b3f15cfc6abf569ed9a0d46b520f86404f97c51"
     },
     {
       "id": "release-manager",

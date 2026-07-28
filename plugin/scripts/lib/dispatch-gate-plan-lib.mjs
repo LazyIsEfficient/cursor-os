@@ -70,7 +70,10 @@ export function dispatchPlanClassifyPaths(changedRaw) {
     }
 
     // Docs / session churn — never reclassify as code (match gate-plan-lib.sh).
+    // openspec/** planning artifacts (markdown specs, config.yaml,
+    // .openspec.yaml) are docs-only — keep in sync with gate-plan-lib.sh.
     if (
+      f.startsWith("openspec/") ||
       f.endsWith(".md") ||
       f.endsWith(".mdc") ||
       f === "LICENSE" ||

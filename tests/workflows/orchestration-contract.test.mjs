@@ -353,3 +353,28 @@ test("findings ledger cannot promote unevidenced judgment into a gate", async ()
   assert.match(ledger.body, /Tier 1 label requires a reproducible/u);
   assert.match(ledger.body, /without that evidence, demote the finding to Tier 2/u);
 });
+
+test("openspec planning is first-class: skill, commands, and rewired planning outputs", async () => {
+  const skill = await load("plugin/skills/openspec-planning/SKILL.md");
+  assert.match(skill.fields.description, /game-design-shaper/u, "routing must deflect domain shapers");
+  assert.match(skill.body, /npm install -g @fission-ai\/openspec/u, "skill must name the CLI prerequisite");
+  assert.match(skill.body, /openspec validate <id> --strict/u, "skill must gate on strict CLI validation");
+  assert.match(skill.body, /dispatch\/<task-id>\.md/u, "skill must define the dispatch brief contract");
+
+  for (const command of ["openspec-propose", "openspec-apply", "openspec-archive"]) {
+    const artifact = await load(`plugin/commands/${command}.md`);
+    assert.doesNotMatch(artifact.body, /\bAgent\(/u, `${command} must not reference Claude Agent tooling`);
+  }
+  for (const command of ["openspec-propose", "openspec-apply"]) {
+    const artifact = await load(`plugin/commands/${command}.md`);
+    assert.match(artifact.body, /\bTask\b/u, `${command} must use Cursor Task dispatch`);
+  }
+  const archive = await load("plugin/commands/openspec-archive.md");
+  assert.match(archive.body, /openspec archive/u, "archive command must shell out to the CLI");
+
+  const shaper = await load("plugin/skills/prompt-shaping/SKILL.md");
+  assert.match(shaper.body, /openspec\/changes\/<kebab-id>\/proposal\.md/u, "shaper output is the on-disk proposal");
+  const planner = await load("plugin/skills/planning-and-task-breakdown/SKILL.md");
+  assert.match(planner.body, /dispatch\/<task-id>\.md/u, "planner writes per-task dispatch briefs");
+  assert.match(planner.body, /tasks\.md/u, "planner writes tasks.md");
+});
