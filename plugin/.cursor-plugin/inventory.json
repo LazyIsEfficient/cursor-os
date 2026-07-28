@@ -156,7 +156,7 @@
       "id": "skill-new",
       "kind": "command",
       "path": "plugin/commands/skill-new.md",
-      "sha256": "9b60471fbdce034d1c398d6e6435e59f22e4df863fd520de0e8bae041f92fbc8"
+      "sha256": "59899734d2bc84f4d67618e6784b74440bd8b05e95250b374ac31b8c47203a8e"
     },
     {
       "id": "state",
@@ -198,7 +198,7 @@
       "id": "communication",
       "kind": "rule",
       "path": "plugin/rules/communication.mdc",
-      "sha256": "736ed0615745d34ac5dbd2321b9ac0c4d4e3665cb0d66b8737c2d6116ed5b0f0"
+      "sha256": "bce4e0ea76c852f5f06049cf224cb9409546a6b5188a29a147acc9d3e6edbddf"
     },
     {
       "id": "evidence-review-tiers",
