@@ -16,16 +16,13 @@ Rust has three canonical test locations:
 # Install once
 cargo install cargo-nextest
 
-# Run all tests
 cargo nextest run
 
 # Run a specific test by name (substring match)
 cargo nextest run test_user_creation
 
-# Run tests in a specific file
 cargo nextest run --test integration_tests
 
-# Run only ignored tests
 cargo nextest run --run-ignored only
 ```
 
@@ -72,13 +69,10 @@ Keep three phases visually distinct. One blank line between each phase sufficien
 ```rust
 #[test]
 fn deduct_reduces_balance() {
-    // Arrange
     let mut account = Account::new(100);
 
-    // Act
     account.deduct(30).unwrap();
 
-    // Assert
     assert_eq!(70, account.balance());
 }
 ```

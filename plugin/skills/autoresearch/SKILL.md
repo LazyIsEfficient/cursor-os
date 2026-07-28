@@ -1,6 +1,6 @@
 ---
 name: autoresearch
-description: Run Karpathy-style autoresearch optimization on any content. Generates 50+ variants, scores with a 5-expert simulated panel, evolves winners through multiple rounds, outputs optimized version + full experiment log. Use when optimizing landing pages, email sequences, ad copy, headlines, form pages, CTA text, or any conversion-focused content. Triggers on "optimize this page", "run autoresearch", "score these variants", "A/B test this copy".
+description: Run Karpathy-style autoresearch optimization on any content. Generates 50+ variants, scores with 5-expert simulated panel, evolves winners across rounds, outputs optimized version + full experiment log. Use when optimizing landing pages, email sequences, ad copy, headlines, form pages, CTA text, or conversion-focused content. Triggers on "optimize this page", "run autoresearch", "score these variants", "A/B test this copy".
 ---
 
 # Autoresearch Skill

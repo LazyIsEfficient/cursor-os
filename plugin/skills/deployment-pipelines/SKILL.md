@@ -1,6 +1,6 @@
 ---
 name: deployment-pipelines
-description: Authoring or reviewing CI/CD pipelines — GitHub Actions workflows, reusable workflows, composite actions, OIDC federation to AWS/GCP, caching, artifacts, and pipeline security hardening. Use when touching pipeline definitions. Triggers on edits to .github/workflows/**, action.yml, or composite action definitions, and on mentions of "CI", "CD", "pipeline", "GitHub Actions", "workflow", "OIDC", "runner", "deploy script", or "build pipeline". Not when "release" means coordinating the release itself (CHANGELOG, version tag, comms) rather than pipeline YAML — use release-manager.
+description: Authoring or reviewing CI/CD pipelines — GitHub Actions workflows, reusable workflows, composite actions, OIDC federation to AWS/GCP, caching, artifacts, pipeline security hardening. Use when touching pipeline definitions. Triggers on edits to .github/workflows/**, action.yml, composite action definitions, and mentions of "CI", "CD", "pipeline", "GitHub Actions", "workflow", "OIDC", "runner", "deploy script", "build pipeline". Not when "release" means coordinating the release itself (CHANGELOG, version tag, comms) vs pipeline YAML — use release-manager.
 ---
 
 # Deployment Pipelines

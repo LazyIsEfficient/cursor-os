@@ -1,6 +1,6 @@
 ---
 name: skill-library-review
-description: Method for reviewing a library of Cursor plugin skills and agents (and Claude Code skills, agents, slash commands, and workflows when scoped) — frontmatter correctness, routing quality, tool allowlists or readonly posture, cross-reference coherence, single-responsibility, file structure, and anti-pattern detection. Triggers on "review skills", "audit agents", "skill library", "is this skill right", or when iterating on plugin/skills/ or plugin/agents/. For a dispatched audit against a cold-context brief — use the library-reviewer agent. For evidence-only mechanical probes with no quality verdict — use library-investigator. Not for application source-code review — use code-review-and-quality.
+description: Method for reviewing a library of Cursor plugin skills and agents (and Claude Code skills, agents, slash commands, workflows when scoped) — frontmatter correctness, routing quality, tool allowlists or readonly posture, cross-reference coherence, single-responsibility, file structure, anti-pattern detection. Triggers on "review skills", "audit agents", "skill library", "is this skill right", or iterating on plugin/skills/ or plugin/agents/. For dispatched audit against cold-context brief — use library-reviewer agent. For evidence-only mechanical probes with no quality verdict — use library-investigator. Not for application source-code review — use code-review-and-quality.
 ---
 
 # Skill Library Review

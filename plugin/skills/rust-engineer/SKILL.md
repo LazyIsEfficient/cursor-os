@@ -1,6 +1,6 @@
 ---
 name: rust-engineer
-description: Method and standards for Rust engineering — systems programming, async Tokio services, Axum HTTP APIs, CLI tooling, Cargo workspace design, library API design (traits, error types, builders), `unsafe` and FFI boundaries, borrow-checker errors that signal a design problem, and profiling. Loaded inline when authoring or restructuring Rust in any of those areas. Triggers on any work in `.rs`, `Cargo.toml`, or `Cargo.lock`. For dispatched implementation in an isolated context against a cold-context brief — use the rust-engineer agent. Not for adversarial security audit of unsafe soundness or supply-chain risk — use the security-reviewer agent.
+description: Method and standards for Rust engineering — systems programming, async Tokio services, Axum HTTP APIs, CLI tooling, Cargo workspace design, library API design (traits, error types, builders), `unsafe` and FFI boundaries, borrow-checker errors signaling design problems, profiling. Loaded inline when authoring or restructuring Rust. Triggers on `.rs`, `Cargo.toml`, `Cargo.lock`. For dispatched implementation in isolated context against cold-context brief — use rust-engineer agent. Not for adversarial security audit of unsafe soundness or supply-chain risk — use security-reviewer agent.
 ---
 
 # Rust Engineer

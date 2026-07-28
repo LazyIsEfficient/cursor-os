@@ -1,6 +1,6 @@
 ---
 name: devops-engineer
-description: Use when authoring or modifying infrastructure as code, working with Kubernetes (k8s, kubectl, cluster, namespace, RBAC, rollout, deployment), Helm (helm chart, helm upgrade, helm diff), Pulumi (pulumi stack, pulumi up, pulumi preview, IaC), or CI/CD pipeline DevOps mechanics (build systems, artifact publishing, environment promotion). Triggers on terms like "DevOps", "platform engineering", "cluster admin", "network policy", "resource quota", "pod spec", or "kubeconfig". For SRE/on-call/incident response see site-reliability-engineering. For Solidity/EVM contracts see web3-smart-contract-engineering. Not for GitHub Actions YAML authoring — use deployment-pipelines.
+description: Use when authoring or modifying infrastructure as code — Kubernetes (k8s, kubectl, cluster, namespace, RBAC, rollout, deployment), Helm (helm chart, helm upgrade, helm diff), Pulumi (pulumi stack, pulumi up, pulumi preview, IaC), or CI/CD pipeline DevOps mechanics (build systems, artifact publishing, environment promotion). Triggers on "DevOps", "platform engineering", "cluster admin", "network policy", "resource quota", "pod spec", "kubeconfig". For SRE/on-call/incident response see site-reliability-engineering. For Solidity/EVM contracts see web3-smart-contract-engineering. Not for GitHub Actions YAML authoring — use deployment-pipelines.
 ---
 
 # DevOps Engineer

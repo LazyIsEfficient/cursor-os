@@ -1,6 +1,6 @@
 ---
 name: openspec-planning
-description: Plans engineering changes as OpenSpec artifacts — proposals, spec deltas, task lists, and dispatch briefs validated by the openspec CLI. Use when planning any code change — specs, proposals, task lists for implementation. For game-design or marketing planning see game-design-shaper / marketing-shaper.
+description: Plans engineering changes as OpenSpec artifacts — proposals, spec deltas, task lists, dispatch briefs validated by openspec CLI. Use when planning any code change — specs, proposals, task lists for implementation. For game-design or marketing planning see game-design-shaper / marketing-shaper.
 ---
 
 # OpenSpec planning

@@ -1,6 +1,6 @@
 ---
 name: security
-description: "Scan and redact PII and sensitive data (emails, phone numbers, SSNs, API keys, IP addresses, credentials, amounts, company/person names) from repository files. Includes a pre-commit hook to block commits containing PII. Use when asked to audit code for sensitive data, sanitize files before publishing, or install PII detection hooks. For application security hardening see security-engineering."
+description: "Scan and redact PII and sensitive data (emails, phone numbers, SSNs, API keys, IP addresses, credentials, amounts, company/person names) from repository files. Includes pre-commit hook blocking commits containing PII. Use when asked to audit code for sensitive data, sanitize files before publishing, or install PII detection hooks. For application security hardening see security-engineering."
 ---
 
 # Security Sanitizer

@@ -1,6 +1,6 @@
 ---
 name: release-manager
-description: Coordinates release preparation for a monorepo — maintaining CHANGELOG and the release assessment document, resolving merge conflicts on release branches, cutting a v-prefixed semver tag via GitHub CLI, and communicating status, risk, and asks to the broader team. Triggers on release manager, release train, cut a release, release branch, CHANGELOG, release assessment, versioning, or coordinating a version bump with stakeholders. Not for CI/CD pipeline design or workflow YAML — use deployment-pipelines.
+description: Coordinates release preparation for a monorepo — CHANGELOG and release assessment maintenance, merge-conflict resolution on release branches, cutting v-prefixed semver tag via GitHub CLI, communicating status, risk, asks to the team. Triggers on release manager, release train, cut a release, release branch, CHANGELOG, release assessment, versioning, coordinating a version bump with stakeholders. Not for CI/CD pipeline design or workflow YAML — use deployment-pipelines.
 ---
 
 # Release Manager
