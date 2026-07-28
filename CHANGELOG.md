@@ -30,7 +30,10 @@ here therefore corresponds to a single consistent version across the repository.
 
 - **`skill-new` command** requires newly authored skills follow
   `plugin/references/caveman-style.md`.
-- **Plugin skills (46) rewritten in caveman style** — pending; 4 waves per
+- **Plugin skills (46) rewritten in caveman style** — all `SKILL.md` and
+  `references/*.md` telegraphic per `plugin/references/caveman-style.md`;
+  frontmatter `name`/`description` unchanged (routing safe), normative
+  directives and code blocks preserved. 4 waves per
   `openspec/changes/cavemen-style-rewrite/`.
 
 ### Added

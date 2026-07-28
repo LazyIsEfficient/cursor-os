@@ -13,34 +13,34 @@
 
 ## 2. Wave 1 — game batch (9)
 
-- [ ] 2.1 Rewrite game-balancer, game-concept-creator, game-design-shaper
-- [ ] 2.2 Rewrite game-marketer, game-monetization-strategist, game-systems-designer
-- [ ] 2.3 Rewrite godot-engineer, phaser-engineer, iap-manager
-- [ ] 2.4 Regenerate inventory; `npm test` + validate green; commit
+- [x] 2.1 Rewrite game-balancer, game-concept-creator, game-design-shaper
+- [x] 2.2 Rewrite game-marketer, game-monetization-strategist, game-systems-designer
+- [x] 2.3 Rewrite godot-engineer, phaser-engineer, iap-manager
+- [x] 2.4 Regenerate inventory; `npm test` + validate green; commit
 
 ## 3. Wave 2 — typescript + testing batch (12)
 
-- [ ] 3.1 Rewrite typescript-analytics, typescript-data-engineering
-- [ ] 3.2 Rewrite typescript-testing-backend, typescript-testing-frontend, browser-testing-with-devtools
-- [ ] 3.3 Rewrite data-model-documentation, data-model-verification, findings-ledger
-- [ ] 3.4 Rewrite incremental-implementation, memory-extraction, session-state, telemetry
-- [ ] 3.5 Regenerate inventory; `npm test` + validate green; commit
+- [x] 3.1 Rewrite typescript-analytics, typescript-data-engineering
+- [x] 3.2 Rewrite typescript-testing-backend, typescript-testing-frontend, browser-testing-with-devtools
+- [x] 3.3 Rewrite data-model-documentation, data-model-verification, findings-ledger
+- [x] 3.4 Rewrite incremental-implementation, memory-extraction, session-state, telemetry
+- [x] 3.5 Regenerate inventory; `npm test` + validate green; commit
 
 ## 4. Wave 3 — engineering/infra batch (12)
 
-- [ ] 4.1 Rewrite autoresearch, code-review-and-quality, deployment-pipelines
-- [ ] 4.2 Rewrite devops-engineer, rust-engineer, web3-smart-contract-engineering
-- [ ] 4.3 Rewrite security-engineering, site-reliability-engineering, release-manager
-- [ ] 4.4 Rewrite openspec-planning, planning-and-task-breakdown, prompt-shaping
-- [ ] 4.5 Regenerate inventory; `npm test` + validate green; commit
+- [x] 4.1 Rewrite autoresearch, code-review-and-quality, deployment-pipelines
+- [x] 4.2 Rewrite devops-engineer, rust-engineer, web3-smart-contract-engineering
+- [x] 4.3 Rewrite security-engineering, site-reliability-engineering, release-manager
+- [x] 4.4 Rewrite openspec-planning, planning-and-task-breakdown, prompt-shaping
+- [x] 4.5 Regenerate inventory; `npm test` + validate green; commit
 
 ## 5. Wave 4 — marketing/content/misc batch (13)
 
-- [ ] 5.1 Rewrite content-ops, content-pipeline, conversion-ops, growth-engine
-- [ ] 5.2 Rewrite marketing-shaper, outbound-engine, revenue-intelligence, seo-ops
-- [ ] 5.3 Rewrite adversarial-claims-reviewer, library-investigator, skill-library-review
-- [ ] 5.4 Rewrite codebase-cost-estimator, security
-- [ ] 5.5 Regenerate inventory; `npm test` + validate green; commit
+- [x] 5.1 Rewrite content-ops, content-pipeline, conversion-ops, growth-engine
+- [x] 5.2 Rewrite marketing-shaper, outbound-engine, revenue-intelligence, seo-ops
+- [x] 5.3 Rewrite adversarial-claims-reviewer, library-investigator, skill-library-review
+- [x] 5.4 Rewrite codebase-cost-estimator, security
+- [x] 5.5 Regenerate inventory; `npm test` + validate green; commit
 
 ## 6. Review / ship
 
