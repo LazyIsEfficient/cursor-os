@@ -1,6 +1,6 @@
 # Agentic AI Security (OWASP 2026)
 
-When building or reviewing AI agent systems (e.g. an agent-orchestration framework):
+When building or reviewing AI agent systems (e.g. agent-orchestration framework):
 
 | Risk | Description | Mitigation |
 |------|-------------|------------|
@@ -19,9 +19,9 @@ When building or reviewing AI agent systems (e.g. an agent-orchestration framewo
 
 - [ ] All agent inputs sanitized and validated
 - [ ] Tools operate with minimum required permissions
-- [ ] Credentials are short-lived and scoped
+- [ ] Credentials short-lived and scoped
 - [ ] Third-party plugins verified and sandboxed
-- [ ] Code execution happens in isolated environments
+- [ ] Code execution in isolated environments
 - [ ] Agent communications authenticated and encrypted
 - [ ] Circuit breakers between agent components
 - [ ] Human approval for sensitive operations

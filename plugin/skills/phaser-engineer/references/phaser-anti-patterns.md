@@ -1,8 +1,8 @@
 # Phaser Anti-Patterns
 
-A catalog of common Phaser 3 + TypeScript mistakes. The point of naming them is recognition: when your code starts to look like one of these, you should be able to spot it, name it, and route around it.
+Catalog of common Phaser 3 + TypeScript mistakes. Point of naming them is recognition: when your code starts looking like one of these, you should spot it, name it, route around it.
 
-This is the cross-cutting catalog. Subsystem-specific gotchas live in their own reference files; pointers at the bottom. Each entry has the same shape: **what it looks like**, **why it's bad**, **what to do instead**. Code is TypeScript and assumes Phaser 3.x.
+Cross-cutting catalog. Subsystem-specific gotchas live in own reference files; pointers at bottom. Each entry same shape: **what it looks like**, **why it's bad**, **what to do instead**. Code is TypeScript, assumes Phaser 3.x.
 
 ## Architecture
 
@@ -30,9 +30,9 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-**Why it's bad:** every change touches the same file. Two engineers can't work on it without merge conflicts. Every system has implicit dependencies on every other system because they all read the same `this.*` fields. Removing or replacing any one piece is impossible.
+**Why it's bad:** every change touches same file. Two engineers can't work without merge conflicts. Every system has implicit dependencies on every other system because all read same `this.*` fields. Removing or replacing any piece impossible.
 
-**Do instead:** the scene is the orchestrator, not the implementation. Each system is a plain TypeScript class the scene composes. Independent surfaces (HUD, pause menu) become parallel scenes.
+**Do instead:** scene is orchestrator, not implementation. Each system is plain TypeScript class scene composes. Independent surfaces (HUD, pause menu) become parallel scenes.
 
 ```ts
 export class GameScene extends Phaser.Scene {
@@ -55,7 +55,7 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-A scene over ~600 lines is a smell. Over 1,000 is a refactor.
+Scene over ~600 lines is smell. Over 1,000 is refactor.
 
 ### 2. Cross-scene reach-in
 
@@ -70,9 +70,9 @@ this.scoreLabel.setText(`Score: ${game.player.score}`);
 this.scene.get('GameScene').player.health = 0;
 ```
 
-**Why it's bad:** every reach-in couples the two scenes. Renaming a field in `GameScene` silently breaks `HudScene`. Ownership of the data becomes ambiguous. Worst case, the consumer mutates state on a scene mid-shutdown and you get a confusing crash.
+**Why it's bad:** every reach-in couples two scenes. Renaming field in `GameScene` silently breaks `HudScene`. Data ownership becomes ambiguous. Worst case: consumer mutates state on scene mid-shutdown → confusing crash.
 
-**Do instead:** push events through `this.events`, `this.game.events`, or `this.registry`. The HUD listens; gameplay broadcasts.
+**Do instead:** push events through `this.events`, `this.game.events`, or `this.registry`. HUD listens; gameplay broadcasts.
 
 ```ts
 // GameScene:
@@ -84,7 +84,7 @@ this.registry.events.on('changedata-score', (_p: unknown, value: number) => {
 });
 ```
 
-The one acceptable read-only pattern is a HUD reading the registry for display. The HUD never *writes* gameplay state.
+One acceptable read-only pattern: HUD reading registry for display. HUD never *writes* gameplay state.
 
 ### 3. Registry as a god object
 
@@ -99,9 +99,9 @@ this.registry.set('inventory_slot_3', 'health_potion');
 // ... 50 more keys, used inconsistently
 ```
 
-**Why it's bad:** the registry was meant for a small set of cross-scene values (score, settings, current level). As a dumping ground, no one knows what lives there or who owns it. `registry.get('player_x')` returns `unknown`. Two systems writing the same key collide silently.
+**Why it's bad:** registry meant for small set of cross-scene values (score, settings, current level). As dumping ground, no one knows what lives there or who owns it. `registry.get('player_x')` returns `unknown`. Two systems writing same key collide silently.
 
-**Do instead:** define the small list of keys that are genuinely cross-scene state. Type them. Keep system-internal state inside the system.
+**Do instead:** define small list of keys that are genuinely cross-scene state. Type them. Keep system-internal state inside system.
 
 ```ts
 export const RegistryKey = {
@@ -115,7 +115,7 @@ this.registry.set(RegistryKey.Score, 0);
 const score = this.registry.get(RegistryKey.Score) as number;
 ```
 
-"Current player position" lives on the player. Not in the registry.
+"Current player position" lives on player. Not in registry.
 
 ### 4. `any` for scene `data` payloads
 
@@ -133,7 +133,7 @@ this.scene.start('LevelScene', { level: 3, difficutly: 'hard' });
 //                                          ^ typo, silently undefined
 ```
 
-**Why it's bad:** `init`/`create` data flow through `any`, so typos go unnoticed and field renames don't propagate. The two ends of the contract drift. Half the bugs in scene transitions are silent typos in payload keys.
+**Why it's bad:** `init`/`create` data flow through `any` → typos go unnoticed, field renames don't propagate. Two ends of contract drift. Half the bugs in scene transitions are silent typos in payload keys.
 
 **Do instead:** type both ends.
 
@@ -163,9 +163,9 @@ this.scene.start('GameSene'); // typo. silent failure.
 this.scene.launch('HUD');     // capitalization mismatch with registered 'Hud'.
 ```
 
-**Why it's bad:** scene keys are strings sprinkled across the codebase. Phaser doesn't error on `start('GameSene')` — it just doesn't start anything. You find out from playtesters.
+**Why it's bad:** scene keys are strings sprinkled across codebase. Phaser doesn't error on `start('GameSene')` — just doesn't start anything. You find out from playtesters.
 
-**Do instead:** a single source of truth. Use it everywhere.
+**Do instead:** single source of truth. Use everywhere.
 
 ```ts
 export const SceneKey = {
@@ -199,7 +199,7 @@ update(time: number, delta: number) {
 }
 ```
 
-**Why it's bad:** every `new`, every `.forEach` closure, every string concat allocates. At 60 FPS that's 60 allocations per line per second per object. GC runs mid-gameplay; you get a 30 ms hitch. On mobile, worse.
+**Why it's bad:** every `new`, every `.forEach` closure, every string concat allocates. 60 FPS = 60 allocations per line per second per object. GC runs mid-gameplay → 30 ms hitch. Mobile: worse.
 
 **Do instead:** pre-allocate, mutate, reuse. Pool short-lived game objects. Use `BitmapText` for frequently-updated HUD text.
 
@@ -218,7 +218,7 @@ update(time: number, delta: number) {
 }
 ```
 
-Treat `update()` like a tight inner loop. Because it is one.
+Treat `update()` like tight inner loop. Because it is one.
 
 ### 7. Per-frame text mutation with `Text` instead of `BitmapText`
 
@@ -232,9 +232,9 @@ update() {
 }
 ```
 
-**Why it's bad:** `Phaser.GameObjects.Text` re-renders to an internal canvas every time the string changes. That's a draw call's worth of work plus garbage every frame for a tiny FPS readout. Multiply across score, combo, timer, ammo, and you've burned the frame budget on text.
+**Why it's bad:** `Phaser.GameObjects.Text` re-renders to internal canvas every time string changes. Draw call's worth of work plus garbage every frame for tiny FPS readout. Multiply across score, combo, timer, ammo → frame budget burned on text.
 
-**Do instead:** `BitmapText` reads from a pre-rendered glyph atlas; mutation is essentially free.
+**Do instead:** `BitmapText` reads from pre-rendered glyph atlas; mutation essentially free.
 
 ```ts
 // PreloadScene:
@@ -247,7 +247,7 @@ update() {
 }
 ```
 
-`Text` is fine for static UI (titles, menu items, dialogue that changes once per beat). For per-frame, use `BitmapText`.
+`Text` fine for static UI (titles, menu items, dialogue changing once per beat). Per-frame: use `BitmapText`.
 
 ## Lifecycle: Listeners, Tweens, and Timers
 
@@ -266,9 +266,9 @@ onRestart() {
 }
 ```
 
-**Why it's bad:** `scene.restart()` runs `create()` again, registering the same listeners again. After 5 deaths, `onPlayerDied` fires 5 times. `onFocus` is *permanently* leaked — the global game event bus survives the scene and nothing cleans it up.
+**Why it's bad:** `scene.restart()` runs `create()` again, registering same listeners again. After 5 deaths, `onPlayerDied` fires 5 times. `onFocus` is *permanently* leaked — global game event bus survives scene, nothing cleans it up.
 
-**Do instead:** clean up in `shutdown`. For one-shot listeners, use `once`.
+**Do instead:** clean up in `shutdown`. One-shot listeners: use `once`.
 
 ```ts
 create() {
@@ -282,7 +282,7 @@ create() {
 }
 ```
 
-Rule: any listener attached to a target that *outlives* the scene (`game.events`, `registry.events`) must be removed on `SHUTDOWN`. Per-scene listeners (`this.events`, `this.input`) are cleaned for you.
+Rule: any listener attached to target that *outlives* scene (`game.events`, `registry.events`) must be removed on `SHUTDOWN`. Per-scene listeners (`this.events`, `this.input`) cleaned for you.
 
 ### 9. Tween and timer leaks
 
@@ -294,9 +294,9 @@ const flashState = { alpha: 0 };
 this.tweens.add({ targets: flashState, alpha: 1, duration: 500, repeat: -1 });
 ```
 
-**Why it's bad:** if the tween's target isn't a scene-managed `GameObject`, the tween manager has nothing to clean up against and the tween runs forever. Worst case, a tween on a destroyed object throws on the next tick.
+**Why it's bad:** tween's target not scene-managed `GameObject` → tween manager has nothing to clean up against, tween runs forever. Worst case: tween on destroyed object throws on next tick.
 
-**Do instead:** prefer scene-managed targets. If you need to tween a plain object, track and stop it in `shutdown`.
+**Do instead:** prefer scene-managed targets. Need to tween plain object? Track and stop in `shutdown`.
 
 ```ts
 private flashTween?: Phaser.Tweens.Tween;
@@ -312,7 +312,7 @@ create() {
 }
 ```
 
-If a tween or timer might survive the scene, it will. Stop it explicitly.
+Tween or timer might survive scene? It will. Stop explicitly.
 
 ## Loader and Audio
 
@@ -326,9 +326,9 @@ this.sound.play('title-music', { loop: true });
 // nothing plays. engineer suspects asset is broken.
 ```
 
-**Why it's bad:** every modern browser blocks audio until the page receives a user gesture. Phaser's `WebAudioSound` honors that. Calling `play` before any input does nothing — no error, just silence.
+**Why it's bad:** every modern browser blocks audio until page receives user gesture. Phaser's `WebAudioSound` honors that. Calling `play` before any input does nothing — no error, just silence.
 
-**Do instead:** start audio after the first input.
+**Do instead:** start audio after first input.
 
 ```ts
 create() {
@@ -343,7 +343,7 @@ create() {
 }
 ```
 
-Plan for this from day one. What plays on your laptop after a reload click will not play on a freshly opened phone.
+Plan for this day one. What plays on laptop after reload click will not play on freshly opened phone.
 
 ### 11. Re-loading assets on scene restart
 
@@ -361,9 +361,9 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-**Why it's bad:** the Loader is smart enough to skip already-cached assets, so this isn't catastrophic on its own. But it's a habit that scales badly. Once you set a `setBaseURL`, switch to asset packs, or load assets conditionally, the duplicated load code becomes a source of subtle bugs (wrong base URL, race with the cache, double-decoded audio).
+**Why it's bad:** Loader smart enough to skip already-cached assets, so not catastrophic alone. But habit scales badly. Once you set `setBaseURL`, switch to asset packs, or load conditionally, duplicated load code becomes source of subtle bugs (wrong base URL, race with cache, double-decoded audio).
 
-**Do instead:** load once in a dedicated `PreloadScene` at boot. Gameplay scenes assume their assets exist.
+**Do instead:** load once in dedicated `PreloadScene` at boot. Gameplay scenes assume assets exist.
 
 ```ts
 export class PreloadScene extends Phaser.Scene {
@@ -378,7 +378,7 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-Restart re-runs `create`, not `preload`, when there's nothing to preload. Faster, safer, asset-pack-ready.
+Restart re-runs `create`, not `preload`, when nothing to preload. Faster, safer, asset-pack-ready.
 
 ## Physics
 
@@ -393,9 +393,9 @@ player.body.setOffset(6, 4);
 player.setScale(2); // body geometry now invalidated
 ```
 
-**Why it's bad:** Arcade body dimensions are computed from the texture's pixel size. `setScale` changes the body's computed extents, but `setSize`/`setOffset` were applied against the unscaled texture. The body ends up visibly offset from the sprite; collisions feel wrong.
+**Why it's bad:** Arcade body dimensions computed from texture's pixel size. `setScale` changes body's computed extents, but `setSize`/`setOffset` were applied against unscaled texture. Body ends up visibly offset from sprite; collisions feel wrong.
 
-**Do instead:** scale first, then size the body.
+**Do instead:** scale first, then size body.
 
 ```ts
 const player = this.physics.add.sprite(100, 100, 'player');
@@ -404,7 +404,7 @@ player.body.setSize(20, 28);   // values in unscaled texture pixels;
 player.body.setOffset(6, 4);   // Arcade applies the scale internally
 ```
 
-See [physics-arcade.md](physics-arcade.md) for the full body-geometry rules.
+See [physics-arcade.md](physics-arcade.md) for full body-geometry rules.
 
 ### 13. Direct write to `body.x`
 
@@ -415,15 +415,15 @@ this.player.body.x = 500;
 this.player.body.y = 300;
 ```
 
-**Why it's bad:** the Arcade body is *driven by* the GameObject in the physics step, not the other way around. Writing `body.x` puts them out of sync until the next step — visual lag, mid-frame collisions against stale positions, tunneling.
+**Why it's bad:** Arcade body is *driven by* GameObject in physics step, not other way around. Writing `body.x` puts them out of sync until next step — visual lag, mid-frame collisions against stale positions, tunneling.
 
-**Do instead:** move the GameObject. The body follows on the next step.
+**Do instead:** move GameObject. Body follows next step.
 
 ```ts
 this.player.setPosition(500, 300);
 ```
 
-To teleport without dragging old velocity:
+Teleport without dragging old velocity:
 
 ```ts
 this.player.setPosition(500, 300);
@@ -442,7 +442,7 @@ update() {
 }
 ```
 
-**Why it's bad:** `body.touching.down` is true *only on the frame the body is touching the ground*. If input runs before the physics step on a given frame, you miss the touching state and the jump doesn't fire. It also misses coyote-time jumps (the grace window after walking off a ledge) every platformer expects.
+**Why it's bad:** `body.touching.down` is true *only on frame body touches ground*. Input running before physics step on given frame → miss touching state, jump doesn't fire. Also misses coyote-time jumps (grace window after walking off ledge) every platformer expects.
 
 **Do instead:** track grounded via collider callback, then add coyote-time.
 
@@ -467,7 +467,7 @@ update(_time: number, delta: number) {
 }
 ```
 
-Same pattern for "just landed" — fire on the callback transition, not by polling.
+Same pattern for "just landed" — fire on callback transition, not polling.
 
 ### 15. Tunneling through one-tile-thick walls
 
@@ -480,16 +480,16 @@ this.physics.add.collider(this.bullet, wallsLayer);
 // fast bullet sometimes passes through a 1-tile wall
 ```
 
-**Why it's bad:** Arcade physics is discrete. A body moving more than one tile per step against a one-tile-thick wall can teleport through without ever overlapping the tile.
+**Why it's bad:** Arcade physics is discrete. Body moving more than one tile per step against one-tile-thick wall can teleport through without ever overlapping tile.
 
-**Do instead:** combine (a) thicker walls, (b) capped velocity, (c) higher physics step rate, (d) higher tile bias. (a) and (b) are usually enough.
+**Do instead:** combine (a) thicker walls, (b) capped velocity, (c) higher physics step rate, (d) higher tile bias. (a) and (b) usually enough.
 
 ```ts
 this.bullet.body.setMaxVelocity(800, 800);
 this.physics.world.TILE_BIAS = 32; // default 16; raise for fast bodies
 ```
 
-For hitscan-fast bodies (lasers), Arcade is the wrong tool — raycast or use Matter. See [physics-arcade.md](physics-arcade.md).
+Hitscan-fast bodies (lasers): Arcade is wrong tool — raycast or use Matter. See [physics-arcade.md](physics-arcade.md).
 
 ## Build and Configuration
 
@@ -507,9 +507,9 @@ new Phaser.Game({
 // canvas gets appended to <body>, breaking page layout
 ```
 
-**Why it's bad:** without `parent`, Phaser appends the canvas to `document.body`. The canvas lands on top of or below your headers and sidebars. On a Vite + React app, the canvas appears outside the React tree, and React reconciliation occasionally collides with it.
+**Why it's bad:** without `parent`, Phaser appends canvas to `document.body`. Canvas lands on top of or below headers and sidebars. Vite + React app: canvas appears outside React tree; React reconciliation occasionally collides with it.
 
-**Do instead:** explicit `parent` matching an element in `index.html`.
+**Do instead:** explicit `parent` matching element in `index.html`.
 
 ```html
 <div id="game-container"></div>
@@ -526,7 +526,7 @@ new Phaser.Game({
 });
 ```
 
-If `'game-container'` doesn't exist at boot, you get a clear error instead of a silent layout bug.
+`'game-container'` doesn't exist at boot? Clear error instead of silent layout bug.
 
 ### 17. Phaser bundle bloat
 
@@ -537,9 +537,9 @@ import Phaser from 'phaser';
 // 1.4 MB (compressed) of Phaser shipped to a 5-screen mobile-web game
 ```
 
-**Why it's bad:** Phaser is one large bundle and does not tree-shake well. The full library brings in Arcade *and* Matter, the entire loader, every GameObject type, every plugin.
+**Why it's bad:** Phaser is one large bundle, does not tree-shake well. Full library brings Arcade *and* Matter, entire loader, every GameObject type, every plugin.
 
-**Do instead:** for most projects, accept it — Phaser's footprint is the cost of using Phaser, and splitting won't recover much. When bundle size genuinely matters (ad units, embedded widgets), use `phaser-core` and explicitly include the plugins you need.
+**Do instead:** most projects — accept it. Phaser's footprint is cost of using Phaser; splitting won't recover much. Bundle size genuinely matters (ad units, embedded widgets)? Use `phaser-core`, explicitly include plugins you need.
 
 ```ts
 // vite.config.ts
@@ -548,14 +548,14 @@ export default defineConfig({
 });
 ```
 
-Verify with a bundle analyzer. If the savings aren't material (>30%), revert and stop optimizing.
+Verify with bundle analyzer. Savings not material (>30%)? Revert, stop optimizing.
 
 ## Related
 
-Each subsystem reference has its own anti-patterns section with deeper, topic-specific gotchas. This file is the cross-cutting catalog.
+Each subsystem reference has own anti-patterns section with deeper, topic-specific gotchas. This file is cross-cutting catalog.
 
 - [phaser-fundamentals.md](phaser-fundamentals.md) — engine model, the loop, the loader, registry semantics
 - [project-and-vite.md](project-and-vite.md) — Game config, `parent`, scale modes, build setup
 - [scenes-and-flow.md](scenes-and-flow.md) — scene lifecycle, parallel scenes, init/data typing, shutdown rules
 - [physics-arcade.md](physics-arcade.md) — body offsets, tile bias, fast-body tunneling, collider callbacks
-- software-design — the cross-cutting design principles these patterns instantiate
+- software-design — cross-cutting design principles these patterns instantiate

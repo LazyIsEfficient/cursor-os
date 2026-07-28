@@ -4,14 +4,14 @@
 
 ### What and Why
 
-A newtype wraps a single value in a tuple struct to create a distinct type:
+Newtype wraps single value in tuple struct to create distinct type:
 
 ```rust
 struct UserId(Uuid);
 struct OrderId(Uuid);
 ```
 
-This prevents `UserId` from being passed where `OrderId` is expected even though both wrap `Uuid`. Secondary uses: bypassing the orphan rule (implementing foreign traits on foreign types), adding domain invariants, and controlling which methods callers see.
+Prevents `UserId` passed where `OrderId` expected though both wrap `Uuid`. Secondary uses: bypassing orphan rule (implementing foreign traits on foreign types), adding domain invariants, controlling which methods callers see.
 
 ### Standard Trait Implementations
 
@@ -52,7 +52,7 @@ impl fmt::Display for UserId {
 | `Clone`, `Copy` | Delegates | If inner doesn't `Copy`, drop `Copy` |
 | `Serialize`/`Deserialize` | Wraps inner format | When wire format must match inner directly, use `#[serde(transparent)]` |
 
-Use `#[serde(transparent)]` to make `UserId` serialize as a plain UUID string rather than `{"0": "..."}`.
+Use `#[serde(transparent)]` to make `UserId` serialize as plain UUID string rather than `{"0": "..."}`.
 
 ### Newtype with Validation
 
@@ -76,7 +76,7 @@ impl TryFrom<String> for Email {
 }
 ```
 
-Implement `TryFrom` for fallible construction. Avoid providing `From<String>` — it signals infallibility. Provide a `fn as_str(&self) -> &str` or `Deref<Target = str>` for read access; avoid exposing the inner field directly so the invariant cannot be violated after construction.
+Implement `TryFrom` for fallible construction. Avoid providing `From<String>` — signals infallibility. Provide `fn as_str(&self) -> &str` or `Deref<Target = str>` for read access; avoid exposing inner field directly so invariant cannot be violated after construction.
 
 ---
 
@@ -84,7 +84,7 @@ Implement `TryFrom` for fallible construction. Avoid providing `From<String>` �
 
 ### Core Pattern
 
-Encode lifecycle state in a type parameter so invalid transitions fail at compile time:
+Encode lifecycle state in type parameter so invalid transitions fail at compile time:
 
 ```rust
 use std::marker::PhantomData;
@@ -122,23 +122,23 @@ impl Connection<Authenticated> {
 }
 ```
 
-`send` is only callable on `Connection<Authenticated>`. Calling it on `Connection<Connected>` is a compile error.
+`send` only callable on `Connection<Authenticated>`. Calling on `Connection<Connected>` is compile error.
 
 ### PhantomData
 
-`PhantomData<S>` is zero-sized. Use it when the state type `S` has no runtime representation. The field tells the compiler "this struct logically owns/uses type `S`" — necessary for variance, drop check, and to avoid `error[E0392]: parameter S is never used`.
+`PhantomData<S>` zero-sized. Use when state type `S` has no runtime representation. Field tells compiler "this struct logically owns/uses type `S`" — necessary for variance, drop check, avoids `error[E0392]: parameter S is never used`.
 
 ### When Typestate Pays Off vs Over-Engineering
 
 **Use typestate when:**
-- The API has a linear or branching lifecycle where calling methods out of order causes logic errors (connection, transaction, HTTP request builder)
-- State transitions are permanent (you consume `self`, return a new state)
-- The type is library-facing — callers should not need to track state themselves
+- API has linear or branching lifecycle where calling methods out of order causes logic errors (connection, transaction, HTTP request builder)
+- State transitions permanent (consume `self`, return new state)
+- Type is library-facing — callers should not track state themselves
 
 **Skip typestate when:**
-- Transitions are reversible or frequent — the ergonomic cost of consuming `self` on every step is high
-- There are more than ~4–5 states — the combinatorial explosion of `impl` blocks is worse than a runtime enum
-- The state is already part of the return type (e.g., `Result` already encodes success/failure)
+- Transitions reversible or frequent — ergonomic cost of consuming `self` on every step is high
+- More than ~4–5 states — combinatorial explosion of `impl` blocks worse than runtime enum
+- State already part of return type (e.g., `Result` already encodes success/failure)
 
 ---
 
@@ -167,7 +167,7 @@ impl RequestBuilder {
 }
 ```
 
-**Consuming style** (`Self` → `Self`): required when the builder holds non-`Clone` resources or when you need type-level enforcement:
+**Consuming style** (`Self` → `Self`): required when builder holds non-`Clone` resources or when type-level enforcement needed:
 
 ```rust
 impl RequestBuilder {
@@ -177,7 +177,7 @@ impl RequestBuilder {
 }
 ```
 
-Use consuming style for typestate builders (see below). Use `&mut Self` when callers need to store the builder across branches.
+Use consuming style for typestate builders (below). Use `&mut Self` when callers need to store builder across branches.
 
 ### Type-Level Required Field Enforcement
 
@@ -204,11 +204,11 @@ impl Builder<WithUrl> {
 }
 ```
 
-`build()` only exists on `Builder<WithUrl>`. The compiler enforces the required field without runtime panics or `Option` unwrapping.
+`build()` only exists on `Builder<WithUrl>`. Compiler enforces required field without runtime panics or `Option` unwrapping.
 
 ### Default + Partial Construction
 
-For structs with many optional fields, derive `Default` and let callers use struct update syntax:
+For structs with many optional fields, derive `Default`, let callers use struct update syntax:
 
 ```rust
 #[derive(Default)]
@@ -221,7 +221,7 @@ pub struct Config {
 let cfg = Config { retries: 3, ..Default::default() };
 ```
 
-Reserve the full builder pattern for types where construction must be validated or where field order/dependency matters.
+Reserve full builder pattern for types where construction must be validated or field order/dependency matters.
 
 ---
 
@@ -240,7 +240,7 @@ trait Read { fn get(&self, key: &str) -> Option<&[u8]>; }
 trait Write { fn set(&mut self, key: &str, value: Vec<u8>); }
 ```
 
-Callers express exactly what they need. Implementors implement what they have. Compose at the bound site: `fn process(s: &(impl Read + Write))`.
+Callers express exactly what they need. Implementors implement what they have. Compose at bound site: `fn process(s: &(impl Read + Write))`.
 
 ### Sealed Traits
 
@@ -260,7 +260,7 @@ impl private::Sealed for MyType {}
 impl MyTrait for MyType { fn do_thing(&self) { todo!() } }
 ```
 
-`private::Sealed` is public (required by coherence) but unreachable from outside the crate — the module is private. External types cannot name `private::Sealed` to implement it.
+`private::Sealed` is public (required by coherence) but unreachable from outside crate — module is private. External types cannot name `private::Sealed` to implement it.
 
 ### Extension Traits
 
@@ -276,14 +276,14 @@ impl StrExt for str {
 }
 ```
 
-Convention: name extension traits `TypeExt` or `TypeMethodExt`. Keep them in dedicated modules so they're imported explicitly.
+Convention: name extension traits `TypeExt` or `TypeMethodExt`. Keep in dedicated modules so imported explicitly.
 
 ### Object Safety
 
-A trait is object-safe (usable as `dyn Trait`) when every method satisfies:
-- No type parameters on the method
-- Return type is not `Self`
-- No `where Self: Sized` on the method (unless `Self: Sized` is the whole bound)
+Trait is object-safe (usable as `dyn Trait`) when every method satisfies:
+- No type parameters on method
+- Return type not `Self`
+- No `where Self: Sized` on method (unless `Self: Sized` is whole bound)
 - No associated constants
 
 ```rust
@@ -297,7 +297,7 @@ trait MyClone where Self: Sized {
 // or accept a Box<dyn MyClone> via a separate method
 ```
 
-Associated types are object-safe when specified: `dyn Iterator<Item = u32>`.
+Associated types object-safe when specified: `dyn Iterator<Item = u32>`.
 
 ### Blanket Implementations
 
@@ -308,9 +308,9 @@ impl<T: fmt::Display> Printable for T {
 ```
 
 **Footguns:**
-- Blanket impls are permanent — adding one is a semver-breaking change if it could conflict with a downstream impl
-- A blanket `impl<T: Display> MyTrait for T` conflicts with any other `impl<T: Debug> MyTrait for T` — Rust cannot resolve the overlap
-- Use sealed traits to constrain blanket impls to your own types
+- Blanket impls permanent — adding one is semver-breaking change if it could conflict with downstream impl
+- Blanket `impl<T: Display> MyTrait for T` conflicts with any other `impl<T: Debug> MyTrait for T` — Rust cannot resolve overlap
+- Use sealed traits to constrain blanket impls to own types
 
 ### `impl Trait` vs `dyn Trait` vs `T: Trait`
 
@@ -321,9 +321,9 @@ impl<T: fmt::Display> Printable for T {
 | `dyn Trait` | dynamic | usually `Box<>` | yes | yes, via `dyn Trait + 'a` |
 
 **Rules of thumb:**
-- Use `T: Trait` when the caller chooses the type and you need the type name elsewhere in the signature
-- Use `impl Trait` in return position when you want to hide a concrete type (e.g., iterator chains)
-- Use `dyn Trait` when you store mixed types in a collection, need runtime polymorphism, or are writing a plugin system
+- Use `T: Trait` when caller chooses type and you need type name elsewhere in signature
+- Use `impl Trait` in return position to hide concrete type (e.g., iterator chains)
+- Use `dyn Trait` when storing mixed types in collection, needing runtime polymorphism, or writing plugin system
 - Avoid `dyn Trait` in hot paths — vtable dispatch and heap allocation cost measurably at scale
 
 ```rust
@@ -345,7 +345,7 @@ fn make_iter(v: Vec<u32>) -> impl Iterator<Item = u32> {
 
 ### The Blanket
 
-`impl<T, U: From<T>> Into<T> for U` is in `std`. This means: implement `From`, get `Into` for free. **Never implement `Into` directly.**
+`impl<T, U: From<T>> Into<T> for U` is in `std`. Means: implement `From`, get `Into` free. **Never implement `Into` directly.**
 
 ```rust
 impl From<UserId> for String {
@@ -357,7 +357,7 @@ let s: String = String::from(user_id);
 let s: String = user_id.into();
 ```
 
-The same blanket applies to `TryFrom`/`TryInto`.
+Same blanket applies to `TryFrom`/`TryInto`.
 
 ### TryFrom Error Type Choice
 
@@ -377,12 +377,12 @@ impl TryFrom<u16> for StatusCode {
 }
 ```
 
-- Make `Error` a concrete named type, not `String` or `Box<dyn Error>` — callers can match on it
+- Make `Error` concrete named type, not `String` or `Box<dyn Error>` — callers can match on it
 - Use `thiserror` for derived `std::error::Error` implementations
 
 ### Infallible
 
-When a conversion is logically infallible but you need to satisfy a `TryFrom` bound:
+Conversion logically infallible but need to satisfy `TryFrom` bound:
 
 ```rust
 impl TryFrom<String> for String {
@@ -391,7 +391,7 @@ impl TryFrom<String> for String {
 }
 ```
 
-`Infallible` is an uninhabited enum — `Result<T, Infallible>` can always be safely unwrapped.
+`Infallible` is uninhabited enum — `Result<T, Infallible>` can always be safely unwrapped.
 
 ### AsRef vs Borrow
 
@@ -413,7 +413,7 @@ m.insert("hello".to_string(), 1);
 let _ = m.get("hello"); // works because String: Borrow<str>
 ```
 
-Use `AsRef` for function arguments that accept multiple "view" types. Use `Borrow` only when implementing container types where hashing equality between owned and borrowed values must be consistent.
+Use `AsRef` for function arguments accepting multiple "view" types. Use `Borrow` only when implementing container types where hashing equality between owned and borrowed values must be consistent.
 
 ---
 
@@ -421,7 +421,7 @@ Use `AsRef` for function arguments that accept multiple "view" types. Use `Borro
 
 ### PhantomData and Variance
 
-`PhantomData<T>` is zero-sized but affects variance and the drop check:
+`PhantomData<T>` zero-sized but affects variance and drop check:
 
 | Field type | Variance of struct over T |
 |---|---|
@@ -432,14 +432,14 @@ Use `AsRef` for function arguments that accept multiple "view" types. Use `Borro
 | `PhantomData<*const T>` | covariant in `T` |
 | `PhantomData<*mut T>` | invariant |
 
-For typestate markers (e.g., `PhantomData<S>` where `S` is `Connected`/`Disconnected`), invariance is usually correct — you don't want the compiler to substitute subtypes silently.
+For typestate markers (e.g., `PhantomData<S>` where `S` is `Connected`/`Disconnected`), invariance usually correct — don't want compiler substituting subtypes silently.
 
-For custom smart pointers that "own" a `T`, use `PhantomData<T>` to tell the drop checker the type logically owns `T` and may drop it.
+For custom smart pointers "owning" a `T`, use `PhantomData<T>` to tell drop checker type logically owns `T`, may drop it.
 
 ### Send and Sync
 
-- `Send`: safe to transfer to another thread. Auto-derived if all fields are `Send`.
-- `Sync`: safe to share a `&T` across threads. Auto-derived if all fields are `Sync`.
+- `Send`: safe to transfer to another thread. Auto-derived if all fields `Send`.
+- `Sync`: safe to share `&T` across threads. Auto-derived if all fields `Sync`.
 - `T: Sync` iff `&T: Send`.
 
 ```rust
@@ -455,13 +455,13 @@ unsafe impl Send for MyHandle {}  // You assert: transfer is safe
 impl !Send for MyHandle {}        // Nightly opt-out; stable: use PhantomData<*mut ()>
 ```
 
-Manual `unsafe impl Send/Sync` is a safety promise. Document why it is sound.
+Manual `unsafe impl Send/Sync` is safety promise. Document why sound.
 
 ### Sized and ?Sized
 
-- All generic parameters are `Sized` by default.
+- All generic parameters `Sized` by default.
 - `?Sized` opts out: `fn foo<T: ?Sized>(t: &T)` accepts `str`, `[u8]`, `dyn Trait`.
-- DSTs (dynamically sized types) can only appear behind a pointer (`&T`, `Box<T>`, `Arc<T>`).
+- DSTs (dynamically sized types) can only appear behind pointer (`&T`, `Box<T>`, `Arc<T>`).
 
 ```rust
 // Works with str, String, [u8], Vec<u8>, dyn Debug, etc.
@@ -470,7 +470,7 @@ fn print_bytes<T: ?Sized + fmt::Debug>(val: &T) {
 }
 ```
 
-Use `?Sized` in library code when you have no reason to require `Sized`. It broadens your API for free.
+Use `?Sized` in library code when no reason to require `Sized`. Broadens API for free.
 
 ---
 
@@ -479,14 +479,14 @@ Use `?Sized` in library code when you have no reason to require `Sized`. It broa
 ### Monomorphization vs Dynamic Dispatch
 
 **Generics (`T: Trait`):**
-- Compiler generates one copy of the function per concrete type used
+- Compiler generates one copy of function per concrete type used
 - Zero runtime overhead — all dispatch resolved at compile time
 - Can cause binary bloat with many type combinations
-- Cannot store mixed types in the same collection
+- Cannot store mixed types in same collection
 
 **`dyn Trait`:**
 - Single compiled copy
-- One vtable lookup per method call (~ns overhead, but real in hot loops)
+- One vtable lookup per method call (~ns overhead, real in hot loops)
 - Requires heap allocation in most ownership scenarios (`Box<dyn Trait>`, `Arc<dyn Trait>`)
 - Enables heterogeneous collections: `Vec<Box<dyn Handler>>`
 
@@ -540,7 +540,7 @@ pub(crate)  — visible across crate, invisible to dependents
 pub         — public API; subject to semver
 ```
 
-Every `pub` item is a semver commitment. Audit `pub` usage before cutting a release. Use `pub(crate)` liberally for implementation details shared across modules.
+Every `pub` item is semver commitment. Audit `pub` usage before cutting release. Use `pub(crate)` liberally for implementation details shared across modules.
 
 ### `#[non_exhaustive]`
 
@@ -559,15 +559,15 @@ pub struct Config {
 }
 ```
 
-**What it prevents:** External crates cannot exhaustively match on the enum (must include `_ => {}`) and cannot construct the struct with struct literal syntax (must use `Config { timeout_ms: 100, ..Default::default() }`).
+**What it prevents:** External crates cannot exhaustively match enum (must include `_ => {}`) and cannot construct struct with struct literal syntax (must use `Config { timeout_ms: 100, ..Default::default() }`).
 
-**Cost to consumers:** Less ergonomic pattern matching. Mitigate by providing constructor functions or a `Default` implementation.
+**Cost to consumers:** Less ergonomic pattern matching. Mitigate by providing constructor functions or `Default` implementation.
 
-Use `#[non_exhaustive]` on all public error enums and public configuration structs from day one. Retrofitting it is a breaking change.
+Use `#[non_exhaustive]` on all public error enums and public configuration structs from day one. Retrofitting is breaking change.
 
 ### Semver Compatibility
 
-**Breaking changes in a Rust library:**
+**Breaking changes in Rust library:**
 
 | Change | Breaking? |
 |---|---|

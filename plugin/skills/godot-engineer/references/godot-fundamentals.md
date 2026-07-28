@@ -1,22 +1,22 @@
 # Godot Fundamentals
 
-This file is the mental model. Before any of the other reference files make sense, you need to internalize how Godot 4 thinks — what its core abstractions are, how the main loop runs, what a "scene" actually is, and how the editor relates to your code. Skip this and the rest of the skill is harder to apply.
+Mental model file. Before other reference files make sense, internalize how Godot 4 thinks — core abstractions, how main loop runs, what "scene" actually is, how editor relates to code. Skip this and rest of skill harder to apply.
 
-The thing most new Godot engineers (especially those coming from Unity or web development) get wrong: **they treat Godot's nodes and scenes as classes and objects in their language of choice**. They aren't quite that. Nodes are runtime entities in a tree; scenes are *templates* for sub-trees that can be instanced. Once you internalize this, the rest of Godot makes sense.
+Thing most new Godot engineers (especially from Unity or web development) get wrong: **they treat Godot's nodes and scenes as classes and objects in their language of choice**. Not quite that. Nodes are runtime entities in tree; scenes are *templates* for sub-trees that can be instanced. Internalize this, rest of Godot makes sense.
 
 ## The Engine Model in Five Sentences
 
-1. A **Node** is the basic building block of everything in Godot — every visible thing, every behavior, every UI element is a node.
-2. A **Scene** is a tree of nodes saved to disk as a `.tscn` file, designed to be *instanced* (used multiple times, anywhere in the project).
-3. The running game is **one big tree of nodes**, built by adding scenes to other scenes; this tree is called the SceneTree.
-4. The **main loop** ticks the tree every frame, calling `_Process` (variable timestep) and `_PhysicsProcess` (fixed timestep) on every node that defines them.
-5. Nodes communicate by **signals** (events), by direct method calls, and via **autoloads** (singletons available everywhere).
+1. A **Node** is basic building block of everything in Godot — every visible thing, every behavior, every UI element is a node.
+2. A **Scene** is tree of nodes saved to disk as `.tscn` file, designed to be *instanced* (used multiple times, anywhere in project).
+3. Running game is **one big tree of nodes**, built by adding scenes to other scenes; this tree is SceneTree.
+4. **Main loop** ticks tree every frame, calling `_Process` (variable timestep) and `_PhysicsProcess` (fixed timestep) on every node defining them.
+5. Nodes communicate by **signals** (events), direct method calls, and via **autoloads** (singletons available everywhere).
 
-If you understand those five things, you understand the engine. The rest is detail.
+Understand those five things, you understand engine. Rest is detail.
 
 ## Nodes
 
-A node is the smallest unit of *anything* in Godot. There are hundreds of built-in node types, all inheriting from `Node`. The most important ones to know:
+Node is smallest unit of *anything* in Godot. Hundreds of built-in node types, all inheriting from `Node`. Most important ones:
 
 | Node | Purpose |
 |---|---|
@@ -44,14 +44,14 @@ A node has:
 
 - A **type** (its class)
 - A **name** (string, unique among siblings)
-- A **parent** (or none, if it's the root)
+- A **parent** (or none, if root)
 - **Children** (zero or more)
 - A **script** (optional — your code attached to this specific node)
-- **Properties** (exported in the inspector)
+- **Properties** (exported in inspector)
 - **Signals** (events it emits)
 - A **process mode** (always, paused, etc.)
 
-In C#, a node is a class that inherits from `Node` (or one of its subclasses). When you attach a script to a node in the editor, the script's class *becomes* that node at runtime.
+In C#, node is class inheriting from `Node` (or subclass). Attaching script to node in editor: script's class *becomes* that node at runtime.
 
 ```csharp
 using Godot;
@@ -73,18 +73,18 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-A few things to note:
+Things to note:
 
-- `partial` is required because Godot generates source code for the class.
-- `[Export]` makes the field visible in the inspector and tweakable per-instance.
+- `partial` required because Godot generates source code for class.
+- `[Export]` makes field visible in inspector, tweakable per-instance.
 - `_Ready` and `_PhysicsProcess` are *override* methods Godot calls automatically.
-- The class name should match the file name (Godot convention).
+- Class name should match file name (Godot convention).
 
 ## Scenes
 
-A scene is a tree of nodes, saved as a `.tscn` file. The simplest scene has one node (the root); a complex scene might have hundreds. The key insight: **a scene is a template that can be instanced multiple times**.
+Scene is tree of nodes, saved as `.tscn` file. Simplest scene has one node (root); complex scene might have hundreds. Key insight: **scene is template that can be instanced multiple times**.
 
-A typical player scene might look like:
+Typical player scene:
 
 ```
 Player (CharacterBody2D)
@@ -96,9 +96,9 @@ Player (CharacterBody2D)
     └── CollisionShape2D
 ```
 
-The root node is a `CharacterBody2D` named "Player". It has child nodes for visuals (sprite, animation), physics (collision shape), camera (so the camera follows the player), and a hit-detection area. All saved as one `.tscn` file. You can drag this scene into a level scene and you've added a player.
+Root node is `CharacterBody2D` named "Player". Child nodes for visuals (sprite, animation), physics (collision shape), camera (camera follows player), hit-detection area. All saved as one `.tscn` file. Drag this scene into level scene → you've added player.
 
-Scenes can contain other scenes. This is called **instancing**. A level scene might have:
+Scenes can contain other scenes. Called **instancing**. Level scene might have:
 
 ```
 Level (Node2D)
@@ -112,26 +112,26 @@ Level (Node2D)
 └── HUD (CanvasLayer; instance of hud.tscn)
 ```
 
-Each instance starts identical but can have its position, properties, and overrides set per-instance in the parent scene. If you change `goblin.tscn`, all instances of it update.
+Each instance starts identical but can have position, properties, overrides set per-instance in parent scene. Change `goblin.tscn` → all instances update.
 
-This is the most powerful feature in Godot. It's also where most engineers go wrong — by *not* using it. The signal that you should split something into its own scene: it appears more than once, or it's complex enough that you'd want to reuse it later, or it's owned by a different person/team.
+Most powerful feature in Godot. Also where most engineers go wrong — by *not* using it. Signal to split something into own scene: appears more than once, or complex enough to reuse later, or owned by different person/team.
 
 ## The SceneTree and the Main Loop
 
-When the game runs, Godot loads the *main scene* (set in project settings) and starts its main loop. The main loop:
+Game runs: Godot loads *main scene* (set in project settings), starts main loop. Main loop:
 
 1. Polls input.
-2. Calls `_Process(delta)` on every node that defines it. Variable timestep — `delta` is the time since the last frame, in seconds.
-3. Steps the physics. Calls `_PhysicsProcess(delta)` on every node that defines it. **Fixed timestep** — defaults to 60Hz, so `delta` is always `1.0/60.0` (regardless of how fast the game is running).
-4. Draws the frame.
+2. Calls `_Process(delta)` on every node defining it. Variable timestep — `delta` is time since last frame, in seconds.
+3. Steps physics. Calls `_PhysicsProcess(delta)` on every node defining it. **Fixed timestep** — defaults to 60Hz, so `delta` always `1.0/60.0` (regardless of how fast game runs).
+4. Draws frame.
 5. Repeats.
 
-The variable-vs-fixed distinction is critical:
+Variable-vs-fixed distinction critical:
 
-- `_Process` runs as fast as the framerate allows. At 120 FPS, it runs twice per "physics frame." At 30 FPS, it runs less often than physics. Use it for visual interpolation, UI updates, polling, anything that's tied to "what the user sees this instant."
-- `_PhysicsProcess` runs at a consistent rate (60Hz by default). Physics happens here. Movement that interacts with collisions happens here. Determinism is easier here because the timestep is predictable.
+- `_Process` runs as fast as framerate allows. 120 FPS: runs twice per "physics frame." 30 FPS: runs less often than physics. Use for visual interpolation, UI updates, polling, anything tied to "what user sees this instant."
+- `_PhysicsProcess` runs at consistent rate (60Hz default). Physics happens here. Movement interacting with collisions happens here. Determinism easier here because timestep predictable.
 
-The most common Godot bug from misusing these: putting movement in `_Process`. The character moves jittery because the physics step doesn't match the rendering step. **Movement of physics bodies goes in `_PhysicsProcess`. Always.**
+Most common Godot bug from misusing these: putting movement in `_Process`. Character moves jittery because physics step doesn't match rendering step. **Movement of physics bodies goes in `_PhysicsProcess`. Always.**
 
 ## Lifecycle Methods
 
@@ -148,7 +148,7 @@ Every node can override these:
 | `_UnhandledInput(InputEvent ev)` | When an input event hasn't been handled by UI. |
 | `_Notification(int what)` | For low-level system events. |
 
-`_Ready` is the most-used. It's the equivalent of a constructor for a node, except it runs *after* the node is in the tree, so you can call `GetNode<T>(...)` on children. Putting initialization in C# constructors is wrong because the node isn't in the tree yet.
+`_Ready` is most-used. Equivalent of constructor for node, except runs *after* node is in tree, so you can call `GetNode<T>(...)` on children. Putting initialization in C# constructors is wrong — node isn't in tree yet.
 
 ```csharp
 public partial class Player : CharacterBody2D
@@ -164,13 +164,13 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-The pattern of grabbing references to children in `_Ready` is *common but brittle*. Better patterns are covered in [nodes-and-architecture.md](nodes-and-architecture.md) — using `[Export]` to assign references in the inspector, or using groups/signals to avoid the path-based lookup entirely.
+Pattern of grabbing references to children in `_Ready` is *common but brittle*. Better patterns covered in [nodes-and-architecture.md](nodes-and-architecture.md) — using `[Export]` to assign references in inspector, or groups/signals to avoid path-based lookup entirely.
 
 ## Signals
 
-Signals are Godot's event system. A node *emits* a signal when something happens; other nodes *connect* to that signal to react.
+Signals are Godot's event system. Node *emits* signal when something happens; other nodes *connect* to react.
 
-In C#, signals are declared with the `[Signal]` attribute on a delegate type:
+In C#, signals declared with `[Signal]` attribute on delegate type:
 
 ```csharp
 public partial class Health : Node
@@ -198,7 +198,7 @@ public partial class Health : Node
 }
 ```
 
-Then somewhere else (often the parent scene's script) connects to the signal:
+Somewhere else (often parent scene's script) connects to signal:
 
 ```csharp
 public override void _Ready()
@@ -219,23 +219,23 @@ private void OnPlayerDied()
 }
 ```
 
-Note: in C# Godot 4, signals are *strongly typed* via the generated `SignalName` class and the `EventHandler` delegate naming convention. You connect with `+=` and disconnect with `-=`, just like normal C# events. This is much better than the string-based approach used in GDScript and earlier C# versions.
+Note: C# Godot 4 signals are *strongly typed* via generated `SignalName` class and `EventHandler` delegate naming convention. Connect with `+=`, disconnect with `-=`, just like normal C# events. Much better than string-based approach in GDScript and earlier C# versions.
 
-The reason signals matter: they let nodes communicate **without knowing about each other**. The Health node doesn't know about the HUD; the HUD subscribes from the outside. This is the foundation of decoupled scene design.
+Why signals matter: nodes communicate **without knowing about each other**. Health node doesn't know about HUD; HUD subscribes from outside. Foundation of decoupled scene design.
 
-For deeper signal patterns, see [signals-and-events.md](signals-and-events.md).
+Deeper signal patterns: [signals-and-events.md](signals-and-events.md).
 
 ## Autoloads (Singletons)
 
-An autoload is a node (or a script) that Godot loads automatically at startup and keeps available globally. Set in **Project Settings → Autoload**.
+Autoload is node (or script) Godot loads automatically at startup, keeps available globally. Set in **Project Settings → Autoload**.
 
 Common uses:
 
 - **Global game state** — current level, score, settings.
 - **Audio bus controllers** — global SFX/music systems.
 - **Scene switchers** — handling transitions between scenes.
-- **Save manager** — load and save the game from anywhere.
-- **Event bus** — a central hub for global events.
+- **Save manager** — load and save game from anywhere.
+- **Event bus** — central hub for global events.
 
 Example:
 
@@ -256,31 +256,31 @@ public partial class GameState : Node
 }
 ```
 
-Anywhere in your code:
+Anywhere in code:
 
 ```csharp
 var gameState = GetNode<GameState>("/root/GameState");
 gameState.AddScore(10);
 ```
 
-Autoloads are powerful and *easily abused*. The temptation is to put everything in autoloads because they're easy to access. The result: a god-singleton that knows everything, and a project where every node depends on the autoload for everything. This is the same anti-pattern as a god class in OO design.
+Autoloads powerful and *easily abused*. Temptation: put everything in autoloads because easy to access. Result: god-singleton knowing everything; project where every node depends on autoload for everything. Same anti-pattern as god class in OO design.
 
-The discipline: use autoloads for *truly global* concerns (game state, audio, scene transitions, saves). Local communication between nodes should use signals and direct references, not autoloads.
+Discipline: use autoloads for *truly global* concerns (game state, audio, scene transitions, saves). Local communication between nodes: signals and direct references, not autoloads.
 
-For deeper patterns, see [signals-and-events.md](signals-and-events.md).
+Deeper patterns: [signals-and-events.md](signals-and-events.md).
 
 ## The Editor
 
-Godot's editor is part of the workflow, not just a tool to launch scenes. You design scenes in the editor visually:
+Godot's editor is part of workflow, not just tool to launch scenes. Design scenes in editor visually:
 
-- **Scene panel** — the node tree of the current scene.
-- **Inspector** — the properties of the selected node.
-- **Filesystem panel** — files in the project.
+- **Scene panel** — node tree of current scene.
+- **Inspector** — properties of selected node.
+- **Filesystem panel** — files in project.
 - **Output / Debugger** — logs and debugging.
-- **2D / 3D viewport** — visual editing of the scene.
+- **2D / 3D viewport** — visual editing of scene.
 - **Script editor** — code editor (or use VS Code / Rider for C#).
 
-Many things are configured in the inspector rather than in code:
+Many things configured in inspector rather than code:
 
 - Initial property values
 - Signal connections
@@ -288,17 +288,17 @@ Many things are configured in the inspector rather than in code:
 - Group memberships
 - Process modes
 
-This is *good* for things that vary per-instance (a particular enemy's health) and *good* for designer-tweakable values. It's *bad* for anything that needs source-control diffability or that should be the same everywhere — those go in code.
+*Good* for things varying per-instance (particular enemy's health), *good* for designer-tweakable values. *Bad* for anything needing source-control diffability or that should be same everywhere — those go in code.
 
-For **C# specifically**, the editor experience is a little weaker than for GDScript: scripts must be compiled, the editor needs to find the .NET assembly, hot-reload doesn't always work. Most C# Godot developers use **VS Code** or **JetBrains Rider** for the actual code editing, with the Godot editor for scene design.
+For **C# specifically**, editor experience slightly weaker than GDScript: scripts must be compiled, editor needs to find .NET assembly, hot-reload doesn't always work. Most C# Godot developers use **VS Code** or **JetBrains Rider** for actual code editing, Godot editor for scene design.
 
 ## Resources
 
-A **Resource** is a piece of data saved to disk that can be shared between nodes. Examples: textures, audio streams, fonts, materials, scripts, scenes themselves.
+**Resource** is piece of data saved to disk, shareable between nodes. Examples: textures, audio streams, fonts, materials, scripts, scenes themselves.
 
-Resources are reference-counted and shared. Two `Sprite2D` nodes that use the same texture share the underlying `Texture2D` resource — no duplication.
+Resources are reference-counted and shared. Two `Sprite2D` nodes using same texture share underlying `Texture2D` resource — no duplication.
 
-You can also create **custom resources** by inheriting from `Resource`:
+Create **custom resources** by inheriting from `Resource`:
 
 ```csharp
 [GlobalClass]
@@ -312,7 +312,7 @@ public partial class WeaponData : Resource
 }
 ```
 
-`[GlobalClass]` makes the type available in the editor's "Create New Resource" dialog. You can now create `.tres` files for each weapon, edit them in the inspector, and assign them to nodes via `[Export]`. This is the Godot equivalent of "data files" in other engines and is *the* idiomatic way to handle game data (item stats, ability definitions, level configs, etc.).
+`[GlobalClass]` makes type available in editor's "Create New Resource" dialog. Now create `.tres` files per weapon, edit in inspector, assign to nodes via `[Export]`. Godot equivalent of "data files" in other engines; *the* idiomatic way to handle game data (item stats, ability definitions, level configs, etc.).
 
 ```csharp
 public partial class Weapon : Node
@@ -321,11 +321,11 @@ public partial class Weapon : Node
 }
 ```
 
-In the editor, you'd assign the `.tres` resource to the `Data` field. At runtime, the weapon has its data without any code knowing the specific weapon names. This pattern scales to thousands of items without any code changes.
+In editor, assign `.tres` resource to `Data` field. Runtime: weapon has data without code knowing specific weapon names. Pattern scales to thousands of items without code changes.
 
 ## Project Structure
 
-A new Godot project starts with just a `project.godot` file. You add folders as you go. Common conventions (more in [assets/project-structure-template.md](../assets/project-structure-template.md)):
+New Godot project starts with just `project.godot` file. Add folders as you go. Common conventions (more in [assets/project-structure-template.md](../assets/project-structure-template.md)):
 
 ```
 project.godot
@@ -354,38 +354,38 @@ shaders/                 ← .gdshader files
 exports/                 ← Generated; gitignore this
 ```
 
-The structure is flexible — Godot doesn't enforce it. Pick something that scales with the project and stick to it.
+Structure flexible — Godot doesn't enforce. Pick something scaling with project, stick to it.
 
 ## C# Specifics
 
-A few things every C# Godot engineer should know up-front:
+Things every C# Godot engineer should know up-front:
 
-- **`Godot.NET.Sdk`** is the project SDK. Your `.csproj` is auto-generated by Godot.
-- **`partial` is required** on every class with Godot generated code (which is most node classes).
-- **`[Export]` attribute** exposes a field/property to the editor's inspector.
-- **`[Signal]` attribute** declares a signal; the convention is `EventHandler` suffix on the delegate.
+- **`Godot.NET.Sdk`** is project SDK. `.csproj` auto-generated by Godot.
+- **`partial` is required** on every class with Godot generated code (most node classes).
+- **`[Export]` attribute** exposes field/property to editor's inspector.
+- **`[Signal]` attribute** declares signal; convention is `EventHandler` suffix on delegate.
 - **Naming conventions differ from C# norms**: Godot uses `PascalCase` for methods and properties (`_Process`, not `_process`; `GlobalPosition`, not `globalPosition`). Follow Godot's conventions in Godot code.
-- **`GD.Print(...)`** is the equivalent of `Console.WriteLine`. `GD.PrintErr(...)` for errors.
+- **`GD.Print(...)`** is equivalent of `Console.WriteLine`. `GD.PrintErr(...)` for errors.
 - **`Tween` and `SignalAwaiter`** can be `await`ed, integrating with async/await.
 - **`ToSignal(node, "name")`** lets you await a signal.
 
-The most important thing about C# in Godot 4: **it's a first-class citizen now**. Earlier versions had a clunky C# story; Godot 4 with .NET 8 is much better. Performance, tooling, and ergonomics are all reasonable. Most of what you'd want from C# (LINQ, async/await, generics, modern syntax) just works.
+Most important thing about C# in Godot 4: **first-class citizen now**. Earlier versions had clunky C# story; Godot 4 with .NET 8 much better. Performance, tooling, ergonomics all reasonable. Most of what you'd want from C# (LINQ, async/await, generics, modern syntax) just works.
 
 ## Common Mistakes Coming In
 
-A few things that trip up new Godot engineers, especially those coming from Unity:
+Things tripping up new Godot engineers, especially from Unity:
 
-- **Treating the editor as optional.** Trying to do everything in code. Godot's editor is good and using it is faster.
-- **Confusing nodes with components.** A `Sprite2D` is a node, not a component on a "player" object. The player *is* a tree of nodes; the sprite is a child of the player. There's no MonoBehaviour-style component model.
+- **Treating editor as optional.** Trying to do everything in code. Godot's editor is good; using it is faster.
+- **Confusing nodes with components.** `Sprite2D` is node, not component on "player" object. Player *is* tree of nodes; sprite is child of player. No MonoBehaviour-style component model.
 - **Putting movement in `_Process`.** Jitter follows.
 - **Not using signals.** Direct method calls everywhere; tightly coupled mess.
 - **Autoload abuse.** Everything in singletons; god-bus pattern.
-- **Thinking GDScript and C# are interchangeable.** They are *not*. They have different semantics, different performance characteristics, different ecosystem support. Pick one for your project.
+- **Thinking GDScript and C# are interchangeable.** They are *not*. Different semantics, different performance characteristics, different ecosystem support. Pick one for project.
 - **Path-based `GetNode` everywhere.** Brittle. Use `[Export]` references or `%UniqueName` syntax.
-- **Custom UI systems.** Godot's `Control` system is powerful; learning it takes a day; reinventing it takes weeks and produces worse results.
-- **Treating `_Ready` like a constructor for the C# class.** Actual C# constructors run *before* the node is in the tree; most setup belongs in `_Ready`.
+- **Custom UI systems.** Godot's `Control` system is powerful; learning takes a day; reinventing takes weeks, produces worse results.
+- **Treating `_Ready` like constructor for C# class.** Actual C# constructors run *before* node is in tree; most setup belongs in `_Ready`.
 
-The rest of this skill's references go deep on each of these topics. Start with this file as the mental model, then read the references that match what you're doing today.
+Rest of skill's references go deep on each. Start with this file as mental model, then read references matching today's work.
 
 ## Related
 

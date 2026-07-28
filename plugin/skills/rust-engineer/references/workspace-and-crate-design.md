@@ -2,7 +2,7 @@
 
 ## Cargo Workspace Basics
 
-### `[workspace]` in the Root `Cargo.toml`
+### `[workspace]` in Root `Cargo.toml`
 
 ```toml
 [workspace]
@@ -19,10 +19,10 @@ exclude = ["vendor/some-fork", "examples/standalone"]
 resolver = "2"  # Always use resolver v2 in workspaces (Rust 2021 default for new crates)
 ```
 
-- `members` paths are relative to the workspace root; glob patterns are supported (`"crates/*"`).
+- `members` paths relative to workspace root; glob patterns supported (`"crates/*"`).
 - `exclude` takes precedence over glob membership.
-- A workspace has a single `Cargo.lock` and a single `target/` directory at the root.
-- Member crates cannot have their own `[workspace]` table.
+- Workspace has single `Cargo.lock` and single `target/` directory at root.
+- Member crates cannot have own `[workspace]` table.
 
 ### `workspace.dependencies` — Declare Once, Inherit Everywhere
 
@@ -54,9 +54,9 @@ sqlx   = { workspace = true }
 tokio  = { workspace = true }
 ```
 
-- `{ workspace = true }` cannot override `version` or `features` — the workspace declaration is the canonical one.
-- To add features in a member, use `{ workspace = true, features = ["extra"] }` — this **adds** to the workspace feature set; it does not replace it.
-- This eliminates version drift: upgrade once in the root, all members get it.
+- `{ workspace = true }` cannot override `version` or `features` — workspace declaration is canonical.
+- To add features in member, use `{ workspace = true, features = ["extra"] }` — **adds** to workspace feature set; does not replace.
+- Eliminates version drift: upgrade once in root, all members get it.
 
 ### `workspace.package` — Shared Metadata
 
@@ -147,18 +147,18 @@ opt-level = 1   # speed up heavy deps (proc-macros, serde) in dev builds
 | Infrastructure | `infra` | `domain` + DB/HTTP/queue drivers, `tokio`, `sqlx`, `reqwest` | Yes |
 | Binary | `service` | `domain`, `infra`, `api`, `config`, `tracing-subscriber` | Yes — startup only |
 
-The domain crate is the centrepiece: it knows nothing about how data is stored or transported.
+Domain crate is centrepiece: knows nothing about how data is stored or transported.
 
 ### Why This Separation Matters
 
 - **Domain crate compiles fast** — no async runtime, no heavy drivers. Unit tests run in milliseconds, no database required.
-- **Infrastructure is swappable** — swap Postgres for SQLite, or `reqwest` for `hyper`, without touching domain logic.
-- **Binary is thin** — its only job is wiring. A thin binary means a readable `main.rs`; configuration, startup, and dependency injection, nothing else.
-- **Test surface is right-sized** — domain tests are fast unit tests; infra tests are integration tests behind a feature flag or test harness; the binary is tested end-to-end only.
+- **Infrastructure swappable** — swap Postgres for SQLite, or `reqwest` for `hyper`, without touching domain logic.
+- **Binary is thin** — only job is wiring. Thin binary means readable `main.rs`; configuration, startup, dependency injection, nothing else.
+- **Test surface right-sized** — domain tests are fast unit tests; infra tests are integration tests behind feature flag or test harness; binary tested end-to-end only.
 
 ### Ports and Adapters in Rust
 
-The domain crate defines traits (ports). Infrastructure crates implement them (adapters).
+Domain crate defines traits (ports). Infrastructure crates implement them (adapters).
 
 ```rust
 // crates/domain/src/ports.rs
@@ -208,7 +208,7 @@ axum::serve(listener, app).await?;
 | Prototype / pre-product | Single crate is fine; defer the split |
 | Shared types used by 3+ crates | Extract to a `types` or `common` crate |
 
-Splitting too early creates coordination overhead. Splitting too late makes tests slow and architecture implicit. The smell is I/O imports (`sqlx`, `reqwest`) and domain logic in the same file.
+Splitting too early creates coordination overhead. Splitting too late makes tests slow, architecture implicit. Smell: I/O imports (`sqlx`, `reqwest`) and domain logic in same file.
 
 ---
 
@@ -253,7 +253,7 @@ my-service/
     order_flow.rs
 ```
 
-Place `tests/` at the workspace root for integration tests that exercise multiple crates together. Per-crate unit tests live in `#[cfg(test)]` modules inside each crate's `src/`.
+Place `tests/` at workspace root for integration tests exercising multiple crates together. Per-crate unit tests live in `#[cfg(test)]` modules inside each crate's `src/`.
 
 ---
 
@@ -261,7 +261,7 @@ Place `tests/` at the workspace root for integration tests that exercise multipl
 
 ### `src/lib.rs` vs `src/main.rs`
 
-Always prefer `lib.rs` + a thin `main.rs` (or `bin/`) that calls into the library.
+Always prefer `lib.rs` + thin `main.rs` (or `bin/`) calling into library.
 
 ```
 # Bad: everything in main.rs
@@ -272,7 +272,7 @@ crates/service/src/lib.rs    # all logic, integration-testable
 crates/service/src/main.rs   # 10 lines: parse config, call lib::run()
 ```
 
-The reason: `cargo test` can import `lib.rs`; it cannot import `main.rs`.
+Reason: `cargo test` can import `lib.rs`; cannot import `main.rs`.
 
 ### File Layout for Modules
 
@@ -290,7 +290,7 @@ src/
     mod.rs          # confusing when multiple mod.rs tabs are open
 ```
 
-Use `directory/mod.rs` only when a module has child modules that genuinely belong under it:
+Use `directory/mod.rs` only when module has child modules genuinely belonging under it:
 
 ```
 src/
@@ -315,9 +315,9 @@ pub use ports::{OrderRepository, PaymentGateway};
 pub use service::OrderService;
 ```
 
-- Internal module structure is an implementation detail — don't leak it.
+- Internal module structure is implementation detail — don't leak it.
 - Re-export aggressively in `lib.rs`; keep internal `mod` declarations private.
-- Use `#[doc(hidden)]` on items that must be `pub` for macro reasons but aren't part of the public API.
+- Use `#[doc(hidden)]` on items that must be `pub` for macro reasons but aren't public API.
 
 ---
 
@@ -333,7 +333,7 @@ pub use service::OrderService;
 | `pub(in path)` | Specific ancestor module — rarely needed |
 | `pub` | Public API — downstream crates and binary crates |
 
-**Rule:** default to `pub(crate)`. Escalate to `pub` only when an external crate needs the item.
+**Rule:** default to `pub(crate)`. Escalate to `pub` only when external crate needs the item.
 
 ### Common Mistakes
 
@@ -348,11 +348,11 @@ pub(crate) struct InternalConfig { ... }
 pub(crate) fn validate_order(o: &Order) -> Result<(), ValidationError> { ... }
 ```
 
-Never make a type `pub` just because it appears in a `#[cfg(test)]` function. Use `pub(crate)` and put the test in the same crate, or use a test helper module.
+Never make type `pub` just because it appears in `#[cfg(test)]` function. Use `pub(crate)`, put test in same crate, or use test helper module.
 
 ### Sealed Trait Pattern
 
-Use when a trait must be `pub` (to appear in public method signatures) but must not be implemented outside the crate:
+Use when trait must be `pub` (to appear in public method signatures) but must not be implemented outside crate:
 
 ```rust
 // crates/domain/src/sealed.rs
@@ -377,10 +377,10 @@ pub trait StorageBackend: private::Sealed {
 
 ### Features Are Strictly Additive
 
-A feature must only add optional dependencies or unlock `#[cfg(feature = "...")]` code paths. Features must never:
-- Change the behaviour of always-present code
+Feature must only add optional dependencies or unlock `#[cfg(feature = "...")]` code paths. Features must never:
+- Change behaviour of always-present code
 - Enable or disable test infrastructure
-- Toggle debug vs release behaviour (use `cfg(debug_assertions)` or runtime config for that)
+- Toggle debug vs release behaviour (use `cfg(debug_assertions)` or runtime config)
 
 ### Minimal Defaults
 
@@ -392,8 +392,8 @@ tracing = ["dep:tracing", "dep:tracing-subscriber"]
 serde   = ["dep:serde", "uuid/serde"]  # enable serde impls for your types
 ```
 
-- Name features after the capability (`tls`, `metrics`, `serde`) not the crate (`rustls`, `prometheus`).
-- `dep:crate-name` syntax (Rust 1.60+) makes a dependency optional and prevents the dep name from being a feature itself.
+- Name features after capability (`tls`, `metrics`, `serde`) not crate (`rustls`, `prometheus`).
+- `dep:crate-name` syntax (Rust 1.60+) makes dependency optional, prevents dep name being feature itself.
 
 ### `cfg_aliases` for Complex Combinations
 
@@ -424,7 +424,7 @@ mod tls_common;
 
 - [ ] `cargo test --no-default-features` passes
 - [ ] `cargo test --all-features` passes
-- [ ] Feature combinations are tested in CI (use a matrix)
+- [ ] Feature combinations tested in CI (use matrix)
 - [ ] No feature silently enables another without documentation
 
 ---
@@ -439,7 +439,7 @@ mod tls_common;
 | Library (`lib` only) | **No** — let consumers control transitive versions |
 | Library with integration tests needing reproducibility | Use `Cargo.lock` but note it in `README` |
 
-Add `Cargo.lock` to `.gitignore` for libraries; commit it for binaries.
+Add `Cargo.lock` to `.gitignore` for libraries; commit for binaries.
 
 ### `cargo deny`
 
@@ -462,10 +462,10 @@ vulnerability = "deny"
 unmaintained  = "warn"
 ```
 
-Run `cargo deny check` in CI before merging. It catches:
+Run `cargo deny check` in CI before merging. Catches:
 - License incompatibilities before legal review
 - Duplicate dep versions (often from transitive conflicts)
-- Known CVEs from the RustSec advisory database
+- Known CVEs from RustSec advisory database
 
 ### `cargo audit`
 
@@ -475,7 +475,7 @@ cargo audit                    # check against RustSec advisory db
 cargo audit fix                # auto-upgrade safe minor versions
 ```
 
-Run `cargo audit` in CI as a separate step from `cargo deny` — they use different databases and catch different things. `cargo deny` is config-driven policy; `cargo audit` is reactive CVE scanning.
+Run `cargo audit` in CI as separate step from `cargo deny` — different databases, catch different things. `cargo deny` is config-driven policy; `cargo audit` is reactive CVE scanning.
 
 ### Version Constraint Discipline
 
@@ -492,7 +492,7 @@ some-crate = "*"
 ```
 
 - For internal path dependencies, omit `version` unless publishing.
-- For published libraries, version ranges must be as wide as possible while remaining correct.
+- For published libraries, version ranges as wide as possible while remaining correct.
 
 ### Deduplicating Transitive Versions
 
@@ -501,7 +501,7 @@ cargo tree -d                        # show duplicate versions
 cargo update -p some-crate --precise 1.2.3   # pin a transitive dep
 ```
 
-If two major versions of a crate exist in the tree, it is almost always a mistake — types won't unify across them. Audit with `cargo tree -d` before releasing.
+Two major versions of crate in tree → almost always mistake — types won't unify across them. Audit with `cargo tree -d` before releasing.
 
 ---
 
@@ -517,13 +517,13 @@ cargo build --timings=json      # machine-readable for CI analysis
 Look for:
 - Crates with long `codegen` time — likely targets for splitting or conditional compilation
 - Long chains with no parallelism — indicates unnecessary dependencies
-- Proc-macro crates — they run serially during expansion; minimise their use
+- Proc-macro crates — run serially during expansion; minimise use
 
 ### Splitting to Improve Incremental Builds
 
-Large monolithic crates recompile fully on any change to their source. Splitting by logical boundary means only the changed crate (and its dependents) recompile. The split pays for itself once a crate reaches ~5–10 kLOC.
+Large monolithic crates recompile fully on any source change. Splitting by logical boundary means only changed crate (and dependents) recompile. Split pays for itself once crate reaches ~5–10 kLOC.
 
-The domain/infra/api split described above is primarily a design decision, but it also delivers a compilation benefit: editing an API handler does not recompile domain or infra.
+Domain/infra/api split described above is primarily design decision, but also delivers compilation benefit: editing API handler does not recompile domain or infra.
 
 ### CI Caching
 
@@ -535,9 +535,9 @@ The domain/infra/api split described above is primarily a design decision, but i
     shared-key: "my-service"     # consistent across jobs
 ```
 
-`Swatinem/rust-cache` caches `~/.cargo/registry`, `~/.cargo/git`, and `target/` keyed on `Cargo.lock` + `rust-toolchain`. It handles cache invalidation correctly on `Cargo.lock` changes.
+`Swatinem/rust-cache` caches `~/.cargo/registry`, `~/.cargo/git`, `target/` keyed on `Cargo.lock` + `rust-toolchain`. Handles cache invalidation correctly on `Cargo.lock` changes.
 
-For self-hosted runners or more control, `sccache` distributes compilation across a shared cache:
+For self-hosted runners or more control, `sccache` distributes compilation across shared cache:
 
 ```bash
 cargo install sccache
@@ -576,10 +576,10 @@ codegen-units = 16
 strip         = false    # keep symbols for test output
 ```
 
-Activate the CI profile with `cargo build --profile ci`.
+Activate CI profile with `cargo build --profile ci`.
 
 ### Dependency Hygiene for Compile Time
 
-- Avoid `features = ["full"]` on large crates (`tokio`, `sqlx`) in library crates — only the binary should request `full`. This prevents unnecessary features from being compiled when the library is used without them.
-- `async-trait` adds a proc-macro dependency; consider `impl_trait_in_assoc_type` (stable as of Rust 1.79) for simple cases.
-- `derive` macros (serde, thiserror) are fast; avoid bespoke proc-macro crates for simple patterns.
+- Avoid `features = ["full"]` on large crates (`tokio`, `sqlx`) in library crates — only binary should request `full`. Prevents unnecessary features compiling when library used without them.
+- `async-trait` adds proc-macro dependency; consider `impl_trait_in_assoc_type` (stable as of Rust 1.79) for simple cases.
+- `derive` macros (serde, thiserror) fast; avoid bespoke proc-macro crates for simple patterns.

@@ -5,7 +5,7 @@ description: "Non-interactive content-production toolkit: mine quotable moments 
 
 # Content Pipeline
 
-Script-driven content production: ingest raw source, repurpose it into platform-native drafts, and gate the drafts before publish. All steps are non-interactive Python; chain them or run any stage standalone.
+Script-driven content production: ingest raw source, repurpose into platform-native drafts, gate drafts before publish. All steps non-interactive Python; chain them or run any stage standalone.
 
 ```
 quote-mining ─┐
@@ -21,7 +21,7 @@ pip install -r requirements.txt      # anthropic, feedparser
 cp .env.example .env                 # set ANTHROPIC_API_KEY; configure optional feeds/voice
 ```
 
-All scripts read/write a data directory (default `./data/`, override with `CONTENT_OPS_DATA_DIR`). Each stage writes a `*-latest.json` the next stage picks up.
+All scripts read/write data directory (default `./data/`, override `CONTENT_OPS_DATA_DIR`). Each stage writes a `*-latest.json` next stage picks up.
 
 ## Stages
 
@@ -30,27 +30,27 @@ All scripts read/write a data directory (default `./data/`, override with `CONTE
    python scripts/quote-mining-engine.py --days 90 --top 50 --min-score 60 \
      --feeds config/feeds.json --notes-dir ./notes/ --speaker "Name"
    ```
-   Feeds come from `--feeds <json>`, `QUOTE_MINING_FEEDS_FILE`, or inline `QUOTE_MINING_FEEDS`. See `config/feeds.example.json`.
+   Feeds from `--feeds <json>`, `QUOTE_MINING_FEEDS_FILE`, or inline `QUOTE_MINING_FEEDS`. See `config/feeds.example.json`.
 
-2. **Ingest — editorial brain.** Two-pass LLM clip discovery on a video transcript: pass 1 finds candidate hook→build→payoff moments, pass 2 deep-scores each on hook/build/payoff/clean-cut (0–100). Only clips at/above `--min-score` (default 90) are cut. Needs `ANTHROPIC_API_KEY`; video cutting needs `yt-dlp` + `ffmpeg` (see `requirements.txt`).
+2. **Ingest — editorial brain.** Two-pass LLM clip discovery on video transcript: pass 1 finds candidate hook→build→payoff moments, pass 2 deep-scores each on hook/build/payoff/clean-cut (0–100). Only clips at/above `--min-score` (default 90) cut. Needs `ANTHROPIC_API_KEY`; video cutting needs `yt-dlp` + `ffmpeg` (see `requirements.txt`).
    ```bash
    python scripts/editorial-brain.py --url "https://youtube.com/watch?v=..." --max-clips 5
    python scripts/editorial-brain.py --vtt file.vtt --video-id ID --skip-cut   # analysis only
    ```
 
-3. **Transform.** Repurpose long-form "content atoms" into platform-native drafts — X threads/posts, LinkedIn posts, YouTube Short scripts, newsletter sections. LLM mode is default; `--template-only` runs without the API. The optional in-loop expert panel (`--no-expert-panel` to disable) reuses `content-ops`'s `experts/` and `scoring-rubrics/content-quality.md` — see Cross-skill dependency below.
+3. **Transform.** Repurpose long-form "content atoms" into platform-native drafts — X threads/posts, LinkedIn posts, YouTube Short scripts, newsletter sections. LLM mode default; `--template-only` runs without API. Optional in-loop expert panel (`--no-expert-panel` to disable) reuses `content-ops`'s `experts/` and `scoring-rubrics/content-quality.md` — see Cross-skill dependency below.
    ```bash
    python scripts/content-transform.py --atoms atoms.json --top-n 10
    python scripts/content-transform.py --atoms atoms.json --template-only
    ```
 
-4. **Score (batch, heuristic).** Score a batch of drafts on five dimensions — voice similarity, specificity, AI-slop penalty, length appropriateness, engagement potential — and emit pass/fail per draft. No LLM; purely heuristic and fast. Default threshold 60; tune weights via `--init-weights` then edit `data/quality-scorer-weights.json`.
+4. **Score (batch, heuristic).** Score batch of drafts on five dimensions — voice similarity, specificity, AI-slop penalty, length appropriateness, engagement potential — emit pass/fail per draft. No LLM; purely heuristic + fast. Default threshold 60; tune weights via `--init-weights` then edit `data/quality-scorer-weights.json`.
    ```bash
    python scripts/content-quality-scorer.py --input drafts.json --verbose
    python scripts/content-quality-scorer.py --threshold 75 --input drafts.json
    ```
 
-5. **Gate (publish filter).** CI-style gate that runs the scorer and filters drafts below threshold; nothing publishes without passing. `--conservative` passes everything but annotates quality flags instead of dropping.
+5. **Gate (publish filter).** CI-style gate: runs scorer, filters drafts below threshold; nothing publishes without passing. `--conservative` passes everything but annotates quality flags instead of dropping.
    ```bash
    python scripts/content-quality-gate.py --input drafts.json --threshold 75
    ```
@@ -69,9 +69,9 @@ Drafts (scorer/gate input):
 
 ## Cross-skill dependency
 
-`content-transform.py`'s optional in-loop expert panel does not duplicate the rubric — it reads the sibling `content-ops` skill's `experts/` panels and `scoring-rubrics/content-quality.md`. The path resolves to `../content-ops/` by default; override with `CONTENT_OPS_SKILL_DIR` if the skills live elsewhere. `content-ops` remains the single source of truth for panel definitions.
+`content-transform.py`'s optional in-loop expert panel does not duplicate rubric — reads sibling `content-ops` skill's `experts/` panels + `scoring-rubrics/content-quality.md`. Path resolves to `../content-ops/` by default; override with `CONTENT_OPS_SKILL_DIR` if skills live elsewhere. `content-ops` remains single source of truth for panel definitions.
 
 ## Related skills
 
-- [content-ops](../content-ops/SKILL.md) — interactive expert-panel scorer; the canonical quality gate for a single artifact, and the source of the panels this pipeline reuses in `content-transform`
+- [content-ops](../content-ops/SKILL.md) — interactive expert-panel scorer; canonical quality gate for single artifact, and source of panels this pipeline reuses in `content-transform`
 - [autoresearch](../autoresearch/SKILL.md) — pre-launch variant generation + multi-round optimization for conversion copy

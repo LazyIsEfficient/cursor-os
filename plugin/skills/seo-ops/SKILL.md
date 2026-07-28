@@ -5,7 +5,7 @@ description: AI-powered SEO operations: keyword intelligence, competitor gap ana
 
 # AI SEO Ops
 
-AI-powered SEO operations: keyword intelligence, competitor gap analysis, GSC optimization, and trend detection.
+AI-powered SEO operations: keyword intelligence, competitor gap analysis, GSC optimization, trend detection.
 
 ## Core Tools
 
@@ -18,12 +18,12 @@ AI-powered SEO operations: keyword intelligence, competitor gap analysis, GSC op
 
 ## Core Rules
 
-1. Run `scripts/gsc_auth.py` once before any GSC tool — it saves the OAuth token locally.
-2. Keywords are prioritized by Impact × Confidence (max 100) — focus on high-score BOFU targets first.
-3. Check the playbook in [growth-engine](../growth-engine/SKILL.md) before creating new content to apply proven patterns.
+1. Run `scripts/gsc_auth.py` once before any GSC tool — saves OAuth token locally.
+2. Keywords prioritized by Impact × Confidence (max 100) — focus high-score BOFU targets first.
+3. Check playbook in [growth-engine](../growth-engine/SKILL.md) before creating new content to apply proven patterns.
 4. Weekly cadence: full brief + daily striking-distance check + 2×/week trend scout.
 
 ## References
 
-- [references/tool-reference.md](references/tool-reference.md) — full CLI and library usage for all four tools
+- [references/tool-reference.md](references/tool-reference.md) — full CLI + library usage for all four tools
 - [references/configuration-and-scoring.md](references/configuration-and-scoring.md) — environment variables, scoring model, funnel classification, workflow, dependencies

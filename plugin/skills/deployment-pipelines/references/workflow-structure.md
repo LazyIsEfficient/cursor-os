@@ -89,8 +89,8 @@ strategy:
 ```
 
 Anti-patterns:
-- Matrix that produces 1 combination → just write the job inline.
-- Matrix > 20 combinations → you're paying for runners you don't need.
+- Matrix producing 1 combination → write job inline.
+- Matrix > 20 combinations → paying for runners you don't need.
 
 ## Reusable Workflows vs Composite Actions
 
@@ -114,7 +114,7 @@ jobs:
 
 ## When to Split a Workflow
 
-Split when ANY of these is true:
+Split when ANY true:
 - Different triggers (PR vs tag vs schedule).
 - Different permission requirements (read vs write vs deploy).
 - Different SLOs (CI must be fast; nightly can be slow).
@@ -127,5 +127,5 @@ Don't split just to feel organized — each workflow file is overhead.
 - **One mega-workflow** with `if:` everywhere. Hard to read, hard to debug.
 - **Implicit ordering via `sleep`**. Use `needs:` instead.
 - **Hardcoded paths** (`/home/runner/...`). Use `${{ runner.temp }}` or step outputs.
-- **`continue-on-error: true`** to silence failures. Fix the failure or remove the step.
-- **Workflows that mutate the repo** (auto-format commits) without a clear loop guard.
+- **`continue-on-error: true`** to silence failures. Fix failure or remove step.
+- **Workflows mutating the repo** (auto-format commits) without clear loop guard.

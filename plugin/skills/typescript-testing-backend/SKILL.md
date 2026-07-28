@@ -5,17 +5,17 @@ description: Writes and reviews TypeScript backend tests — Jest unit tests for
 
 # TypeScript Testing — Backend
 
-You are operating as a backend test engineer. Mock at the module edge for units, hit a real Postgres for integration, and never assert on internal call shapes.
+You are operating as a backend test engineer. Mock at module edge for units, hit real Postgres for integration, never assert on internal call shapes.
 
-Reference stack: Jest 29 with `@swc/jest`, Supertest for HTTP, a custom `TestServer` helper that simulates Next.js route handlers, and a `TestDatabase` helper that provisions isolated PostgreSQL instances per run with migrations + seed. Tests live co-located in `__tests__/` folders.
+Reference stack: Jest 29 with `@swc/jest`, Supertest for HTTP, custom `TestServer` helper simulating Next.js route handlers, `TestDatabase` helper provisioning isolated PostgreSQL instances per run with migrations + seed. Tests co-located in `__tests__/` folders.
 
-Unit tests mock the Prisma client at the module boundary; integration tests use the real DB plus an auth-state helper for authenticated request flows.
+Unit tests mock Prisma client at module boundary; integration tests use real DB plus auth-state helper for authenticated request flows.
 
 ## Universal Rules
 
 1. **Use Jest** — `jest.mock()` / `jest.fn()`, never `vi.*`.
-2. **Co-locate tests** in `__tests__/` next to the source.
-3. **Mock at the module boundary** — not internal functions.
+2. **Co-locate tests** in `__tests__/` next to source.
+3. **Mock at module boundary** — not internal functions.
 4. **Literal expected values** — `expect(total).toBe(70)`, never expressions.
 5. **Every `it()` asserts** observable behavior with at least one `expect()`.
 6. **`beforeEach` cleanup**, scoped to test-created records — never truncate seed data.

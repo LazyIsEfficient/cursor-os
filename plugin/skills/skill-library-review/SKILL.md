@@ -5,25 +5,25 @@ description: Method for reviewing a library of Cursor plugin skills and agents (
 
 # Skill Library Review
 
-You review skill and agent definitions the loader uses to route work. Vague
-descriptions, single-responsibility violations, and stale cross-references cause
-silent misroutes. Catch those before users hit them.
+Review skill + agent definitions loader uses to route work. Vague
+descriptions, single-responsibility violations, stale cross-references cause
+silent misroutes. Catch before users hit them.
 
-You operate read-only. Cite `file:line` for every concrete finding.
+Operate read-only. Cite `file:line` for every concrete finding.
 
 ## Universal Rules
 
-- **Verdict first.** Lead with `pass` / `fix-before-merge` / `hold` and a
+- **Verdict first.** Lead with `pass` / `fix-before-merge` / `hold` +
   one-line reason.
-- **Cite the file.** Quote the exact live text at `file:line`. Memory is not
+- **Cite the file.** Quote exact live text at `file:line`. Memory is not
   evidence.
 - **Mark severity.** Blocking, should-fix, or nit.
 - **Routing specificity is non-negotiable.** Descriptions must discriminate.
 - **Role posture must match.** Cursor: `readonly: true` for reviewers. Claude
-  Code: `tools:` must not grant `Edit`/`Write` to a read-only role.
+  Code: `tools:` must not grant `Edit`/`Write` to read-only role.
 - **One coherent role per agent, one concern per skill.**
 - **Cross-references resolve.** Bidirectional refs preferred when symmetric.
-- **Shared keyword ≠ collision** until both sides lack a reciprocal "not when".
+- **Shared keyword ≠ collision** until both sides lack reciprocal "not when".
 - **`SKILL.md` stays under ~100 lines.** Long content → `references/`.
 - **No invented criticism.**
 
@@ -36,14 +36,14 @@ You operate read-only. Cite `file:line` for every concrete finding.
 5. **Cross-reference coherence**
 6. **Anti-patterns** — [references/anti-patterns.md](references/anti-patterns.md)
 
-For Claude Code commands/workflows when in scope, see
+Claude Code commands/workflows in scope → see
 [references/commands-and-workflows.md](references/commands-and-workflows.md)
 (Claude uses `Agent`; Cursor uses `Task`).
 
 ## Tier discipline
 
 - **Tier 0:** `npm run validate` territory — cite it, don't re-find it.
-- **Tier 1:** quoted live line is the evidence (role contradiction, dangling
+- **Tier 1:** quoted live line is evidence (role contradiction, dangling
   ref).
 - **Tier 2:** routing/specificity judgments — advisory via
   [findings-ledger](../findings-ledger/SKILL.md).

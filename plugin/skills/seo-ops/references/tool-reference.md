@@ -2,7 +2,7 @@
 
 ## Content Attack Brief (`scripts/content_attack_brief.py`)
 
-Full keyword intelligence pipeline. Requires `AHREFS_TOKEN` and GSC auth.
+Full keyword intelligence pipeline. Requires `AHREFS_TOKEN` + GSC auth.
 
 ```bash
 # Run the full brief
@@ -69,4 +69,4 @@ python scripts/trend_scout.py
 
 **Sources:** Google Trends RSS, Hacker News, Reddit, X/Twitter (needs `BRAVE_API_KEY`)
 
-**Output:** Prints summary + saves JSON to `OUTPUT_DIR/flash-trends-latest.json` and markdown report.
+**Output:** Prints summary + saves JSON to `OUTPUT_DIR/flash-trends-latest.json` + markdown report.

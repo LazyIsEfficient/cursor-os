@@ -16,6 +16,15 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **`AGENTS.md` at repo root:** load-first concision directive ("Be extremely
+  concise. Sacrifice grammar for concision. No filler, no pleasantries, no
+  hedging. Answer first.") plus pointers to CONTRIBUTING.md and plugin/rules/.
+- **`plugin/references/caveman-style.md`:** durable telegraphic style contract
+  for skills and references — compression rules, MUST-preserve list
+  (frontmatter precision, normative force, code blocks, paths, protocol steps,
+  information content), before/after examples.
+- **Concision directive in `communication` rule:** same directive prepended to
+  the `plugin/rules/communication.mdc` body.
 - **OpenSpec first-class planning:** engineering planning artifacts now live
   on disk under `openspec/` in the consuming repository, validated by the
   external `openspec` CLI (`@fission-ai/openspec`, global prerequisite like
@@ -29,6 +38,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Changed
 
+- **`skill-new` command** requires newly authored skills follow
+  `plugin/references/caveman-style.md`.
+- **Plugin skills (46) rewritten in caveman style** — all `SKILL.md` and
+  `references/*.md` telegraphic per `plugin/references/caveman-style.md`;
+  frontmatter `name`/`description` unchanged (routing safe), normative
+  directives and code blocks preserved. 4 waves per
+  `openspec/changes/cavemen-style-rewrite/`.
 - **`prompt-shaping` output artifact** is now
   `openspec/changes/<id>/proposal.md` (was a chat-YAML brief); the 7-field
   dispatchability gate survives as the proposal completeness check.

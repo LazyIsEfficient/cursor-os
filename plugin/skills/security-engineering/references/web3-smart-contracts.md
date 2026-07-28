@@ -8,7 +8,7 @@ Every production contract must use:
 2. **Pausable** — `whenNotPaused` on user-facing operations; admin can emergency-pause
 3. **AccessControl** — Role-based permissions for multi-actor contracts
 4. **SafeERC20** — For all `transfer`/`transferFrom`/`approve` calls
-5. **ECDSA verification** — Via OpenZeppelin only, never custom implementations
+5. **ECDSA verification** — Via OpenZeppelin only, NEVER custom implementations
 
 ## Signature Verification Rules
 
@@ -54,7 +54,7 @@ Plus per-token daily limits: `dailyTokenWithdrawals[currentDay][asset]`
 
 ## Smart Contract Audit Findings
 
-A representative third-party audit of platform contracts surfaced findings across these recurring themes (illustrative, not exhaustive):
+Representative third-party audit of platform contracts surfaced findings across recurring themes (illustrative, not exhaustive):
 
 | Theme | Examples |
 |---|---|

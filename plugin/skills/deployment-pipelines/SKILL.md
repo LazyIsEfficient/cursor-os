@@ -5,45 +5,45 @@ description: Authoring or reviewing CI/CD pipelines — GitHub Actions workflows
 
 # Deployment Pipelines
 
-You are operating as an infrastructure engineer with the CI/CD lens. Pipelines are production code: untrusted inputs (PRs, third-party actions, package registries) flow through privileged contexts. Default to least privilege, pinned versions, and fast-fail behavior over convenience.
+You are operating as infrastructure engineer with CI/CD lens. Pipelines are production code: untrusted inputs (PRs, third-party actions, package registries) flow through privileged contexts. Default to least privilege, pinned versions, fast-fail behavior over convenience.
 
-Currently implemented on **GitHub Actions** with OIDC federation to AWS and GCP — no long-lived credentials. Workflows live in `.github/workflows/`. Reusable workflows and composite actions are versioned alongside the repos that consume them.
+Currently implemented on **GitHub Actions** with OIDC federation to AWS and GCP — no long-lived credentials. Workflows live in `.github/workflows/`. Reusable workflows and composite actions versioned alongside repos that consume them.
 
 ## Universal Rules
 
 ### Security
 1. **No long-lived secrets** — use OIDC to assume cloud roles. AWS access keys in repo secrets are a bug.
-2. **Pin third-party actions to a full commit SHA**, not a tag. Tags are mutable; SHAs are not. `actions/*` from GitHub itself may use `@vN`.
-3. **Default `permissions: {}`** at workflow level, then grant the minimum each job needs (`contents: read`, `id-token: write`, etc.). Never rely on the org default.
-4. **Never `pull_request_target` with checkout of PR code** unless you fully understand the privilege escalation. Default to `pull_request`.
+2. **Pin third-party actions to full commit SHA**, not tag. Tags mutable; SHAs not. `actions/*` from GitHub itself may use `@vN`.
+3. **Default `permissions: {}`** at workflow level, then grant minimum each job needs (`contents: read`, `id-token: write`, etc.). Never rely on org default.
+4. **Never `pull_request_target` with checkout of PR code** unless you fully understand privilege escalation. Default to `pull_request`.
 5. **Mask and never echo secrets.** No `env:` dumps in debug steps.
 6. **Restrict who can approve deploys** via environment protection rules, not branch rules alone.
-7. **No inline scripts that interpolate untrusted input** (`${{ github.event.issue.title }}` in `run:`) — write the value to an env var first.
+7. **No inline scripts interpolating untrusted input** (`${{ github.event.issue.title }}` in `run:`) — write value to env var first.
 
 ### Reliability
 1. **Pin runner OS** (`ubuntu-24.04`, not `ubuntu-latest`) for any pipeline whose stability matters.
-2. **Set `timeout-minutes`** on every job. Default `360` is a hung-runner trap.
-3. **Use `concurrency` groups** to cancel superseded runs on the same ref.
-4. **Fail fast on lint/type errors** before running expensive tests.
+2. **Set `timeout-minutes`** on every job. Default `360` is hung-runner trap.
+3. **Use `concurrency` groups** to cancel superseded runs on same ref.
+4. **Fail fast on lint/type errors** before expensive tests.
 5. **Cache deterministically** — lockfile-derived keys, never date-based.
-6. **Idempotent deploys** — re-running the same workflow on the same SHA must be safe.
+6. **Idempotent deploys** — re-running same workflow on same SHA must be safe.
 
 ### Maintainability
 1. **One responsibility per workflow file** — `ci.yml`, `deploy-staging.yml`, `release.yml`. Not one mega-workflow with conditionals.
-2. **Reusable workflows** (`workflow_call`) for shared logic across repos. Composite actions for shared steps within a repo.
-3. **No copy-pasted YAML across jobs** — extract to a composite action or matrix.
-4. **Pin action versions in one place** when possible (e.g., a `versions.env` file or Dependabot grouping).
-5. **Treat workflows like code**: they get reviewed, tested (act / branch deploys), and refactored.
+2. **Reusable workflows** (`workflow_call`) for shared logic across repos. Composite actions for shared steps within repo.
+3. **No copy-pasted YAML across jobs** — extract to composite action or matrix.
+4. **Pin action versions in one place** when possible (e.g., `versions.env` file or Dependabot grouping).
+5. **Treat workflows like code**: reviewed, tested (act / branch deploys), refactored.
 
 ### Cost
 1. **Path filters** (`paths:` / `paths-ignore:`) so doc-only changes don't trigger full CI.
 2. **Cancel-in-progress** for pull request runs.
-3. **Right-size runners** — don't put a 1-minute lint job on a 16-core runner.
+3. **Right-size runners** — no 1-minute lint job on 16-core runner.
 4. **Cache aggressively** but invalidate on lockfile changes.
 
 ## Tier discipline
 
-A pipeline diff is reviewed under the `evidence-review-tiers` rule. A red workflow run is Tier 0. A permissions or unpinned-SHA finding is Tier 1 only when you can point at the exact line and the escalation path it enables; a bare "this looks risky" is Tier 2 and belongs in [findings-ledger](../findings-ledger/SKILL.md). Pipeline diffs touching OIDC, secrets, or `pull_request_target` always warrant a parallel readonly [security-reviewer](../../agents/security-reviewer.md) Task.
+Pipeline diff reviewed under `evidence-review-tiers` rule. Red workflow run is Tier 0. Permissions or unpinned-SHA finding is Tier 1 only when you point at exact line and escalation path it enables; bare "this looks risky" is Tier 2 and belongs in [findings-ledger](../findings-ledger/SKILL.md). Pipeline diffs touching OIDC, secrets, or `pull_request_target` always warrant parallel readonly [security-reviewer](../../agents/security-reviewer.md) Task.
 
 ## References
 
@@ -58,4 +58,4 @@ A pipeline diff is reviewed under the `evidence-review-tiers` rule. A red workfl
 ## Related skills
 
 - [security-engineering](../security-engineering/SKILL.md) — pipeline security review, supply-chain hardening, secret-handling rules
-- [release-manager](../release-manager/SKILL.md) — coordinates the release itself (CHANGELOG, version tag, stakeholder comms) once the pipeline is authored
+- [release-manager](../release-manager/SKILL.md) — coordinates release itself (CHANGELOG, version tag, stakeholder comms) once pipeline authored

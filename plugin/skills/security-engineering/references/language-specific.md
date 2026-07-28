@@ -92,15 +92,15 @@ set -euo pipefail
 
 ## Deep Security Analysis Mindset
 
-When reviewing any code, think like a senior security researcher:
+When reviewing any code, think like senior security researcher:
 
 1. **Memory model**: Managed vs manual? GC pauses exploitable?
 2. **Type system**: Weak typing = type confusion attacks. Look for coercion exploits.
-3. **Serialization**: Every language has its pickle/Marshal equivalent. All are dangerous with untrusted input.
-4. **Concurrency**: Race conditions, TOCTOU, atomicity failures in the threading model.
-5. **FFI boundaries**: Native interop is where type safety breaks down.
+3. **Serialization**: Every language has its pickle/Marshal equivalent. All dangerous with untrusted input.
+4. **Concurrency**: Race conditions, TOCTOU, atomicity failures in threading model.
+5. **FFI boundaries**: Native interop where type safety breaks down.
 6. **Standard library**: Historic CVEs in std libs (Python urllib, Java XML, Ruby OpenSSL).
 7. **Package ecosystem**: Typosquatting, dependency confusion, malicious packages.
 8. **Build system**: Script injection during builds (Makefile, npm scripts, Gradle).
 9. **Runtime behavior**: Debug vs release differences (Rust overflow, C++ assertions).
-10. **Error handling**: How does the language fail? Silently? With stack traces? Fail-open?
+10. **Error handling**: How does language fail? Silently? With stack traces? Fail-open?

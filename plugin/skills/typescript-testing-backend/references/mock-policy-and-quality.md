@@ -10,7 +10,7 @@
 | Internal validators / utils | Use real implementations | Use real implementations |
 | External HTTP APIs | `jest.mock(...)` | `jest.mock(...)` |
 
-Mock at the module boundary — not internal functions.
+Mock at module boundary — not internal functions.
 
 ## Test Quality Criteria
 
@@ -31,12 +31,12 @@ expect(result).toEqual({ id: '1', status: 'created' })
 
 ### Every Test Must Assert
 
-Every `it()` block must include at least one `expect()` that validates observable behavior.
+Every `it()` block must include at least one `expect()` validating observable behavior.
 
 ### Keep All Tests Active
 
-- Fix broken tests — do not use `test.skip()` or comment them out
-- Delete tests that are genuinely no longer relevant
+- Fix broken tests — never `test.skip()` or comment out
+- Delete tests genuinely no longer relevant
 - Skipped tests create silent coverage gaps
 
 ## Test Failure Response

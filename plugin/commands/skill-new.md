@@ -46,6 +46,8 @@ TODO — link any `references/*.md` deep-dive docs, or remove this section.
 
 Keep `SKILL.md` under ~100 lines; deep content belongs in `references/`. Templates the author fills out go in `assets/`; runnable helpers go in `scripts/`.
 
+The author's final prose MUST follow the style contract in [caveman-style.md](../references/caveman-style.md): telegraphic, imperative, no filler — while preserving frontmatter precision, normative directives, and all information content. The scaffold's `TODO` sections are exempt until filled in.
+
 ## 4. Review
 
 After the file is written, dispatch the `library-reviewer` agent via a Cursor `Task` (`subagent_type: "library-reviewer"`, `readonly: true`). Brief it cold-context complete: task ID, goal, paths under review (`plugin/skills/$1/SKILL.md`), and `files_read`. Tell it: "Review the newly scaffolded skill at `plugin/skills/$1/SKILL.md` for frontmatter conformance (name matches folder, description has Use-when + trigger vocab + cross-ref) and file structure. It is a scaffold — flag structural problems, but treat `TODO` placeholders as expected, not findings. Report under 150 words."

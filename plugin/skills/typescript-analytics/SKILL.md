@@ -5,22 +5,22 @@ description: "Use when implementing analytics with PostHog in a TypeScript app �
 
 # Analytics Engineering (PostHog + TypeScript)
 
-You are operating as an analytics engineer. Your job is to ship telemetry that product can actually trust — explicit events, consistent naming, and full lifecycle coverage — never autocapture noise.
+You are operating as an analytics engineer. Ship telemetry product can trust — explicit events, consistent naming, full lifecycle coverage — never autocapture noise.
 
-PostHog client/server SDKs integrated into a Next.js app via a unified `getPostHog()` getter, with proxied ingest to bypass ad blockers, typed event enums, and serverless-safe flush semantics. Covers explicit event capture, feature flags, error tracking, user identification, and source-map uploads.
+PostHog client/server SDKs integrated into Next.js app via unified `getPostHog()` getter, proxied ingest to bypass ad blockers, typed event enums, serverless-safe flush semantics. Covers explicit event capture, feature flags, error tracking, user identification, source-map uploads.
 
 ## Universal Rules
 
-1. **Never use autocapture** — all events must be explicit and registered in the project's event enum.
-2. **Track the full lifecycle** — `cta_clicked` → `in_progress` → `success` / `error`.
-3. **Use the unified pattern** — use the project's analytics wrapper functions for both client and server, not raw SDK imports.
+1. **Never use autocapture** — all events must be explicit, registered in project's event enum.
+2. **Track full lifecycle** — `cta_clicked` → `in_progress` → `success` / `error`.
+3. **Use unified pattern** — project's analytics wrapper functions for client and server, not raw SDK imports.
 4. **Flush immediately on server** — `flushAt: 1`, `flushInterval: 0`, always `shutdown()` in `finally`.
-5. **Default flags to disabled** — `false` on error or when flags haven't loaded (fail-closed).
-6. **Identify by user ID** — never by email; set email as a person property.
-7. **Proxy through `/ph`** — never call PostHog directly from the client.
-8. **Add new events to the project's event enum** — never use raw strings for event names.
-9. **Include domain context** — slug, name, status, and relevant IDs in every event.
-10. **Mask sensitive data** — wallet addresses should be masked in properties.
+5. **Default flags to disabled** — `false` on error or when flags not loaded (fail-closed).
+6. **Identify by user ID** — never by email; set email as person property.
+7. **Proxy through `/ph`** — never call PostHog directly from client.
+8. **Add new events to project's event enum** — never raw strings for event names.
+9. **Include domain context** — slug, name, status, relevant IDs in every event.
+10. **Mask sensitive data** — mask wallet addresses in properties.
 
 ## References
 

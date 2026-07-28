@@ -1,6 +1,6 @@
 # Allocation Module (Token Launch System)
 
-State machine for token commitments, claims, and refunds:
+State machine for token commitments, claims, refunds:
 
 ```solidity
 enum AllocState { NULL, COMMITTING, CLAIMABLE, REFUNDED }
@@ -25,10 +25,10 @@ struct AllocData {
 ## Lifecycle
 
 1. Owner creates allocation with parameters
-2. Users commit the base token during `commitStartTime..commitEndTime` (signed quota)
+2. Users commit base token during `commitStartTime..commitEndTime` (signed quota)
 3. Admin sets merkle root → state transitions to `CLAIMABLE`
 4. Users claim new tokens + base-token refunds via merkle proof
-5. If admin misses deadline → auto-transitions to `REFUNDED`
+5. Admin misses deadline → auto-transitions to `REFUNDED`
 
 ## Advanced Features
 

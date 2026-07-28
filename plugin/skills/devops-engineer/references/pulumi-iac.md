@@ -1,8 +1,8 @@
 # Pulumi IaC Reference
 
-> **Grounding rule (read first):** Before every `pulumi up`, run `pulumi preview` and read the output in full. Before touching an existing stack, run `pulumi stack output` and `pulumi state export` to understand what is deployed. Mark any stack state you have not personally read as `UNVERIFIED:`. This is not optional hygiene — it is the only way to know what you are about to change.
+> **Grounding rule (read first):** Before every `pulumi up`, run `pulumi preview`, read output in full. Before touching existing stack, run `pulumi stack output` and `pulumi state export` to understand what is deployed. Mark any stack state not personally read as `UNVERIFIED:`. Not optional hygiene — only way to know what you are about to change.
 
-For resource-specific patterns (VPC, RDS, ECS, secrets, IAM, Cloudflare) see `cloud-infrastructure`. This reference covers Pulumi workflow, state, and TypeScript mechanics.
+For resource-specific patterns (VPC, RDS, ECS, secrets, IAM, Cloudflare) see `cloud-infrastructure`. This reference covers Pulumi workflow, state, TypeScript mechanics.
 
 ---
 
@@ -18,7 +18,7 @@ my-stack/
 └── tsconfig.json          # strict: true recommended; moduleResolution: node
 ```
 
-`pulumi new typescript` for a bare scaffold; `pulumi new aws-typescript` for an AWS-wired scaffold. Pin provider versions — `"@pulumi/aws": "*"` will silently break on the next major provider release. `index.ts` should read config and export outputs only; resource logic belongs in `./modules/`.
+`pulumi new typescript` for bare scaffold; `pulumi new aws-typescript` for AWS-wired scaffold. Pin provider versions — `"@pulumi/aws": "*"` silently breaks on next major provider release. `index.ts` should read config and export outputs only; resource logic belongs in `./modules/`.
 
 ---
 
@@ -33,13 +33,13 @@ pulumi config get <key>        # read a config value for the active stack
 pulumi config set <key> <val>  # write into Pulumi.<stack>.yaml
 ```
 
-**One stack = one environment.** Sharing a stack between dev and prod collapses the isolation boundary. A misconfigured `stack select` is then the only thing standing between a dev change and production — that is not a guard, it is a trap.
+**One stack = one environment.** Sharing stack between dev and prod collapses isolation boundary. Misconfigured `stack select` then only thing standing between dev change and production — not a guard, a trap.
 
 ---
 
 ## 3. Preview Discipline
 
-**`pulumi preview` is required before every `pulumi up` — no exceptions.**
+**`pulumi preview` required before every `pulumi up` — no exceptions.**
 
 ```bash
 pulumi preview                       # always
@@ -54,21 +54,21 @@ pulumi preview --expect-no-changes   # assert no drift in CI
 | `+-`   | Replace | **High — destroyed and recreated** |
 | `-`    | Destroy | **High — deleted** |
 
-Pulumi replaces a resource when an immutable property changes — an RDS `identifier`, an ECS task `family`, a Cloudflare `zone_id`. When you see `+-`, use `pulumi preview --diff` to find the offending property and confirm recreation is intentional. Replacements of stateful resources cause downtime.
+Pulumi replaces resource when immutable property changes — RDS `identifier`, ECS task `family`, Cloudflare `zone_id`. Seeing `+-` → use `pulumi preview --diff` to find offending property, confirm recreation intentional. Replacements of stateful resources cause downtime.
 
-**Never skip preview because "it's a small change."** A one-line rename of an RDS instance triggers a replace that destroys the database. The blast radius of an unexpected replacement does not scale with the size of the diff.
+**Never skip preview because "it's a small change."** One-line rename of RDS instance triggers replace destroying database. Blast radius of unexpected replacement does not scale with diff size.
 
 For existing stacks, read current state before writing new resources:
 ```bash
 pulumi stack output && pulumi state export > state.json
 ```
-If you cannot read the stack state, mark every assumption `UNVERIFIED:`.
+Cannot read stack state → mark every assumption `UNVERIFIED:`.
 
 ---
 
 ## 4. State Hygiene
 
-Pulumi state is the authoritative record of what the program believes is deployed. Treat it as sacred.
+Pulumi state is authoritative record of what program believes is deployed. Treat as sacred.
 
 ```bash
 pulumi refresh                          # sync state with actual cloud reality
@@ -78,7 +78,7 @@ pulumi state move <urn> <dest-stack>    # move resource between stacks (advanced
 pulumi state delete <urn>               # remove from state only; does not destroy in cloud
 ```
 
-Run `pulumi refresh` before risky operations — out-of-band changes (console, CLI, another tool) leave state stale and produce phantom diffs. `pulumi state delete` is a last resort for resources already gone from the cloud; using it on a live resource orphans it permanently. Never recreate an existing database to bring it under Pulumi — use `pulumi import`. Never manually edit state JSON; the format has internal consistency requirements that manual edits silently violate.
+Run `pulumi refresh` before risky operations — out-of-band changes (console, CLI, another tool) leave state stale, produce phantom diffs. `pulumi state delete` is last resort for resources already gone from cloud; using on live resource orphans it permanently. Never recreate existing database to bring under Pulumi — use `pulumi import`. Never manually edit state JSON; format has internal consistency requirements manual edits silently violate.
 
 ---
 
@@ -95,7 +95,7 @@ const svc = new aws.ecs.Service("api", { ... }, {
 });
 ```
 
-Always comment why a protection flag is set. `protect: true` without context reads as a mistake and will be removed. Write: `// protect: true — prod RDS; accidental replace = data loss + downtime`.
+Always comment why protection flag set. `protect: true` without context reads as mistake, will be removed. Write: `// protect: true — prod RDS; accidental replace = data loss + downtime`.
 
 ---
 
@@ -111,13 +111,13 @@ const pwd = config.requireSecret("DB_PASSWORD"); // Output<string>, redacted in 
 const marked = pulumi.secret(computedValue);     // mark any Output as secret
 ```
 
-Never hardcode secrets in `index.ts` or committed config files. Never `console.log` a secret Output — it appears verbatim in CI logs. Use `.requireSecret()`, not `.require()` — the former returns a redacted `Output<string>`; the latter leaks the value as a plain string.
+Never hardcode secrets in `index.ts` or committed config files. Never `console.log` secret Output — appears verbatim in CI logs. Use `.requireSecret()`, not `.require()` — former returns redacted `Output<string>`; latter leaks value as plain string.
 
 ---
 
 ## 7. TypeScript Patterns [Assumed: TypeScript]
 
-`pulumi.Output<T>` resolves at deployment time, not at program evaluation time. Treating it as a plain value is the most common Pulumi TypeScript mistake.
+`pulumi.Output<T>` resolves at deployment time, not program evaluation time. Treating as plain value is most common Pulumi TypeScript mistake.
 
 ```typescript
 // WRONG — produces "[Output<string>]"
@@ -129,9 +129,9 @@ const upper = bucket.bucketName.apply(n => n.toUpperCase());
 const combined = pulumi.all([a.id, b.arn]).apply(([id, arn]) => `${id}:${arn}`);
 ```
 
-Never call `.toString()` on an Output — TypeScript permits it but the result is always the object's internal string, never the cloud value.
+Never call `.toString()` on Output — TypeScript permits but result always object's internal string, never cloud value.
 
-`ComponentResource` is the abstraction for reusable modules. Child resources declared with `{ parent: this }` appear nested in `pulumi preview` and inherit `protect: true` from the parent — use this for logical groupings like "an ECS service plus its task definition plus its IAM role."
+`ComponentResource` is abstraction for reusable modules. Child resources declared with `{ parent: this }` appear nested in `pulumi preview`, inherit `protect: true` from parent — use for logical groupings like "ECS service plus task definition plus IAM role."
 
 ---
 

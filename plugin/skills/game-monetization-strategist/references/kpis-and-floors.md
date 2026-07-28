@@ -1,6 +1,6 @@
 # KPIs and floors
 
-What to measure, what's a healthy number, what's a kill threshold. Use as a starting point; recalibrate to your category and audience using comp-title benchmarks.
+What to measure, healthy numbers, kill thresholds. Starting point — recalibrate to category and audience using comp-title benchmarks.
 
 ## Retention
 
@@ -58,28 +58,28 @@ What to measure, what's a healthy number, what's a kill threshold. Use as a star
 
 Each KPI gets three thresholds:
 
-- **Floor** — below this, the game is not commercially viable in current form. Re-tune-or-kill.
-- **Target** — at this level, ship globally with caveats. Monitor and tune in live ops.
-- **Strong** — at this level, ship globally and scale acquisition aggressively.
+- **Floor** — below this, game not commercially viable in current form. Re-tune-or-kill.
+- **Target** — ship globally with caveats. Monitor and tune in live ops.
+- **Strong** — ship globally, scale acquisition aggressively.
 
-The thresholds above are starting points. Calibrate to:
-- **Category** — hyper-casual differs from gacha differs from premium PC
-- **Comp titles** — what the actual market is doing right now
+Thresholds above are starting points. Calibrate to:
+- **Category** — hyper-casual ≠ gacha ≠ premium PC
+- **Comp titles** — what actual market does right now
 - **Geo mix** — tier-1 spends more than tier-3
-- **Platform** — mobile differs from PC differs from console
+- **Platform** — mobile ≠ PC ≠ console
 
 ## Cohort vs population
 
-For all retention and ARPU metrics, use **cohort analysis**:
-- Track installs from a specific day across their lifetime
-- D1, D7, D30 are *cohort* numbers (% of that cohort that returned on day N)
+All retention and ARPU metrics: use **cohort analysis**:
+- Track installs from specific day across their lifetime
+- D1, D7, D30 are *cohort* numbers (% of cohort returning on day N)
 - DAU and MAU can be population numbers; useful for live-ops alerting
 
-For monetization decisions, *always cohort*. Population numbers contain the rolling input of new installs and lapsed players, which distorts the picture.
+Monetization decisions: *always cohort*. Population numbers contain rolling input of new installs and lapsed players — distorts picture.
 
 ## Alert thresholds (live ops)
 
-Once live, set automated alerts at:
+Once live, automated alerts at:
 
 - **Retention** — alert at 80% of healthy floor (e.g. D7 < 16% → alert if healthy is 18%)
 - **ARPDAU** — alert at 50% drop week-over-week (sudden monetization break)
@@ -87,7 +87,7 @@ Once live, set automated alerts at:
 - **Crash rate** — alert at any 0.5pp drop in crash-free sessions
 - **Review score** — alert at 0.2 drop week-over-week
 
-Hand the alert plan to `site-reliability-engineering` for SLI / alerting setup.
+Hand alert plan to `site-reliability-engineering` for SLI / alerting setup.
 
 ## What "good" looks like by category (rough)
 
@@ -102,8 +102,8 @@ Hand the alert plan to `site-reliability-engineering` for SLI / alerting setup.
 
 ## Output
 
-For the strategy doc:
+For strategy doc:
 - KPI floor table with chosen values for *this* game
-- Reasoning for any deviation from category benchmarks
+- Reasoning for deviations from category benchmarks
 - Alert thresholds for live ops
 - Soft-launch decision triplets (floor / target / strong)

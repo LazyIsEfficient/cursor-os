@@ -1,19 +1,19 @@
 # Message Brokers — Implementation Patterns
 
-Implementation guide for producers, consumers, and operational concerns when integrating with RabbitMQ, Kafka, SQS, or BullMQ from a TypeScript service. For broker selection and design-level trade-offs see the [`engineer`](../../../agents/engineer.md) agent.
+Implementation guide for producers, consumers, operational concerns when integrating RabbitMQ, Kafka, SQS, or BullMQ from TypeScript service. For broker selection and design-level trade-offs see [`engineer`](../../../agents/engineer.md) agent.
 
 ## Universal Rules
 
-1. **Idempotent consumers, always.** Assume at-least-once delivery; dedupe on a stable key (event ID or business key) via an inbox table or Redis SET with TTL.
-2. **Outbox on the producer side** when the message must commit atomically with a DB write. Never call `producer.send()` after `prisma.create()` — they can diverge on crash.
+1. **Idempotent consumers, always.** Assume at-least-once delivery; dedupe on stable key (event ID or business key) via inbox table or Redis SET with TTL.
+2. **Outbox on producer side** when message must commit atomically with DB write. Never call `producer.send()` after `prisma.create()` — can diverge on crash.
 3. **Bounded retries with backoff + jitter**, then DLQ. Never retry forever in-process.
-4. **Acknowledge after the side effect commits**, not before. `ack` means "I have safely processed this."
-5. **One handler does one thing.** A consumer that handles five event types is a queue with extra steps.
-6. **Validate every message with Zod** at the consumer boundary. Brokers are an external system.
+4. **Acknowledge after side effect commits**, not before. `ack` means "I have safely processed this."
+5. **One handler does one thing.** Consumer handling five event types is queue with extra steps.
+6. **Validate every message with Zod** at consumer boundary. Brokers are external system.
 7. **Set message TTLs** so stuck messages don't accumulate forever.
 8. **Trace every message** — propagate trace context (W3C `traceparent`) in message headers.
-9. **Never block the event loop** in a consumer — pull next message only after the current one is durably handled.
-10. **Graceful shutdown**: stop pulling, drain in-flight, then close the connection.
+9. **Never block event loop** in consumer — pull next message only after current one durably handled.
+10. **Graceful shutdown**: stop pulling, drain in-flight, then close connection.
 
 ## Producer Pattern (Outbox)
 
@@ -34,7 +34,7 @@ await prisma.$transaction(async (tx) => {
 // A separate relay process polls the outbox and publishes to the broker.
 ```
 
-The relay:
+Relay:
 
 ```typescript
 // workers/outbox-relay.ts
@@ -51,7 +51,7 @@ async function relayOnce() {
 }
 ```
 
-The `messageId` is the dedup key — consumers use it to drop duplicates if the relay republishes after a crash.
+`messageId` is dedup key — consumers use it to drop duplicates if relay republishes after crash.
 
 ## Consumer Pattern (Idempotent Inbox)
 
@@ -108,9 +108,9 @@ ch.consume('fulfillment.order.created', async (msg) => {
 
 Key points:
 - **`durable: true`** on exchanges and queues — survive broker restart.
-- **Always set `deadLetterExchange`** at queue creation; a queue without a DLX is a foot-gun.
+- **Always set `deadLetterExchange`** at queue creation; queue without DLX is foot-gun.
 - **`prefetch`** caps in-flight per consumer. Without it, one slow consumer hoards messages.
-- Use **quorum queues** in production for HA; classic mirrored queues are deprecated.
+- **Quorum queues** in production for HA; classic mirrored queues deprecated.
 
 ## Kafka (kafkajs)
 
@@ -136,11 +136,11 @@ await consumer.run({
 ```
 
 Key points:
-- **Partition key = the entity whose causality matters** (orderId, userId). Wrong key breaks ordering.
-- **Consumer group = one logical consumer.** Two instances in the same group share partitions; two instances in different groups each get every message.
-- **Don't disable auto-commit** unless you know exactly when you want to commit. If you do, commit *after* the side effect.
-- **Tune `sessionTimeout` and `heartbeatInterval`** — defaults assume fast handlers. Long handlers must heartbeat or use a separate processing thread.
-- Use **idempotent producer** (`idempotent: true`) and `acks: 'all'` for at-least-once with exactly-once-within-broker semantics.
+- **Partition key = entity whose causality matters** (orderId, userId). Wrong key breaks ordering.
+- **Consumer group = one logical consumer.** Two instances in same group share partitions; two instances in different groups each get every message.
+- **Don't disable auto-commit** unless you know exactly when to commit. If you do, commit *after* side effect.
+- **Tune `sessionTimeout` and `heartbeatInterval`** — defaults assume fast handlers. Long handlers must heartbeat or use separate processing thread.
+- **Idempotent producer** (`idempotent: true`) and `acks: 'all'` for at-least-once with exactly-once-within-broker semantics.
 
 ## AWS SQS (@aws-sdk/client-sqs)
 
@@ -174,11 +174,11 @@ async function poll() {
 ```
 
 Key points:
-- **Always use long polling** (`WaitTimeSeconds: 20`). Short polling is a billing anti-pattern.
+- **Always long polling** (`WaitTimeSeconds: 20`). Short polling is billing anti-pattern.
 - **Set `VisibilityTimeout` ≥ p99 handler latency.** Too short → duplicate processing; too long → slow retries.
-- **Configure a DLQ via redrive policy** with `maxReceiveCount` (typically 3–5).
-- **FIFO queues** for ordering: pay the throughput cost only when you need it.
-- For batch handlers in Lambda, return `batchItemFailures` so partial failures don't reprocess the whole batch.
+- **Configure DLQ via redrive policy** with `maxReceiveCount` (typically 3–5).
+- **FIFO queues** for ordering: pay throughput cost only when needed.
+- Batch handlers in Lambda: return `batchItemFailures` so partial failures don't reprocess whole batch.
 
 ## BullMQ (Redis-backed jobs)
 
@@ -204,31 +204,31 @@ new Worker('emails', async (job) => {
 ```
 
 Key points:
-- BullMQ is a **job queue**, not an event bus. Use it for unit-of-work tasks (send email, process upload), not for cross-service event distribution.
+- BullMQ is **job queue**, not event bus. Use for unit-of-work tasks (send email, process upload), not cross-service event distribution.
 - **`removeOnComplete` / `removeOnFail`** — without these, Redis fills up.
-- **`lockDuration`** must exceed your handler's worst-case latency or the job gets re-picked while still running.
-- **Failed jobs** stay in the failed set — wire alerting, not just hope.
+- **`lockDuration`** must exceed handler worst-case latency or job gets re-picked while still running.
+- **Failed jobs** stay in failed set — wire alerting, not just hope.
 
 ## Operational Concerns
 
-- **Connection management**: a single broker connection per process; multiplex with channels (RabbitMQ) or consumers (Kafka).
-- **Health checks**: `/healthz` should report broker connectivity. A consumer with a dead broker connection looks alive otherwise.
-- **Backpressure**: cap concurrency per consumer; never let unbounded promise fan-out drain the broker.
-- **Schema evolution**: treat message schemas as APIs. Add fields optionally; never remove or rename in place. Version the topic if you must break.
-- **Testing**: integration-test consumers against a real broker (testcontainers); unit-test handlers against a fake `BrokerMessage`.
+- **Connection management**: single broker connection per process; multiplex with channels (RabbitMQ) or consumers (Kafka).
+- **Health checks**: `/healthz` must report broker connectivity. Consumer with dead broker connection looks alive otherwise.
+- **Backpressure**: cap concurrency per consumer; never unbounded promise fan-out draining broker.
+- **Schema evolution**: treat message schemas as APIs. Add fields optionally; never remove or rename in place. Version topic if you must break.
+- **Testing**: integration-test consumers against real broker (testcontainers); unit-test handlers against fake `BrokerMessage`.
 
 ## Anti-Patterns
 
-- **`producer.send()` outside a transaction** with the DB write — split-brain on crash. Use the outbox.
+- **`producer.send()` outside transaction** with DB write — split-brain on crash. Use outbox.
 - **Catching all errors and acking** — silently drops poison messages. Let them go to DLQ.
-- **One mega-consumer** that handles every topic — couples deploys and noisy-neighbors latency.
+- **One mega-consumer** handling every topic — couples deploys, noisy-neighbors latency.
 - **Polling tight loop with no `WaitTimeSeconds`** — burns CPU and money.
-- **Treating Kafka like a queue** (one consumer group, no replay) — you're paying for a log you're not using; use SQS or RabbitMQ.
-- **No DLQ alerting** — DLQ that no one watches is data loss.
+- **Treating Kafka like queue** (one consumer group, no replay) — paying for log you're not using; use SQS or RabbitMQ.
+- **No DLQ alerting** — DLQ no one watches is data loss.
 
 ## Related
 
-- [event-sourcing.md](event-sourcing.md) — outbox/inbox patterns at the database level
-- [etl-pipelines.md](etl-pipelines.md) — batch ETL flows that complement event streams
-- the [`engineer`](../../../agents/engineer.md) agent — broker selection, delivery semantics, ordering
-- the [`security-reviewer`](../../../agents/security-reviewer.md) agent — broker authn/authz, TLS, ACLs
+- [event-sourcing.md](event-sourcing.md) — outbox/inbox patterns at database level
+- [etl-pipelines.md](etl-pipelines.md) — batch ETL flows complementing event streams
+- [`engineer`](../../../agents/engineer.md) agent — broker selection, delivery semantics, ordering
+- [`security-reviewer`](../../../agents/security-reviewer.md) agent — broker authn/authz, TLS, ACLs

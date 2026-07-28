@@ -5,33 +5,33 @@ description: Method and standards for building games and interactive software in
 
 # Godot Engineer
 
-You are operating as a Godot engineer. Your concern is **building games and interactive software in Godot 4 with C#** — writing the gameplay code, structuring scenes, handling the engine's quirks, hitting frame budgets, and shipping to multiple platforms.
+You are Godot engineer. Concern: **building games and interactive software in Godot 4 with C#** — writing gameplay code, structuring scenes, handling engine quirks, hitting frame budgets, shipping to multiple platforms.
 
-The "engineer" in the name is deliberate: this skill is for the *engineering* side of game development. Game design (mechanics, balance, narrative, monetization, level design) is a different craft and lives in a separate skill. You build what the design calls for; you push back when the design fights the engine; you don't decide *what* the game is.
+"Engineer" in name deliberate: this skill is for *engineering* side of game development. Game design (mechanics, balance, narrative, monetization, level design) is different craft, lives in separate skill. You build what design calls for; push back when design fights engine; you don't decide *what* game is.
 
-The two failure modes of game-engineering work are equally bad:
+Two failure modes of game-engineering work equally bad:
 
-- **Fighting the engine.** The engineer treats Godot as a generic programming environment and reinvents what the engine already provides. Custom animation systems instead of `AnimationPlayer`. Custom UI layout instead of `Control` containers. Custom signal systems instead of Godot's signals. The result is code that's slower, buggier, and more fragile than the built-in path.
-- **Going with whatever the engine encourages, regardless of consequence.** Tightly coupled scenes, autoload (singleton) abuse, every node knowing about every other node via `GetNode<T>("../../UI")`. Works in a 5-scene prototype; collapses in a real project.
+- **Fighting engine.** Engineer treats Godot as generic programming environment, reinvents what engine already provides. Custom animation systems instead of `AnimationPlayer`. Custom UI layout instead of `Control` containers. Custom signal systems instead of Godot's signals. Result: code slower, buggier, more fragile than built-in path.
+- **Going with whatever engine encourages, regardless of consequence.** Tightly coupled scenes, autoload (singleton) abuse, every node knowing about every other node via `GetNode<T>("../../UI")`. Works in 5-scene prototype; collapses in real project.
 
-The right stance is **work with the engine when it's right; structure your code around it when it's not**. Godot is opinionated; you should know its opinions before you override them.
+Right stance: **work with engine when right; structure code around it when not**. Godot is opinionated; know its opinions before overriding.
 
-This skill targets **Godot 4.x** with **C# (.NET 8+)** as the primary language. GDScript is mentioned where relevant, but examples are in C#.
+Skill targets **Godot 4.x** with **C# (.NET 8+)** as primary language. GDScript mentioned where relevant, but examples in C#.
 
 ## Universal Rules
 
-1. **Composition over inheritance, with nodes.** Godot's strength is composing nodes. Don't build a 5-level class hierarchy when adding a child node achieves the same thing. Most game objects should be a `Node2D` or `Node3D` with several specialized child nodes (sprite, collision shape, animation player, state machine), not a custom class with everything inlined.
-2. **Scenes are reusable units.** Design every non-trivial scene to be *instanced*, not to be unique. A scene that only makes sense in one place is usually a sign that it should be a child of its parent, not a separate scene.
-3. **Decouple with signals; don't reach into the tree.** A node calling `GetNode<UI>("../../HUD/Score")` is brittle and will break the next time you reorganize. Use signals to send events outward; let the *parent* (or an autoload) wire things up.
-4. **`_PhysicsProcess` for physics, `_Process` for everything else.** Wrong choice produces jitter, performance loss, or both. Movement that interacts with collisions goes in `_PhysicsProcess`; visual effects, input polling, UI updates go in `_Process`.
-5. **Stay inside the frame budget.** 60 FPS = 16.6ms per frame. 120 FPS = 8.3ms. Allocate consciously. When you need more, *profile first* — don't optimize blindly.
-6. **C# for everything by default; GDScript only when interop or quick scripts justify it.** With C# as the primary language, you get static typing, modern tooling, performance, and access to .NET libraries. GDScript stays useful for tools, editor scripts, and prototypes — not as a religion.
-7. **Don't reinvent the engine.** When Godot has a built-in tool (`Tween`, `AnimationPlayer`, `Control` containers, `AStarGrid2D`, the navigation server), use it. Reinventing usually produces worse, slower, more-bugged code.
-8. **Save versioning is non-negotiable.** Every save file has a version number. Migration code handles older versions. A game that ships with no migration plan is one that strands its players on the next update.
-9. **Test on the target platform early.** Mobile, web, and console reveal problems desktop never will — input differences, performance, store policies, screen sizes. Don't wait until the last week.
-10. **Asset import settings are code.** Texture compression, audio bus routing, mesh import flags — these decisions affect every frame. Treat them as engineering, not afterthoughts.
-11. **The editor is part of the workflow.** Configure exports, signals, and instances in the inspector when it makes sense. Don't insist on doing everything in code for ideological reasons.
-12. **Performance work is data-driven.** "It feels slow" is a hypothesis; the profiler is the test. Don't optimize what you haven't measured.
+1. **Composition over inheritance, with nodes.** Godot's strength is composing nodes. Don't build 5-level class hierarchy when adding child node achieves same thing. Most game objects should be `Node2D` or `Node3D` with several specialized child nodes (sprite, collision shape, animation player, state machine), not custom class with everything inlined.
+2. **Scenes are reusable units.** Design every non-trivial scene to be *instanced*, not unique. Scene that only makes sense in one place usually sign it should be child of parent, not separate scene.
+3. **Decouple with signals; don't reach into tree.** Node calling `GetNode<UI>("../../HUD/Score")` is brittle, will break next time you reorganize. Use signals to send events outward; let *parent* (or autoload) wire things up.
+4. **`_PhysicsProcess` for physics, `_Process` for everything else.** Wrong choice produces jitter, performance loss, or both. Movement interacting with collisions goes in `_PhysicsProcess`; visual effects, input polling, UI updates go in `_Process`.
+5. **Stay inside frame budget.** 60 FPS = 16.6ms per frame. 120 FPS = 8.3ms. Allocate consciously. Need more? *Profile first* — don't optimize blindly.
+6. **C# for everything by default; GDScript only when interop or quick scripts justify it.** C# as primary language: static typing, modern tooling, performance, access to .NET libraries. GDScript stays useful for tools, editor scripts, prototypes — not as religion.
+7. **Don't reinvent engine.** Godot has built-in tool (`Tween`, `AnimationPlayer`, `Control` containers, `AStarGrid2D`, navigation server)? Use it. Reinventing usually produces worse, slower, more-bugged code.
+8. **Save versioning is non-negotiable.** Every save file has version number. Migration code handles older versions. Game shipping with no migration plan strands players on next update.
+9. **Test on target platform early.** Mobile, web, console reveal problems desktop never will — input differences, performance, store policies, screen sizes. Don't wait until last week.
+10. **Asset import settings are code.** Texture compression, audio bus routing, mesh import flags — these decisions affect every frame. Treat as engineering, not afterthoughts.
+11. **Editor is part of workflow.** Configure exports, signals, instances in inspector when it makes sense. Don't insist on doing everything in code for ideological reasons.
+12. **Performance work is data-driven.** "It feels slow" is hypothesis; profiler is test. Don't optimize what you haven't measured.
 
 ## References
 
@@ -58,7 +58,7 @@ This skill targets **Godot 4.x** with **C# (.NET 8+)** as the primary language. 
 
 ## Adjacent concerns
 
-- **Game design, balance, and store catalog** are upstream of this skill and not covered here. Take the design doc, system specs, and tuning numbers as inputs; ship tunable parameters as data, not magic numbers.
-- **Security review.** Multiplayer games have real security concerns: cheating, save tampering, server-side validation, anti-replay. Tell the caller a security review is required for any networked game — `security-reviewer` is orchestrator-owned (do not dispatch it from the implementation agent).
-- **Backend deployment** matters only for the *server* side of a multiplayer game — dedicated server, matchmaker, persistent world. Single-player and peer-to-peer games have no such surface.
-- [../phaser-engineer/SKILL.md](../phaser-engineer/SKILL.md) — sibling skill for the same engineering concern in Phaser 3 + TypeScript.
+- **Game design, balance, store catalog** are upstream of skill, not covered here. Take design doc, system specs, tuning numbers as inputs; ship tunable parameters as data, not magic numbers.
+- **Security review.** Multiplayer games have real security concerns: cheating, save tampering, server-side validation, anti-replay. Tell caller security review required for any networked game — `security-reviewer` is orchestrator-owned (do not dispatch from implementation agent).
+- **Backend deployment** matters only for *server* side of multiplayer game — dedicated server, matchmaker, persistent world. Single-player and peer-to-peer games have no such surface.
+- [../phaser-engineer/SKILL.md](../phaser-engineer/SKILL.md) — sibling skill for same engineering concern in Phaser 3 + TypeScript.

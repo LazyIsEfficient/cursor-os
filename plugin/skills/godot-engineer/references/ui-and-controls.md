@@ -1,33 +1,33 @@
 # UI and Controls
 
-Godot's UI system is one of its strengths and one of its most-misunderstood subsystems. The `Control` node, with its anchors and containers, is powerful enough to build complex interfaces — and confusing enough that many engineers spend hours fighting it before learning the patterns.
+Godot's UI system is one of its strengths and one of its most-misunderstood subsystems. `Control` node, with anchors and containers, powerful enough to build complex interfaces — and confusing enough that many engineers spend hours fighting it before learning patterns.
 
-This file is the practical guide to building UI in Godot 4 with C#. The most important thing to internalize: **don't fight the engine**. Godot's container system is good, the anchor system is good, and reinventing them is almost always wrong.
+File is practical guide to building UI in Godot 4 with C#. Most important thing to internalize: **don't fight the engine**. Godot's container system is good, anchor system is good, reinventing them almost always wrong.
 
 ## The Control System
 
-A `Control` is the base class for all UI elements: buttons, labels, text inputs, panels, sliders, etc. It has properties most other nodes don't:
+`Control` is base class for all UI elements: buttons, labels, text inputs, panels, sliders, etc. Has properties most other nodes don't:
 
 - **Position** and **size** in screen space (or relative to parent)
-- **Anchors** (how it's positioned relative to its parent)
-- **Margins** / **offsets** (the actual position computed from anchors and absolute offsets)
-- **Min size** (minimum size the layout system will give it)
+- **Anchors** (how it's positioned relative to parent)
+- **Margins** / **offsets** (actual position computed from anchors and absolute offsets)
+- **Min size** (minimum size layout system will give it)
 - **Layout direction** (LTR/RTL for internationalization)
 - **Theme** (visual styling)
 - **Focus** (for keyboard/gamepad navigation)
 - **Mouse filter** (whether it intercepts mouse events)
 
-The system is built around the idea that you can lay out UI by:
+System built around idea you can lay out UI by:
 
-1. Setting **anchors** that describe where in the parent the control sticks to
-2. Setting **margins** that describe the offset from those anchors
-3. Or, using **containers** (described below) that lay out their children automatically
+1. Setting **anchors** describing where in parent the control sticks to
+2. Setting **margins** describing offset from those anchors
+3. Or, using **containers** (described below) laying out children automatically
 
-The first approach is for free-floating UI elements; the second is for grids, lists, and structured layouts. Both have their place.
+First approach for free-floating UI elements; second for grids, lists, structured layouts. Both have place.
 
 ## Anchors and Margins
 
-The anchor system is best understood with a picture, but here's the verbal version: every `Control` has four anchor values (left, top, right, bottom), each between 0 and 1. They describe what *fraction* of the parent the control's edges are anchored to.
+Anchor system best understood with picture, but verbal version: every `Control` has four anchor values (left, top, right, bottom), each between 0 and 1. Describe what *fraction* of parent the control's edges anchored to.
 
 | Anchors | What it does |
 |---|---|
@@ -37,9 +37,9 @@ The anchor system is best understood with a picture, but here's the verbal versi
 | `left=0.5, top=0.5, right=0.5, bottom=0.5` | Centered point; size is fixed |
 | `left=0, top=0, right=1, bottom=0` | Stretches horizontally at the top |
 
-The **Layout** menu in the inspector (the icon at the top of the Control inspector) has presets: "Center", "Top Left", "Full Rect", "Center Top", etc. These set the anchors for you. **Use the presets** unless you have a specific reason not to.
+**Layout** menu in inspector (icon at top of Control inspector) has presets: "Center", "Top Left", "Full Rect", "Center Top", etc. Set anchors for you. **Use presets** unless specific reason not to.
 
-The **margins** (now called **offsets** in Godot 4) are the absolute pixel offsets from the anchor point. Anchors `(0, 0, 0, 0)` with offsets `(50, 50, 100, 80)` produces a control 50 pixels from the top-left, 50 pixels wide, 30 pixels tall.
+**Margins** (now called **offsets** in Godot 4) are absolute pixel offsets from anchor point. Anchors `(0, 0, 0, 0)` with offsets `(50, 50, 100, 80)` produces control 50 pixels from top-left, 50 pixels wide, 30 pixels tall.
 
 In code:
 
@@ -50,11 +50,11 @@ control.Position = new Vector2(0, 0);
 control.Size = new Vector2(200, 100);
 ```
 
-`SetAnchorsPreset` is the equivalent of clicking the layout preset in the editor.
+`SetAnchorsPreset` is equivalent of clicking layout preset in editor.
 
 ## Containers
 
-A `Container` is a `Control` that lays out its children automatically. The container types:
+`Container` is `Control` laying out children automatically. Container types:
 
 | Container | Layout |
 |---|---|
@@ -70,9 +70,9 @@ A `Container` is a `Control` that lays out its children automatically. The conta
 | **`TabContainer`** | Tabbed interface |
 | **`HFlowContainer` / `VFlowContainer`** | Children that wrap |
 
-When you put a `Control` inside a container, the container takes over its layout. You don't set anchors or position — you set `Custom Minimum Size`, and the container does the rest.
+Put `Control` inside container → container takes over its layout. Don't set anchors or position — set `Custom Minimum Size`, container does rest.
 
-A typical menu:
+Typical menu:
 
 ```
 PauseMenu (CanvasLayer)
@@ -86,44 +86,44 @@ PauseMenu (CanvasLayer)
             └── QuitButton (Button)
 ```
 
-This produces a centered panel with a column of buttons, regardless of screen size. No manual positioning. The `VBoxContainer` lays out the buttons; the `PanelContainer` gives them a background; the `CenterContainer` centers the whole thing.
+Produces centered panel with column of buttons, regardless of screen size. No manual positioning. `VBoxContainer` lays out buttons; `PanelContainer` gives background; `CenterContainer` centers whole thing.
 
-The single most useful UI insight: **stop manually positioning things; use containers**.
+Single most useful UI insight: **stop manually positioning things; use containers**.
 
 ## Size Flags
 
-When a child is in a container, it has **Size Flags** that control how the container treats it:
+Child in container has **Size Flags** controlling how container treats it:
 
-- **Fill** — fill the available space
-- **Expand** — claim a share of leftover space
-- **Shrink Center / Begin / End** — alignment within the cell
+- **Fill** — fill available space
+- **Expand** — claim share of leftover space
+- **Shrink Center / Begin / End** — alignment within cell
 
-For example, in an `HBoxContainer` with a label and a button, by default they take their minimum size and sit on the left. If you want the label to grow and the button to stay tight, set the label's `Horizontal Size Flags` to `Fill | Expand` and leave the button at default.
+Example: `HBoxContainer` with label and button, default they take minimum size, sit on left. Want label to grow, button stay tight? Set label's `Horizontal Size Flags` to `Fill | Expand`, leave button at default.
 
-Size flags are confusing at first; experiment with them in the editor to see the effect.
+Size flags confusing at first; experiment in editor to see effect.
 
 ## The Theme System
 
-The `Theme` system is Godot's CSS equivalent — a way to style controls consistently across the project.
+`Theme` system is Godot's CSS equivalent — way to style controls consistently across project.
 
 ### Setting up a theme
 
-1. Create a new `Theme` resource (`Resource → New Theme`).
-2. In the theme editor, add a control type (e.g., `Button`).
+1. Create new `Theme` resource (`Resource → New Theme`).
+2. In theme editor, add control type (e.g., `Button`).
 3. Set styles for each state (Normal, Hovered, Pressed, Disabled, Focus).
-4. Save the theme to disk.
-5. Apply it to the project in **Project Settings → GUI → Theme → Custom**, or to specific scenes by setting the `Theme` property of a root `Control`.
+4. Save theme to disk.
+5. Apply to project in **Project Settings → GUI → Theme → Custom**, or to specific scenes by setting `Theme` property of root `Control`.
 
 ### Theme overrides
 
-Individual controls can override the theme for specific properties:
+Individual controls can override theme for specific properties:
 
 ```csharp
 var button = GetNode<Button>("MyButton");
 button.AddThemeColorOverride("font_color", Colors.Red);
 ```
 
-Use overrides sparingly. They're per-instance and don't update when the theme changes.
+Use overrides sparingly. Per-instance; don't update when theme changes.
 
 ### What goes in a theme
 
@@ -134,16 +134,16 @@ Use overrides sparingly. They're per-instance and don't update when the theme ch
 - **Styleboxes** — backgrounds, borders, hover effects
 - **Icons** — control-specific icons
 
-A well-organized theme is what separates a Godot game that looks polished from one that looks like raw default UI.
+Well-organized theme separates Godot game looking polished from one looking like raw default UI.
 
 ## StyleBox
 
-A `StyleBox` is a styled rectangle used as a background for controls. The two main types:
+`StyleBox` is styled rectangle used as background for controls. Two main types:
 
 - **`StyleBoxFlat`** — flat color with optional border and corner radius. Most common.
-- **`StyleBoxTexture`** — textured background using a 9-slice. Good for stylized UI.
+- **`StyleBoxTexture`** — textured background using 9-slice. Good for stylized UI.
 
-In the theme editor, you assign a `StyleBox` to each state of each control type. A button's "Normal" state might have a dark gray `StyleBoxFlat`; the "Hovered" state, a slightly lighter one; the "Pressed" state, darker again.
+Theme editor: assign `StyleBox` to each state of each control type. Button's "Normal" state might have dark gray `StyleBoxFlat`; "Hovered" state slightly lighter; "Pressed" state darker again.
 
 ```csharp
 // Creating a StyleBoxFlat in code (rarely needed; usually done in the editor)
@@ -176,7 +176,7 @@ private void OnButtonPressed()
 }
 ```
 
-`Button` has variants: `TextureButton` (uses textures for each state), `CheckBox`, `CheckButton`, `OptionButton` (dropdown), `MenuButton` (dropdown menu).
+`Button` has variants: `TextureButton` (textures for each state), `CheckBox`, `CheckButton`, `OptionButton` (dropdown), `MenuButton` (dropdown menu).
 
 ### Labels
 
@@ -185,7 +185,7 @@ var label = GetNode<Label>("ScoreLabel");
 label.Text = "Score: 100";
 ```
 
-For rich text (colors, font sizes, links within the text), use `RichTextLabel` with BBCode:
+Rich text (colors, font sizes, links within text): `RichTextLabel` with BBCode:
 
 ```csharp
 var label = GetNode<RichTextLabel>("RichLabel");
@@ -231,26 +231,26 @@ healthBar.MaxValue = 100;
 healthBar.Value = currentHealth;
 ```
 
-For a custom-styled health bar (gradient, animated, etc.), often a `TextureProgressBar` is the right choice.
+Custom-styled health bar (gradient, animated, etc.): often `TextureProgressBar` right choice.
 
 ## Focus and Keyboard Navigation
 
-Godot's `Control` system has built-in focus management. With keyboard or controller, the player can `Tab` between focusable controls, press `Enter` to activate, etc. This works automatically — but it requires your UI to be set up correctly.
+Godot's `Control` system has built-in focus management. Keyboard or controller: player can `Tab` between focusable controls, press `Enter` to activate, etc. Works automatically — but requires UI set up correctly.
 
-The `ui_*` actions handle navigation by default:
+`ui_*` actions handle navigation by default:
 
-- `ui_focus_next` (Tab) — focus the next control
-- `ui_focus_prev` (Shift+Tab) — focus the previous control
-- `ui_accept` (Enter, Space) — activate the focused control
+- `ui_focus_next` (Tab) — focus next control
+- `ui_focus_prev` (Shift+Tab) — focus previous control
+- `ui_accept` (Enter, Space) — activate focused control
 - `ui_cancel` (Escape) — back / dismiss
 - `ui_left`, `ui_right`, `ui_up`, `ui_down` — directional navigation
 
 Each control has **Focus** properties:
 
-- **Focus Mode** — None, Click, All. "All" means it can be focused via Tab.
-- **Focus Neighbor** properties (Top, Left, Bottom, Right) — explicitly set the next focusable control in each direction.
+- **Focus Mode** — None, Click, All. "All" means focusable via Tab.
+- **Focus Neighbor** properties (Top, Left, Bottom, Right) — explicitly set next focusable control in each direction.
 
-For controller-friendly menus, set focus neighbors so directional input always lands somewhere sensible.
+Controller-friendly menus: set focus neighbors so directional input always lands somewhere sensible.
 
 ```csharp
 public override void _Ready()
@@ -259,11 +259,11 @@ public override void _Ready()
 }
 ```
 
-`GrabFocus()` puts focus on a control programmatically. Common use: when a menu opens, focus the first item.
+`GrabFocus()` puts focus on control programmatically. Common use: menu opens → focus first item.
 
 ## Connecting Game Logic to UI
 
-A common pattern: the game state changes; the UI should update. The naive approach is for the game state to know about the UI and update it directly. The better approach is signals.
+Common pattern: game state changes; UI should update. Naive approach: game state knows about UI, updates it directly. Better approach: signals.
 
 ```csharp
 // PlayerHealth.cs
@@ -307,11 +307,11 @@ public partial class HUD : CanvasLayer
 }
 ```
 
-The `PlayerHealth` doesn't know the HUD exists. The HUD subscribes to changes. Either can be replaced or removed without touching the other.
+`PlayerHealth` doesn't know HUD exists. HUD subscribes to changes. Either replaceable or removable without touching other.
 
 ## Custom Drawing
 
-Sometimes you need a `Control` that draws something custom — a radar display, a custom progress visualization, a non-standard widget. For this, override `_Draw`:
+Sometimes need `Control` drawing something custom — radar display, custom progress visualization, non-standard widget. Override `_Draw`:
 
 ```csharp
 public partial class CustomBar : Control
@@ -334,45 +334,45 @@ public partial class CustomBar : Control
 }
 ```
 
-`_Draw` is only called when `QueueRedraw()` is called, so it's not running every frame for nothing. The available draw methods include `DrawRect`, `DrawCircle`, `DrawLine`, `DrawTexture`, `DrawString`, `DrawPolygon`, etc.
+`_Draw` only called when `QueueRedraw()` called — not running every frame for nothing. Available draw methods: `DrawRect`, `DrawCircle`, `DrawLine`, `DrawTexture`, `DrawString`, `DrawPolygon`, etc.
 
 ## Resolution and Scaling
 
-A game needs to look right on multiple screen sizes. Godot supports this via project-level stretch settings.
+Game needs to look right on multiple screen sizes. Godot supports via project-level stretch settings.
 
 In **Project Settings → Display → Window**:
 
-- **Viewport Width / Height** — your "base" resolution. Pick something appropriate for your art.
+- **Viewport Width / Height** — your "base" resolution. Pick appropriate for your art.
 - **Stretch Mode**:
-  - `disabled` — no scaling; UI scales with the window
-  - `canvas_items` — UI scales smoothly to fit the window (vector-friendly)
+  - `disabled` — no scaling; UI scales with window
+  - `canvas_items` — UI scales smoothly to fit window (vector-friendly)
   - `viewport` — render at base resolution and scale (pixel-art-friendly, integer scaling possible)
 - **Stretch Aspect**:
   - `ignore` — stretch to fit; can distort
   - `keep` — letterbox or pillarbox to maintain aspect ratio
-  - `keep_width` / `keep_height` — extend in the other dimension
+  - `keep_width` / `keep_height` — extend in other dimension
   - `expand` — extend in both dimensions; UI must handle variable size
 
-For a typical 2D game with a designed resolution (say, 1920x1080) and want it to scale to other resolutions: **stretch_mode = `canvas_items`, aspect = `keep`**.
+Typical 2D game with designed resolution (say, 1920x1080), want scaling to other resolutions: **stretch_mode = `canvas_items`, aspect = `keep`**.
 
-For a pixel art game at 320x180: **stretch_mode = `viewport`, aspect = `keep`**.
+Pixel art game at 320x180: **stretch_mode = `viewport`, aspect = `keep`**.
 
 ## Internationalization (i18n)
 
-Godot has built-in i18n support via `tr()` (in GDScript) or `Tr()` (in C#):
+Godot has built-in i18n support via `tr()` (GDScript) or `Tr()` (C#):
 
 ```csharp
 label.Text = Tr("MAIN_MENU_PLAY");
 ```
 
-The translation key `"MAIN_MENU_PLAY"` is looked up in the project's translation files (CSV or PO format). You set the active locale via `TranslationServer.SetLocale("fr")`.
+Translation key `"MAIN_MENU_PLAY"` looked up in project's translation files (CSV or PO format). Set active locale via `TranslationServer.SetLocale("fr")`.
 
-For UI that supports multiple languages:
+UI supporting multiple languages:
 
-- **Use translation keys, not literal strings.** Even if you only ship in English now.
-- **Allow space for translation expansion.** German is 30% longer than English; some languages double the length. Don't design buttons that fit "OK" exactly.
-- **Right-to-left layout support.** `Control` has a `Layout Direction` property. Some languages need this set.
-- **Test with a "long string" locale** during development to catch overflow issues.
+- **Use translation keys, not literal strings.** Even if only shipping English now.
+- **Allow space for translation expansion.** German 30% longer than English; some languages double length. Don't design buttons fitting "OK" exactly.
+- **Right-to-left layout support.** `Control` has `Layout Direction` property. Some languages need this set.
+- **Test with "long string" locale** during development to catch overflow issues.
 
 ## Common UI Patterns
 
@@ -426,24 +426,24 @@ Settings (PanelContainer)
 
 ## Anti-Patterns
 
-- **Manually positioning everything.** Containers exist for a reason.
-- **Hardcoding screen sizes.** Use anchors, containers, and the stretch settings.
-- **Reinventing the theme system.** Use Godot's; it covers most cases.
-- **Reinventing controls** (custom buttons, custom labels) when the built-ins would do.
-- **Per-instance theme overrides everywhere** instead of theme types. The theme becomes irrelevant.
+- **Manually positioning everything.** Containers exist for reason.
+- **Hardcoding screen sizes.** Use anchors, containers, stretch settings.
+- **Reinventing theme system.** Use Godot's; covers most cases.
+- **Reinventing controls** (custom buttons, custom labels) when built-ins would do.
+- **Per-instance theme overrides everywhere** instead of theme types. Theme becomes irrelevant.
 - **Plain text strings** instead of translation keys. Ships in one language only.
 - **Mixing units.** Some controls in pixels, others in percentages. Confusing layout.
-- **No focus mode for controller-friendly menus.** Player can't navigate with a gamepad.
-- **`MouseFilter` set to `Pass` on big invisible panels.** They block clicks to the controls beneath.
+- **No focus mode for controller-friendly menus.** Player can't navigate with gamepad.
+- **`MouseFilter` set to `Pass` on big invisible panels.** They block clicks to controls beneath.
 - **`MouseFilter` set to `Stop` on labels that should be clickable through.** They eat clicks meant for buttons.
-- **UI in the world space, not in a `CanvasLayer`.** UI scrolls with the camera.
-- **Multiple `CanvasLayer`s with the same layer index.** Order is unpredictable.
+- **UI in world space, not in `CanvasLayer`.** UI scrolls with camera.
+- **Multiple `CanvasLayer`s with same layer index.** Order unpredictable.
 - **`get_node` paths in UI scripts.** Use `[Export]` references or `%UniqueName`.
 - **Animating UI in `_PhysicsProcess`.** Use `_Process` or `Tween`.
-- **Updating UI from `_Process`** when an event would do. Polling wastes work.
-- **Tightly coupling game logic to UI.** Use signals; game state shouldn't know about the HUD.
-- **Custom drawing every frame** without `QueueRedraw`. `_Draw` is only called when needed.
-- **Long strings** that overflow buttons in other languages. Test with longer text.
+- **Updating UI from `_Process`** when event would do. Polling wastes work.
+- **Tightly coupling game logic to UI.** Use signals; game state shouldn't know about HUD.
+- **Custom drawing every frame** without `QueueRedraw`. `_Draw` only called when needed.
+- **Long strings** overflowing buttons in other languages. Test with longer text.
 
 ## Related
 
@@ -451,5 +451,5 @@ Settings (PanelContainer)
 - [signals-and-events.md](signals-and-events.md) — connecting game state to UI via signals
 - [animation-and-tweens.md](animation-and-tweens.md) — animating UI elements
 - [input-and-controls.md](input-and-controls.md) — input handling in UI
-- ux-design — broader UX principles that apply to game UI
+- ux-design — broader UX principles applying to game UI
 - [godot-anti-patterns.md](godot-anti-patterns.md) — broader patterns to avoid

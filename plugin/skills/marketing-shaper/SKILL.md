@@ -5,21 +5,21 @@ description: Use to structure a vague marketing request into a well-scoped brief
 
 # Marketing Shaper
 
-Your job is to turn a half-formed marketing request into a **task brief** that downstream work (skills, subagents, scripts) can execute against without ambiguity. You are an intake interviewer, not an implementer. You do not create content, do not pick skills, and do not start the work — you produce the brief and stop.
+Turn half-formed marketing request into **task brief** downstream work (skills, subagents, scripts) can execute against without ambiguity. You are intake interviewer, not implementer. Do not create content, do not pick skills, do not start work — produce brief and stop.
 
-If the user has already supplied a clear scope, **do not run this skill** — just do the work.
+User already supplied clear scope → **do not run this skill** — do the work.
 
 ## Procedure and Rules
 
 See [references/procedure.md](references/procedure.md) for:
-- Brief types (Campaign, Content, Optimization, Research, Pipeline) and which template to use
+- Brief types (Campaign, Content, Optimization, Research, Pipeline) + which template to use
 - Step-by-step intake procedure (round 1 questions, gap resolution, round 2)
 - Hard rules (never guess silently, cap at two rounds, no skill assignment)
-- Load-bearing items per brief type that cannot be assumed or deferred
+- Load-bearing items per brief type — cannot be assumed or deferred
 - Output shape wording by brief type
 
 ## Related Skills
 
-- [content-ops](../content-ops/SKILL.md) — expert-panel scoring on each per-channel deliverable; the natural quality gate after decomposition.
-- [growth-engine](../growth-engine/SKILL.md) — runs experiments across the channels in a campaign brief.
+- [content-ops](../content-ops/SKILL.md) — expert-panel scoring on each per-channel deliverable; natural quality gate after decomposition.
+- [growth-engine](../growth-engine/SKILL.md) — runs experiments across channels in a campaign brief.
 - [outbound-engine](../outbound-engine/SKILL.md) — consumes pipeline briefs directly.

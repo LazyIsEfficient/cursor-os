@@ -1,25 +1,25 @@
 # Probe table — the contract
 
-One row per rule. The investigator probes ONLY the mechanically-checkable rules
-(top section). It defers structural rules to the repository validator (Tier 0)
-and judgment rules to human or reviewer-agent review (N-A). The probe is exact —
-`scripts/library-probe.sh` implements precisely these checks; if the script and
-this table disagree, the table is the spec and the script is the bug.
+One row per rule. Investigator probes ONLY mechanically-checkable rules
+(top section). Defers structural rules to repository validator (Tier 0),
+judgment rules to human or reviewer-agent review (N-A). Probe is exact —
+`scripts/library-probe.sh` implements precisely these checks; if script and
+this table disagree, table is spec, script is bug.
 
-The tier on each row is a FACT about the check's reproducibility (per the
-`evidence-review-tiers` rule), not a judgment and not a gate. Every VIOLATES is a
-candidate to ratchet *down* into the repository validator.
+Tier on each row is FACT about check's reproducibility (per
+`evidence-review-tiers` rule), not judgment, not gate. Every VIOLATES is
+candidate to ratchet *down* into repository validator.
 
 ## Surface keys
 
 - **skills** = `plugin/skills/*/SKILL.md`
 - **agents** = `plugin/agents/*.md`
 - **rules** = `plugin/rules/*.mdc`
-- **md-fm** = the YAML-ish frontmatter block of any of the above
+- **md-fm** = YAML-ish frontmatter block of any of the above
 
-Note that this repository's frontmatter parser is line-based, not a YAML parser:
-one `key: value` per physical line, no empty values, no duplicate keys, and no
-multi-line or block-scalar values. A probe that assumes real YAML will be wrong
+Note: this repository's frontmatter parser is line-based, not YAML parser:
+one `key: value` per physical line, no empty values, no duplicate keys, no
+multi-line or block-scalar values. Probe assuming real YAML will be wrong
 about this repository.
 
 ## Mechanically-probeable rules — investigator owns
@@ -34,29 +34,29 @@ about this repository.
 
 ### Notes on the probes
 
-- **P1** is a local readability cap, not a validator rule. Nothing in the
-  repository validator bounds description length, so drift here is invisible to
-  Tier 0 — which is exactly why the investigator measures it.
-- **P3** scans the frontmatter block only, never the body — angle brackets in
-  body prose are legal. Because this repository forbids multi-line frontmatter
-  values outright, a surviving `<` or `>` is always real content, never a YAML
-  block-scalar indicator. The probe still strips a trailing indicator
-  defensively so that a malformed file reports the injected text rather than the
+- **P1** is local readability cap, not validator rule. Nothing in
+  repository validator bounds description length, so drift here invisible to
+  Tier 0 — exactly why investigator measures it.
+- **P3** scans frontmatter block only, never body — angle brackets in
+  body prose legal. Repository forbids multi-line frontmatter
+  values outright → surviving `<` or `>` always real content, never YAML
+  block-scalar indicator. Probe still strips trailing indicator
+  defensively so malformed file reports injected text rather than
   indicator.
-- **P4** duplicates a Tier 0 assertion on purpose. The orchestration contract
-  test already fails the build above 99 lines; the investigator reports the
-  measured count so a skill creeping toward the cap is visible before it breaks.
-  Counts physical lines of `SKILL.md` only — `references/` and `assets/` are
+- **P4** duplicates Tier 0 assertion on purpose. Orchestration contract
+  test already fails build above 99 lines; investigator reports
+  measured count so skill creeping toward cap visible before it breaks.
+  Counts physical lines of `SKILL.md` only — `references/` + `assets/`
   uncapped.
-- **P5** flags a runnable sitting directly in the skill folder. Files under
-  `scripts/`, `references/`, or `assets/` are correctly placed and never
+- **P5** flags runnable sitting directly in skill folder. Files under
+  `scripts/`, `references/`, or `assets/` correctly placed, never
   flagged.
 
 ## Tier 0 rules — defer to the repository validator
 
-The investigator does NOT re-implement these. The script runs `npm run validate`
-and reports its exit as a single `TIER0-validate` row. A nonzero exit is a
-deterministic VIOLATES against whichever of these the validator names.
+Investigator does NOT re-implement these. Script runs `npm run validate`,
+reports its exit as single `TIER0-validate` row. Nonzero exit =
+deterministic VIOLATES against whichever of these validator names.
 
 | Rule | Applies-to | Probe | Tier | Owner |
 |---|---|---|---|---|
@@ -70,7 +70,7 @@ deterministic VIOLATES against whichever of these the validator names.
 
 ## Judgment rules — N-A
 
-These are not mechanically probeable. The investigator emits `N-A` and never
+Not mechanically probeable. Investigator emits `N-A`, never
 guesses.
 
 | Rule | Applies-to | Why N-A |
@@ -84,7 +84,7 @@ guesses.
 ## Per-surface applicability summary
 
 - **skills**: P1, P2, P3, P4, P5 (mechanical) + Tier 0 + judgment N-A.
-- **agents**: P1, P2, P3 (mechanical) + Tier 0 + judgment N-A. P4 and P5 are
+- **agents**: P1, P2, P3 (mechanical) + Tier 0 + judgment N-A. P4 + P5
   skills-only.
-- **rules**: P1, P3 (mechanical) + Tier 0. Rule files carry `alwaysApply` and
-  `description` but no `name` key, so P2 is N-A there.
+- **rules**: P1, P3 (mechanical) + Tier 0. Rule files carry `alwaysApply` +
+  `description` but no `name` key → P2 N-A there.

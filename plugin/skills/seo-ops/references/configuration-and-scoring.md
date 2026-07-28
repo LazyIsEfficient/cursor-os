@@ -2,7 +2,7 @@
 
 ## Configuration
 
-All scripts read from environment variables. Copy `.env.example` to `.env` and fill in your values.
+All scripts read environment variables. Copy `.env.example` to `.env`, fill in values.
 
 Required:
 - `GSC_SITE_URL` — your Google Search Console property URL
@@ -10,7 +10,7 @@ Required:
 - `YOUR_DOMAIN` — your root domain
 
 Optional:
-- `AHREFS_TOKEN` — enables Ahrefs keyword data and competitor analysis
+- `AHREFS_TOKEN` — enables Ahrefs keyword data + competitor analysis
 - `COMPETITORS` — comma-separated competitor domains
 - `BRAVE_API_KEY` — enables X/Twitter trend scanning
 - `CONTENT_VERTICALS` — comma-separated topics for trend relevance scoring
@@ -18,7 +18,7 @@ Optional:
 
 ## Scoring Model
 
-Keywords are scored on two axes:
+Keywords scored on two axes:
 
 **Impact (0-10):** Volume + CPC + Funnel Stage + Trend direction
 **Confidence (0-10):** Keyword Difficulty + Current ranking position + Topic authority
@@ -33,10 +33,10 @@ Keywords are scored on two axes:
 
 ## Recommended Workflow
 
-1. **Weekly:** Run `scripts/content_attack_brief.py` for the full intelligence report
+1. **Weekly:** Run `scripts/content_attack_brief.py` for full intelligence report
 2. **Daily:** Run `scripts/gsc_client.py --striking` to monitor striking distance keywords
 3. **2x/week:** Run `scripts/trend_scout.py` to catch trending topics early
-4. **Monthly:** Review competitor gaps and adjust `COMPETITORS` list
+4. **Monthly:** Review competitor gaps, adjust `COMPETITORS` list
 
 ## Dependencies
 

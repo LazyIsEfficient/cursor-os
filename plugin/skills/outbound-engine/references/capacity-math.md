@@ -19,7 +19,7 @@ Expected replies × qualification rate = pipeline opportunities
 | Positive reply rate | 1%+ | 3%+ |
 | Meeting rate | 0.5%+ | 1.5%+ |
 
-Adjust targets based on niche and offer. Cold traffic to a free audit converts differently than a paid trial.
+Adjust targets by niche + offer. Cold traffic to free audit converts differently than paid trial.
 
 ## Add-On Recommendations (mention but don't build)
 

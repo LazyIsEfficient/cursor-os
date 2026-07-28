@@ -18,8 +18,8 @@ export enum FEATURE_FLAGS {
 ```
 
 **Rules**:
-- All flags must be added to the `FEATURE_FLAGS` enum
-- Use kebab-case for flag names
+- All flags must be added to `FEATURE_FLAGS` enum
+- Kebab-case flag names
 - Dynamic flags use `{param}` placeholder syntax
 
 ## Client-Side Hook
@@ -53,9 +53,9 @@ export const useFeatureFlag = (flagName: FEATURE_FLAGS[keyof FEATURE_FLAGS]): bo
 ```
 
 **Rules**:
-- Default to `false` (disabled) on error — fail-closed
+- Default `false` (disabled) on error — fail-closed
 - Wait for flags to load via `onFeatureFlags` callback before checking
-- Use the typed enum, never raw strings
+- Typed enum, never raw strings
 
 ## Server-Side Flag Check
 
@@ -86,5 +86,5 @@ export async function getFeatureFlag(
 
 **Rules**:
 - Always call `posthog.shutdown()` in `finally` — prevents serverless timeout leaks
-- Use `'anonymous'` as distinctId when user is not authenticated
+- `'anonymous'` as distinctId when user not authenticated
 - `checkFeatureFlag` returns boolean, `getFeatureFlag` returns variant value

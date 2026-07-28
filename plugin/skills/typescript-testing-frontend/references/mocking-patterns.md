@@ -1,10 +1,10 @@
 # Mocking Patterns
 
-Follow **Tests-only default and refactor callouts** in [SKILL.md](../SKILL.md). When mocks feel excessive, deeply nested, or tied to internal implementation, treat that as a testability signal: describe it under **Refactor opportunities (not in scope)** (bulleted). Do not widen production APIs or refactor modules in the same turn unless the user asked.
+Follow **Tests-only default and refactor callouts** in [SKILL.md](../SKILL.md). When mocks feel excessive, deeply nested, or tied to internal implementation, treat as testability signal: describe under **Refactor opportunities (not in scope)** (bulleted). Do not widen production APIs or refactor modules in same turn unless user asked.
 
 ## Zustand Store Mocking
 
-Mock the store module and use the selector pattern:
+Mock store module, use selector pattern:
 
 ```typescript
 jest.mock('@/domains/authentication/hooks/useUserStore', () => ({
@@ -28,7 +28,7 @@ mockState({
 })
 ```
 
-For integration tests, set state directly on the store:
+For integration tests, set state directly on store:
 
 ```typescript
 import { userStore } from '@/domains/authentication/hooks/useUserStore'
@@ -45,7 +45,7 @@ beforeEach(() => {
 
 ## Service / API Mocking
 
-Mock the service module, then configure return values per test:
+Mock service module, configure return values per test:
 
 ```typescript
 jest.mock('@/domains/points/service', () => ({
@@ -100,11 +100,11 @@ jest.mock('../ProfileHero', () => {
 })
 ```
 
-Use `const React = require('react')` inside mock factories — top-level imports are not available inside `jest.mock()` callbacks.
+Use `const React = require('react')` inside mock factories — top-level imports unavailable inside `jest.mock()` callbacks.
 
 ## Chakra UI / Window Mocking
 
-For components using Chakra's responsive features:
+For components using Chakra responsive features:
 
 ```typescript
 Object.defineProperty(window, 'matchMedia', {

@@ -1,8 +1,8 @@
 # Physics and Collision
 
-Godot's physics system is one of the most-used parts of the engine and one of the most-misused. Get the body type wrong, the layer setup wrong, or the process function wrong, and you get jitter, missed collisions, falling through floors, or bodies that ignore each other for no apparent reason.
+Godot's physics system is one of most-used parts of engine and one of most-misused. Get body type wrong, layer setup wrong, or process function wrong → jitter, missed collisions, falling through floors, bodies ignoring each other for no apparent reason.
 
-This file is about Godot 4's physics, in C#, for both 2D and 3D — the body types, the collision system, the right process function, and the patterns that avoid the common pitfalls.
+File is about Godot 4's physics, in C#, both 2D and 3D — body types, collision system, right process function, patterns avoiding common pitfalls.
 
 ## The Three Physics Body Types
 
@@ -14,15 +14,15 @@ Godot has three main physics body types, in both 2D and 3D variants:
 | **`RigidBody2D` / `RigidBody3D`** | Physics-driven objects: barrels, debris, ragdolls, anything that obeys physics laws naturally | Forces, impulses, gravity (engine controls) |
 | **`CharacterBody2D` / `CharacterBody3D`** | Things you control programmatically with collision: players, most enemies, projectiles when you want precise control | Manual `MoveAndSlide()` (you control) |
 
-There's also `Area2D` / `Area3D` for detecting overlaps without solid collision (triggers, hit detection zones, pickup areas).
+Also `Area2D` / `Area3D` for detecting overlaps without solid collision (triggers, hit detection zones, pickup areas).
 
-The single most common physics confusion: which body type to use for the player. The answer is almost always **`CharacterBody2D` / `CharacterBody3D`** — you want precise, programmatic control over the player's movement, not a physics engine deciding when to slide and when to bounce.
+Single most common physics confusion: which body type for player. Answer almost always **`CharacterBody2D` / `CharacterBody3D`** — you want precise, programmatic control over player movement, not physics engine deciding when to slide and when to bounce.
 
 ## `CharacterBody2D` (and 3D)
 
-The bread and butter of Godot character movement. You set `Velocity`, call `MoveAndSlide()`, and the engine handles the collision response — sliding along walls, stopping at obstacles, etc.
+Bread and butter of Godot character movement. Set `Velocity`, call `MoveAndSlide()`, engine handles collision response — sliding along walls, stopping at obstacles, etc.
 
-A complete 2D player example:
+Complete 2D player example:
 
 ```csharp
 using Godot;
@@ -58,7 +58,7 @@ public partial class Player : CharacterBody2D
 }
 ```
 
-A 3D version is structurally identical but uses `Vector3`:
+3D version structurally identical but uses `Vector3`:
 
 ```csharp
 public partial class Player3D : CharacterBody3D
@@ -96,30 +96,30 @@ public partial class Player3D : CharacterBody3D
 }
 ```
 
-A few critical things to notice:
+Critical things to notice:
 
-- **Everything is in `_PhysicsProcess`**, not `_Process`. Wrong choice causes jitter.
-- **`Velocity` is a property of the body**; `MoveAndSlide()` uses it.
-- **`MoveAndSlide()` uses `delta` internally** — you set `Velocity` in units per second, and the engine multiplies by the physics delta. You don't multiply velocity by delta yourself.
+- **Everything in `_PhysicsProcess`**, not `_Process`. Wrong choice causes jitter.
+- **`Velocity` is property of body**; `MoveAndSlide()` uses it.
+- **`MoveAndSlide()` uses `delta` internally** — set `Velocity` in units per second, engine multiplies by physics delta. Don't multiply velocity by delta yourself.
 - **Acceleration toward zero with `MoveToward`** gives smooth deceleration when input stops.
-- **`IsOnFloor()`** is the correct way to check if the body is grounded — not by manually checking velocity.
+- **`IsOnFloor()`** is correct way to check if body grounded — not manually checking velocity.
 
 ## `_PhysicsProcess` vs `_Process`
 
-The most consequential and most-misunderstood distinction in Godot.
+Most consequential and most-misunderstood distinction in Godot.
 
 | Method | Frequency | Purpose | Examples |
 |---|---|---|---|
 | **`_PhysicsProcess(delta)`** | Fixed (60Hz default) | Anything that interacts with physics or needs deterministic stepping | `MoveAndSlide`, `MoveAndCollide`, applying forces, raycasting against the physics world, AI decisions that affect movement |
 | **`_Process(delta)`** | Variable (frame rate) | Anything visual or input-related that doesn't touch physics | UI updates, visual interpolation, polling input that doesn't affect physics, particle spawning, sound effects |
 
-**Movement of any physics body goes in `_PhysicsProcess`. Always.** Doing it in `_Process` causes the visual position to update at the rendering rate (which can be different from the physics rate), producing jitter and inconsistent collision response.
+**Movement of any physics body goes in `_PhysicsProcess`. Always.** Doing it in `_Process` causes visual position to update at rendering rate (can differ from physics rate), producing jitter, inconsistent collision response.
 
-The most common bug: a tutorial says "in `_process`, move the player." The tutorial is wrong (or it's about a non-physics node). For physics bodies, it's `_PhysicsProcess`.
+Most common bug: tutorial says "in `_process`, move the player." Tutorial wrong (or about non-physics node). Physics bodies: `_PhysicsProcess`.
 
-A subtle but important point: **`delta` in `_PhysicsProcess` is fixed**. At the default 60Hz, it's always `1.0/60.0 = 0.01667` seconds. This means physics simulations are deterministic across machines (assuming the same code and inputs), which is critical for replay systems, networking, and reproducibility.
+Subtle but important: **`delta` in `_PhysicsProcess` is fixed**. Default 60Hz → always `1.0/60.0 = 0.01667` seconds. Physics simulations deterministic across machines (same code, same inputs), critical for replay systems, networking, reproducibility.
 
-**`delta` in `_Process` varies** with the frame rate. A game running at 144 FPS has a smaller `_Process` delta than one running at 30 FPS. Use `delta` correctly when scaling things to time:
+**`delta` in `_Process` varies** with frame rate. Game at 144 FPS has smaller `_Process` delta than at 30 FPS. Use `delta` correctly when scaling things to time:
 
 ```csharp
 // _Process: scale by delta for time-based smoothing
@@ -133,7 +133,7 @@ public override void _Process(double delta)
 
 ## `RigidBody2D` (and 3D)
 
-For things that should obey physics naturally — barrels rolling, boxes stacking, debris flying. The engine controls the body's position; you control its forces and impulses.
+Things that should obey physics naturally — barrels rolling, boxes stacking, debris flying. Engine controls body's position; you control forces and impulses.
 
 ```csharp
 public partial class ExplodingBarrel : RigidBody2D
@@ -148,10 +148,10 @@ public partial class ExplodingBarrel : RigidBody2D
 
 Things to know:
 
-- **Don't set `GlobalPosition` directly** on a `RigidBody`. The physics engine owns its position. To teleport a rigid body, use `SetDeferred` or set `GlobalTransform` (carefully).
+- **Don't set `GlobalPosition` directly** on `RigidBody`. Physics engine owns position. Teleport rigid body: use `SetDeferred` or set `GlobalTransform` (carefully).
 - **Apply forces and impulses** to make it move. `ApplyImpulse` for one-shot pushes; `ApplyForce` for continuous forces.
-- **Mass matters**. Heavier bodies move less per impulse. Set in the inspector.
-- **Use `_IntegrateForces` for fine control** — this is called by the physics engine before the body's state is computed, and lets you read/write the body's `LinearVelocity`/`AngularVelocity` directly.
+- **Mass matters**. Heavier bodies move less per impulse. Set in inspector.
+- **Use `_IntegrateForces` for fine control** — called by physics engine before body's state computed; lets you read/write body's `LinearVelocity`/`AngularVelocity` directly.
 
 ```csharp
 public override void _IntegrateForces(PhysicsDirectBodyState2D state)
@@ -164,15 +164,15 @@ public override void _IntegrateForces(PhysicsDirectBodyState2D state)
 }
 ```
 
-For most game purposes, you don't need `_IntegrateForces`. Apply impulses and let the engine handle the rest.
+Most game purposes: don't need `_IntegrateForces`. Apply impulses, let engine handle rest.
 
 ## `Area2D` (and 3D)
 
-`Area`s detect overlaps without producing physical collision. Use them for:
+`Area`s detect overlaps without producing physical collision. Use for:
 
-- **Hit detection** — a sword's hit area, an enemy's hurt area
-- **Triggers** — a region that activates when the player enters
-- **Pickups** — area around an item that detects the player
+- **Hit detection** — sword's hit area, enemy's hurt area
+- **Triggers** — region activating when player enters
+- **Pickups** — area around item detecting player
 - **Damage zones** — fire, poison gas, etc.
 
 ```csharp
@@ -196,14 +196,14 @@ public partial class HealthPickup : Area2D
 }
 ```
 
-The `BodyEntered` signal fires when a `PhysicsBody` enters the area; `AreaEntered` fires when another `Area` enters. Pick the one matching what you're detecting.
+`BodyEntered` signal fires when `PhysicsBody` enters area; `AreaEntered` fires when another `Area` enters. Pick one matching what you're detecting.
 
-A common pattern is **hitbox vs hurtbox**:
+Common pattern: **hitbox vs hurtbox**:
 
-- **Hitbox**: an `Area` attached to the attacking entity. It represents the area where the attack hits.
-- **Hurtbox**: an `Area` attached to the defending entity. It represents the area where the entity can be hit.
+- **Hitbox**: `Area` attached to attacking entity. Represents area where attack hits.
+- **Hurtbox**: `Area` attached to defending entity. Represents area where entity can be hit.
 
-When a hitbox overlaps a hurtbox, damage is dealt:
+Hitbox overlaps hurtbox → damage dealt:
 
 ```csharp
 // Hitbox.cs (on the attacker)
@@ -237,20 +237,20 @@ public partial class Hurtbox : Area2D
 }
 ```
 
-This pattern decouples the attacker from the defender. The hitbox doesn't know the type of thing it's hitting; the hurtbox doesn't know the type of thing that hit it. Each handles its own concern.
+Pattern decouples attacker from defender. Hitbox doesn't know type of thing it's hitting; hurtbox doesn't know type of thing that hit it. Each handles own concern.
 
 ## Collision Layers and Masks
 
-The most common cause of "my collision isn't working": layers and masks set incorrectly.
+Most common cause of "my collision isn't working": layers and masks set incorrectly.
 
 Every physics body and area has:
 
-- **`CollisionLayer`** — what *I am*. A bitmask of layers I exist in.
-- **`CollisionMask`** — what *I detect/collide with*. A bitmask of layers I look for.
+- **`CollisionLayer`** — what *I am*. Bitmask of layers I exist in.
+- **`CollisionMask`** — what *I detect/collide with*. Bitmask of layers I look for.
 
-Two bodies interact if and only if **A's mask includes B's layer**. Note: it's a one-way relationship — A might detect B without B detecting A.
+Two bodies interact if and only if **A's mask includes B's layer**. One-way relationship — A might detect B without B detecting A.
 
-Example: in a 2D platformer, you might define layers as:
+Example: 2D platformer, layers defined as:
 
 | Bit | Layer name |
 |---|---|
@@ -263,20 +263,20 @@ Example: in a 2D platformer, you might define layers as:
 
 Then:
 
-- **Player**: layer 1 (Player), mask 5 + 6 (collides with environment, detects pickups) — but you also want it to be hit by enemies and enemy bullets, so mask 2 + 4 + 5 + 6.
+- **Player**: layer 1 (Player), mask 5 + 6 (collides with environment, detects pickups) — but you also want it hit by enemies and enemy bullets, so mask 2 + 4 + 5 + 6.
 - **Enemy**: layer 2 (Enemies), mask 5 (collides with environment).
 - **Player Bullet**: layer 3, mask 2 + 5 (hits enemies and walls).
 - **Enemy Bullet**: layer 4, mask 1 + 5 (hits player and walls).
 - **Environment**: layer 5, mask 0 (doesn't actively detect anything; other things detect it).
-- **Pickup**: layer 6, mask 0 (the player detects it).
+- **Pickup**: layer 6, mask 0 (player detects it).
 
-Set these in the inspector, in the **Collision** section of any physics node.
+Set in inspector, **Collision** section of any physics node.
 
-**Name your layers** in **Project Settings → Layer Names → 2D Physics** (or 3D Physics). Bare bit numbers are unreadable; named layers ("Player", "Enemy", "Environment") are self-documenting.
+**Name your layers** in **Project Settings → Layer Names → 2D Physics** (or 3D Physics). Bare bit numbers unreadable; named layers ("Player", "Enemy", "Environment") self-documenting.
 
 ## Collision Shapes
 
-Every physics body and area needs a `CollisionShape2D` or `CollisionShape3D` child node with a shape resource. Common shapes:
+Every physics body and area needs `CollisionShape2D` or `CollisionShape3D` child node with shape resource. Common shapes:
 
 | 2D | 3D |
 |---|---|
@@ -288,16 +288,16 @@ Every physics body and area needs a `CollisionShape2D` or `CollisionShape3D` chi
 
 Tips:
 
-- **Prefer simple shapes.** A circle or capsule is much faster than a complex polygon. For characters, a capsule is usually right in 3D; a rectangle or circle in 2D.
-- **One shape per body is the default.** You can have multiple, but each adds collision cost.
-- **Concave shapes only for static geometry.** `ConcavePolygonShape3D` is for static environment meshes; using it on moving bodies is slow and prone to bugs.
-- **`StaticBody`s with `CollisionShape`s** can be assembled from multiple shapes for complex environments. For tile-based 2D, use `TileMap` instead, which handles this automatically.
+- **Prefer simple shapes.** Circle or capsule much faster than complex polygon. Characters: capsule usually right in 3D; rectangle or circle in 2D.
+- **One shape per body is default.** Can have multiple, but each adds collision cost.
+- **Concave shapes only for static geometry.** `ConcavePolygonShape3D` for static environment meshes; on moving bodies slow and bug-prone.
+- **`StaticBody`s with `CollisionShape`s** assembleable from multiple shapes for complex environments. Tile-based 2D: use `TileMap` instead, handles automatically.
 
 ## Raycasting
 
-For line-of-sight checks, hit-scan weapons, and queries against the physics world, use raycasting.
+Line-of-sight checks, hit-scan weapons, queries against physics world: use raycasting.
 
-The cleanest API is `PhysicsDirectSpaceState2D` / `3D` via the world's `DirectSpaceState`:
+Cleanest API is `PhysicsDirectSpaceState2D` / `3D` via world's `DirectSpaceState`:
 
 ```csharp
 public bool CanSeeTarget(Node2D target)
@@ -312,9 +312,9 @@ public bool CanSeeTarget(Node2D target)
 }
 ```
 
-The `result` is a dictionary that's empty if no collision was found, or contains `position`, `normal`, `collider`, `rid`, etc. if there was a hit.
+`result` is dictionary empty if no collision found, or contains `position`, `normal`, `collider`, `rid`, etc. if hit.
 
-For frequent raycasts (e.g., a player's vision cone), prefer `RayCast2D` / `RayCast3D` *nodes*, which run the cast every physics frame and cache the result:
+Frequent raycasts (e.g. player's vision cone): prefer `RayCast2D` / `RayCast3D` *nodes*, running cast every physics frame, caching result:
 
 ```
 Player (CharacterBody2D)
@@ -332,14 +332,14 @@ public override void _PhysicsProcess(double delta)
 }
 ```
 
-This is faster for queries that happen every frame because the engine batches them with the physics step.
+Faster for queries happening every frame — engine batches them with physics step.
 
 ## `MoveAndCollide` vs `MoveAndSlide`
 
 `CharacterBody` has two methods for movement:
 
-- **`MoveAndSlide()`** — Move along the velocity vector, sliding along walls when collisions occur. The standard way to move a player.
-- **`MoveAndCollide(motion)`** — Move by a specific motion vector, stopping on collision and returning a `KinematicCollision`. Used for finer control or for projectiles.
+- **`MoveAndSlide()`** — Move along velocity vector, sliding along walls when collisions occur. Standard way to move player.
+- **`MoveAndCollide(motion)`** — Move by specific motion vector, stopping on collision, returning `KinematicCollision`. Finer control or projectiles.
 
 ```csharp
 // Sliding along walls (player)
@@ -360,13 +360,13 @@ if (collision != null)
 }
 ```
 
-`MoveAndSlide` is what you want 95% of the time for player-like characters. `MoveAndCollide` is for one-shot collision queries where you want full control over the response.
+`MoveAndSlide` is what you want 95% of time for player-like characters. `MoveAndCollide` for one-shot collision queries where you want full control over response.
 
 ## Common Physics Patterns
 
 ### Coyote Time (Forgiving Jumps)
 
-A small grace period after walking off a ledge during which the player can still jump. Makes platformers feel responsive.
+Small grace period after walking off ledge during which player can still jump. Makes platformers feel responsive.
 
 ```csharp
 private float _coyoteTimer = 0;
@@ -390,7 +390,7 @@ public override void _PhysicsProcess(double delta)
 
 ### Jump Buffering
 
-If the player presses jump slightly before landing, register the jump on landing.
+Player presses jump slightly before landing → register jump on landing.
 
 ```csharp
 private float _jumpBufferTimer = 0;
@@ -414,48 +414,48 @@ public override void _PhysicsProcess(double delta)
 
 ### One-Way Platforms
 
-Platforms you can jump *up* through but stand *on*. Use `OneWayCollisionDirection` on the collision shape, or use a tile map's one-way property.
+Platforms you jump *up* through but stand *on*. Use `OneWayCollisionDirection` on collision shape, or tile map's one-way property.
 
 ### Moving Platforms
 
-A `CharacterBody2D` will automatically inherit motion from a moving platform if the platform is properly set up. In 2D: set the platform's `Sync To Physics` to true and use a `CharacterBody2D` for the platform itself. The player will be carried along.
+`CharacterBody2D` automatically inherits motion from moving platform if platform properly set up. In 2D: set platform's `Sync To Physics` to true, use `CharacterBody2D` for platform itself. Player carried along.
 
 ## Determinism
 
-If you need deterministic physics (replays, lockstep multiplayer, reproducible saves), be aware:
+Need deterministic physics (replays, lockstep multiplayer, reproducible saves)? Be aware:
 
-- **Physics is deterministic *if and only if*** all inputs and the initial state are the same. The engine itself is deterministic.
-- **Floating-point math** is mostly deterministic on the same hardware/OS combo, but cross-platform determinism is hard.
-- **Use `_PhysicsProcess` for everything that affects state**, never `_Process`.
+- **Physics deterministic *if and only if*** all inputs and initial state same. Engine itself deterministic.
+- **Floating-point math** mostly deterministic on same hardware/OS combo, but cross-platform determinism hard.
+- **Use `_PhysicsProcess` for everything affecting state**, never `_Process`.
 - **Don't use `Time.GetTicksMsec()`** for game logic; use frame counts.
-- **Avoid randomness without a seeded RNG.** `GD.Randf()` is non-deterministic by default; use `RandomNumberGenerator` with an explicit seed.
+- **Avoid randomness without seeded RNG.** `GD.Randf()` non-deterministic by default; use `RandomNumberGenerator` with explicit seed.
 
-For most single-player games, you don't need strict determinism. For lockstep multiplayer or replays, design for it from the start.
+Most single-player games: don't need strict determinism. Lockstep multiplayer or replays: design for it from start.
 
 ## Anti-Patterns
 
 - **Movement in `_Process` instead of `_PhysicsProcess`.** Jitter; bad collision response.
-- **Setting `Velocity *= delta`** before calling `MoveAndSlide`. The engine handles delta; you set velocity in units per second.
-- **Setting `GlobalPosition` on a `RigidBody`.** Fights the physics engine; produces unpredictable behavior.
-- **Using `RigidBody` for the player.** You want precise control; physics-driven players are floaty and unpredictable.
-- **Using `StaticBody` for things that move.** They're "static" — moving them is wrong.
+- **Setting `Velocity *= delta`** before calling `MoveAndSlide`. Engine handles delta; set velocity in units per second.
+- **Setting `GlobalPosition` on `RigidBody`.** Fights physics engine; unpredictable behavior.
+- **Using `RigidBody` for player.** You want precise control; physics-driven players floaty and unpredictable.
+- **Using `StaticBody` for things that move.** They're "static" — moving them wrong.
 - **Forgetting collision layers/masks.** Things don't collide; you can't figure out why.
-- **Layers without names.** Project settings has a "Layer Names" section. Use it.
+- **Layers without names.** Project settings has "Layer Names" section. Use it.
 - **Concave polygon shapes on dynamic bodies.** Slow; bug-prone. Use convex pieces or simpler shapes.
 - **Too many collision shapes per body.** Each shape adds cost. Prefer fewer, simpler shapes.
-- **Raycasting in tight loops in `_Process`.** Raycasts are not free; cache results when possible.
+- **Raycasting in tight loops in `_Process`.** Raycasts not free; cache results when possible.
 - **Manually checking ground state instead of `IsOnFloor()`.** Often wrong about edge cases like slopes.
 - **Skipping `IsOnFloor()` after `MoveAndSlide()`.** Some games check ground state *before* moving; you usually want it after.
 - **Forgetting `IsInstanceValid` checks** when storing references to physics bodies that might be freed.
-- **Treating `Area` as a body and vice versa.** Areas detect; they don't collide. Bodies collide. They're different.
-- **Mixing `_IntegrateForces` with `MoveAndSlide`.** They serve different paradigms; pick one.
-- **Hardcoding gravity on each body** instead of using the project-wide setting (or a shared gravity manager).
+- **Treating `Area` as body and vice versa.** Areas detect; they don't collide. Bodies collide. Different.
+- **Mixing `_IntegrateForces` with `MoveAndSlide`.** Different paradigms; pick one.
+- **Hardcoding gravity on each body** instead of using project-wide setting (or shared gravity manager).
 - **Ignoring `delta`.** `Velocity *= 0.95` per frame produces frame-rate-dependent behavior; use `Velocity = Velocity.Lerp(target, 0.95f * delta)` or similar.
 
 ## Related
 
 - [godot-fundamentals.md](godot-fundamentals.md) — `_Process` vs `_PhysicsProcess` foundationally
-- [input-and-controls.md](input-and-controls.md) — input handling that drives physics
+- [input-and-controls.md](input-and-controls.md) — input handling driving physics
 - [animation-and-tweens.md](animation-and-tweens.md) — animating physics bodies
 - [performance-and-profiling.md](performance-and-profiling.md) — physics performance work
 - [godot-anti-patterns.md](godot-anti-patterns.md) — broader patterns to avoid

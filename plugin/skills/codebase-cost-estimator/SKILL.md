@@ -5,74 +5,74 @@ description: "Estimate the full development cost of an existing codebase from li
 
 # Codebase Cost Estimator
 
-Estimate what it cost (or would cost) to build an existing codebase. The estimate is driven by
-**measured lines of code and complexity** — not by ticket count, story points, or feature lists.
-Always present a range with explicit assumptions; never a single number.
+Estimate what codebase cost (or would cost) to build. Estimate driven by
+**measured lines of code + complexity** — not ticket count, story points, feature lists.
+Always present range with explicit assumptions; never single number.
 
 ## Inputs
 
-- A checked-out codebase (local path or repo) you can run `git`, `cloc`/`tokei`, and file counts against.
-- Optional: project README/status for version and scope context.
-- Optional: git history, for the AI-ROI step (commit timestamps).
+- Checked-out codebase (local path or repo) you can run `git`, `cloc`/`tokei`, file counts against.
+- Optional: project README/status for version + scope context.
+- Optional: git history, for AI-ROI step (commit timestamps).
 
 ## Process
 
-1. **Measure the codebase.** Count LOC by language and separate production code, tests, and docs.
-   Prefer a real counter over guessing:
+1. **Measure the codebase.** Count LOC by language; separate production code, tests, docs.
+   Prefer real counter over guessing:
    ```bash
    # whichever is installed; both break LOC down by language
    tokei .        # or: cloc --vcs=git .
    ```
-   Record per-language LOC, test LOC, doc LOC, and total. Note complexity drivers: advanced
-   frameworks, system-level/GPU/native code, and third-party integrations. These map directly to
-   the productivity bands in `references/rates.md`.
+   Record per-language LOC, test LOC, doc LOC, total. Note complexity drivers: advanced
+   frameworks, system-level/GPU/native code, third-party integrations. Map directly to
+   productivity bands in `references/rates.md`.
 
-2. **Convert LOC to raw developer-hours.** For each code category, divide its LOC by the
+2. **Convert LOC to raw developer-hours.** Per code category, divide LOC by
    lines-per-hour band in `references/rates.md` (e.g. simple CRUD/UI 30–50 LOC/hr; GPU/shader
-   10–20 LOC/hr; comprehensive tests 25–40 LOC/hr). Sum to a raw coding-hours subtotal. Keep the
-   per-category breakdown — it is the audit trail for the estimate.
+   10–20 LOC/hr; comprehensive tests 25–40 LOC/hr). Sum to raw coding-hours subtotal. Keep
+   per-category breakdown — audit trail for estimate.
 
-3. **Apply overhead multipliers.** Raw coding time is not total engineering time. Add the
+3. **Apply overhead multipliers.** Raw coding time ≠ total engineering time. Add
    multipliers from `references/rates.md` for architecture & design, debugging, review &
-   refactoring, documentation, integration & testing, and learning curve. Total overhead is
-   typically 1.9x–2.25x raw coding hours. This yields **total estimated engineering hours**.
+   refactoring, documentation, integration & testing, learning curve. Total overhead
+   typically 1.9x–2.25x raw coding hours. Yields **total estimated engineering hours**.
 
-4. **Research current market rates.** Web-search hourly rates for the relevant tech stack and
-   seniority **for the current year** — do not use stale figures. Build a low / median / high
-   rate table and state the rationale for the recommended rate (stack, specialization, region).
+4. **Research current market rates.** Web-search hourly rates for relevant tech stack +
+   seniority **for current year** — do not use stale figures. Build low / median / high
+   rate table; state rationale for recommended rate (stack, specialization, region).
 
-5. **Convert to calendar time.** Raw hours ≠ wall-clock delivery. Apply the
+5. **Convert to calendar time.** Raw hours ≠ wall-clock delivery. Apply
    organizational-overhead efficiency factors in `references/org-overhead.md`
-   (`Calendar Weeks = Raw Dev Hours ÷ (40 × Efficiency Factor)`) and show calendar time across
-   company types (lean startup → enterprise), since a solo founder and a bureaucracy ship the
+   (`Calendar Weeks = Raw Dev Hours ÷ (40 × Efficiency Factor)`); show calendar time across
+   company types (lean startup → enterprise) — solo founder + bureaucracy ship
    same code on very different timelines.
 
-6. **Layer in full-team cost.** Engineering is not the whole bill. Apply the supporting-role
-   ratios and team multipliers in `references/team-cost.md` (PM, UX/UI, eng management, QA,
-   program management, tech writing, DevOps) to produce a role-by-role breakdown across company
-   stages, plus a full-team total.
+6. **Layer in full-team cost.** Engineering not whole bill. Apply supporting-role
+   ratios + team multipliers in `references/team-cost.md` (PM, UX/UI, eng management, QA,
+   program management, tech writing, DevOps) → role-by-role breakdown across company
+   stages, plus full-team total.
 
-7. **Assemble the estimate.** Use the structure in `assets/output-template.md`: codebase
+7. **Assemble the estimate.** Use structure in `assets/output-template.md`: codebase
    metrics, dev hours, calendar time, market rates, engineering cost (low/median/high), full-team
-   cost, grand-total summary, confidence level, and assumptions.
+   cost, grand-total summary, confidence level, assumptions.
 
-8. **AI / Claude ROI (optional).** If the codebase was built with AI assistance, follow
+8. **AI / Claude ROI (optional).** Codebase built with AI assistance → follow
    `references/claude-roi.md` to estimate Claude's actual active hours (git-commit clustering
-   preferred; file timestamps or `LOC ÷ 350` as fallbacks) and compute value per Claude hour,
-   speed multiplier vs. a human developer, and cost ROI.
+   preferred; file timestamps or `LOC ÷ 350` as fallbacks); compute value per Claude hour,
+   speed multiplier vs human developer, cost ROI.
 
 ## Key principles
 
 - **Estimate from measured LOC and complexity — never from ticket volume or story points.**
-- Always show ranges (low / median / high). A single number is a lie about precision.
-- State confidence level and every load-bearing assumption.
-- Use current-year market rates; flag the search date.
-- Present professionally — the output should stand up in front of a client or stakeholder.
+- Always show ranges (low / median / high). Single number is lie about precision.
+- State confidence level + every load-bearing assumption.
+- Use current-year market rates; flag search date.
+- Present professionally — output should stand up in front of client or stakeholder.
 
 ## References
 
-- `references/rates.md` — lines-per-hour productivity bands and overhead multipliers
-- `references/org-overhead.md` — efficiency factors and the calendar-time formula
-- `references/team-cost.md` — supporting-role ratios and full-team multipliers
-- `assets/output-template.md` — the stakeholder-ready estimate template
+- `references/rates.md` — lines-per-hour productivity bands + overhead multipliers
+- `references/org-overhead.md` — efficiency factors + calendar-time formula
+- `references/team-cost.md` — supporting-role ratios + full-team multipliers
+- `assets/output-template.md` — stakeholder-ready estimate template
 - `references/claude-roi.md` — AI/Claude ROI calculation method

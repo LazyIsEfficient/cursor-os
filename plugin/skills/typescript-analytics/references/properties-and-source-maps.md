@@ -24,7 +24,7 @@
 
 ## Source Maps (Production Debugging)
 
-Source maps are uploaded to PostHog on deploy via GitHub Actions:
+Source maps uploaded to PostHog on deploy via GitHub Actions:
 
 ```yaml
 # .github/workflows/posthog-sourcemaps.yml

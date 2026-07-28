@@ -1,9 +1,9 @@
 # Learned Patterns
 
-Patterns learned from content approvals and rejections. The expert panel checks these
-before scoring begins and docks points for known-bad patterns.
+Patterns learned from content approvals + rejections. Expert panel checks these
+before scoring begins; dock points for known-bad patterns.
 
-<!-- Add patterns as they are learned. Format:
+<!-- Add patterns as learned. Format:
 
 ## [Pattern Name]
 - **Type:** rejection | preference | override

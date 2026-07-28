@@ -1,28 +1,28 @@
 # Scenes and Instancing
 
-Scenes are the most powerful and most misused feature in Godot. They're how you compose a game out of reusable, self-contained pieces. They're also where most projects collapse into chaos when they're not used well — too many scenes and the project is fragmented, too few and you've built a god-scene.
+Scenes are most powerful and most misused feature in Godot. How you compose game out of reusable, self-contained pieces. Also where most projects collapse into chaos when not used well — too many scenes and project fragmented; too few and you've built god-scene.
 
-This file is the playbook for getting scene composition right.
+This file is playbook for getting scene composition right.
 
 ## What a Scene Actually Is
 
-A scene is a tree of nodes saved as a `.tscn` file. The root node is the "type" of the scene; the children are its parts. The whole tree is the *template* — when you instance the scene, you get a copy of the entire tree, with overrides applied at the root.
+Scene is tree of nodes saved as `.tscn` file. Root node is "type" of scene; children are its parts. Whole tree is *template* — instancing gives copy of entire tree, with overrides applied at root.
 
-A scene has three properties that matter:
+Scene has three properties that matter:
 
-1. **It's a template.** Instancing it gives you a fresh copy.
-2. **It's editable in the inspector** at the instance level. Override values; change properties; add child nodes.
-3. **Changes to the source `.tscn` propagate to all instances.** Update the player scene; every level using the player scene gets the update.
+1. **It's a template.** Instancing gives fresh copy.
+2. **It's editable in inspector** at instance level. Override values; change properties; add child nodes.
+3. **Changes to source `.tscn` propagate to all instances.** Update player scene; every level using player scene gets update.
 
-The third property is what makes scenes powerful and what makes them dangerous. A change to a heavily-used scene affects every place it's used; sometimes that's exactly what you want, and sometimes it breaks four levels you forgot about.
+Third property is what makes scenes powerful and dangerous. Change to heavily-used scene affects every place it's used; sometimes exactly what you want, sometimes breaks four levels you forgot about.
 
 ## When to Make Something a Scene
 
-A useful test: would you ever want to use this exact tree of nodes more than once, or have a designer reuse it without engineering's help?
+Useful test: would you ever want to use this exact tree of nodes more than once, or have designer reuse it without engineering's help?
 
-If yes → it's a scene.
+Yes → it's a scene.
 
-If no → it's just a child node of the parent, no separate scene needed.
+No → just child node of parent, no separate scene needed.
 
 Concrete examples:
 
@@ -41,23 +41,23 @@ Concrete examples:
 | A reusable AI behavior | Yes | If multiple enemies share it |
 | A one-off cutscene trigger | No | Inline child of the level |
 
-The bias should be **toward more scenes**. A few too many is fine; a few too few becomes a god-scene problem fast.
+Bias should be **toward more scenes**. Few too many fine; few too few becomes god-scene problem fast.
 
 ## The God Scene Anti-Pattern
 
-The most common scene-design failure: a single scene that contains everything. The "level" scene has the player inline, the enemies inline, the HUD inline, the pause menu inline, and 50 other things. Every change requires opening this one massive scene; merge conflicts on the `.tscn` are constant.
+Most common scene-design failure: single scene containing everything. "Level" scene has player inline, enemies inline, HUD inline, pause menu inline, 50 other things. Every change requires opening one massive scene; merge conflicts on `.tscn` constant.
 
-Symptoms of a god scene:
+Symptoms of god scene:
 
-- The `.tscn` file is hundreds of lines long.
-- Multiple people can't work on it without merge conflicts.
-- Things that should be reusable across levels are duplicated by hand.
-- Adding a new feature means adding new top-level nodes to the god scene.
-- The scene takes a long time to open in the editor.
+- `.tscn` file hundreds of lines long.
+- Multiple people can't work without merge conflicts.
+- Things that should be reusable across levels duplicated by hand.
+- Adding new feature means adding new top-level nodes to god scene.
+- Scene takes long time to open in editor.
 
-The fix: extract reusable parts into their own scenes. The level scene becomes a thin orchestrator that *instances* other scenes (player, enemies, HUD, pickups). Each piece is owned by its own file.
+Fix: extract reusable parts into own scenes. Level scene becomes thin orchestrator *instancing* other scenes (player, enemies, HUD, pickups). Each piece owned by own file.
 
-A healthy level scene might look like:
+Healthy level scene might look like:
 
 ```
 Level1 (Node2D)
@@ -74,19 +74,19 @@ Level1 (Node2D)
 └── PauseMenu (CanvasLayer; instance of pause_menu.tscn)
 ```
 
-The level scene is small. It says "this level has these things, in these positions, with these values." It doesn't define what a player, an enemy, or the HUD *is*.
+Level scene is small. Says "this level has these things, in these positions, with these values." Doesn't define what player, enemy, or HUD *is*.
 
 ## Instancing in Code
 
-You instance a scene in two ways:
+Instance scene two ways:
 
 ### In the editor
 
-Right-click a node → "Instance Child Scene" → pick the `.tscn` file. The instance appears with a chain icon, indicating it came from another scene.
+Right-click node → "Instance Child Scene" → pick `.tscn` file. Instance appears with chain icon, indicating it came from another scene.
 
 ### In code
 
-Load the scene as a `PackedScene` resource and call `Instantiate()`:
+Load scene as `PackedScene` resource, call `Instantiate()`:
 
 ```csharp
 public partial class EnemySpawner : Node2D
@@ -106,73 +106,73 @@ public partial class EnemySpawner : Node2D
 }
 ```
 
-A few things to notice:
+Things to notice:
 
-- **`PackedScene` is a resource type.** Assign it via `[Export]` in the inspector — much cleaner than `GD.Load<PackedScene>("res://path/to/scene.tscn")` scattered through the code.
-- **`Instantiate<T>()`** returns the root node typed as `T`. If the scene's root is the right type, this is type-safe; if not, it returns `null` or throws.
-- **`AddChild(enemy)`** adds the new instance to the tree. Until you do this, the instance exists in memory but isn't part of the running game.
-- **Setting position after `AddChild`** is correct — many nodes initialize properties on entering the tree; setting position before is sometimes overridden.
+- **`PackedScene` is resource type.** Assign via `[Export]` in inspector — much cleaner than `GD.Load<PackedScene>("res://path/to/scene.tscn")` scattered through code.
+- **`Instantiate<T>()`** returns root node typed as `T`. Scene's root right type → type-safe; if not, returns `null` or throws.
+- **`AddChild(enemy)`** adds new instance to tree. Until you do this, instance exists in memory but isn't part of running game.
+- **Setting position after `AddChild`** is correct — many nodes initialize properties on entering tree; setting before sometimes overridden.
 
 ## Inspector Overrides
 
-When you instance a scene, the instance starts with all the values from the source. You can then *override* any of them in the parent scene:
+Instancing scene: instance starts with all values from source. Then *override* any of them in parent scene:
 
-- Position the enemy differently than the default
-- Set a different sprite
-- Change the maximum health
-- Connect a signal to a different handler
+- Position enemy differently than default
+- Set different sprite
+- Change maximum health
+- Connect signal to different handler
 - Add new child nodes
 
-Overrides are stored in the parent `.tscn` file as deltas — only the changed values are saved, so the instance stays small. When the source scene changes, unchanged properties update; changed (overridden) properties keep their override.
+Overrides stored in parent `.tscn` file as deltas — only changed values saved, so instance stays small. Source scene changes → unchanged properties update; changed (overridden) properties keep override.
 
-This is what makes scenes a real composition system. The base behavior comes from the scene; the per-use customization comes from the parent.
+What makes scenes real composition system. Base behavior from scene; per-use customization from parent.
 
 ## Scene Inheritance
 
-Godot supports scene *inheritance* — a scene that inherits from another scene and overrides parts of it. This is different from scene instancing.
+Godot supports scene *inheritance* — scene inheriting from another scene, overriding parts. Different from scene instancing.
 
 When to use scene inheritance:
 
-- You have a "base enemy" scene with shared behavior, and "specific enemy" scenes that inherit and override the visuals and stats.
-- You have a "menu page" scene with shared layout, and specific pages that inherit and add page-specific content.
+- "Base enemy" scene with shared behavior; "specific enemy" scenes inheriting and overriding visuals and stats.
+- "Menu page" scene with shared layout; specific pages inheriting, adding page-specific content.
 
 When *not* to use scene inheritance:
 
-- For most cases. Composition (instancing reusable child scenes) is simpler and more flexible.
-- When the inheritance hierarchy gets deep. Two levels is usually fine; three is suspect; four is a smell.
+- Most cases. Composition (instancing reusable child scenes) simpler and more flexible.
+- Inheritance hierarchy deep. Two levels usually fine; three suspect; four is smell.
 
-The classic guideline applies: **prefer composition over inheritance**. Inheritance has its uses but composition scales better and breaks less.
+Classic guideline: **prefer composition over inheritance**. Inheritance has uses but composition scales better, breaks less.
 
-To create an inherited scene: in the editor, **Scene → New Inherited Scene** → pick the parent. The new scene has the parent's tree visible but locked; you can override properties and add children, but you can't modify the parent's structure.
+Create inherited scene: in editor, **Scene → New Inherited Scene** → pick parent. New scene has parent's tree visible but locked; can override properties, add children, can't modify parent's structure.
 
 ## Unique Names and the `%` Syntax
 
-A common pain point in scenes: holding references to deeply-nested nodes. The brittle way:
+Common pain point in scenes: holding references to deeply-nested nodes. Brittle way:
 
 ```csharp
 var label = GetNode<Label>("UI/Container/InfoPanel/StatusLabel");
 ```
 
-Move "InfoPanel" out of "Container" and the path breaks. Move "StatusLabel" anywhere and the path breaks.
+Move "InfoPanel" out of "Container" → path breaks. Move "StatusLabel" anywhere → path breaks.
 
-The fix: **scene-unique names**. Right-click a node in the editor → "Access as Scene Unique Name". The node now has a `%` prefix in the scene panel and is accessible by short name from anywhere in the same scene:
+Fix: **scene-unique names**. Right-click node in editor → "Access as Scene Unique Name". Node now has `%` prefix in scene panel, accessible by short name from anywhere in same scene:
 
 ```csharp
 var label = GetNode<Label>("%StatusLabel");
 ```
 
-This works regardless of where `StatusLabel` is in the tree, as long as it's in the same scene. Move it; the reference still works.
+Works regardless of where `StatusLabel` is in tree, as long as same scene. Move it; reference still works.
 
-The trade-offs:
+Trade-offs:
 
 - **Pros:** robust to refactoring; clean code; works across deeply nested trees.
-- **Cons:** the names must be unique within the scene; you don't see the path in the code so it's slightly harder to find.
+- **Cons:** names must be unique within scene; you don't see path in code so slightly harder to find.
 
-For most cases, scene-unique names are the right call. Use them for any node referenced from script.
+Most cases: scene-unique names are right call. Use for any node referenced from script.
 
 ## Saving and Loading Scenes
 
-The full machinery for runtime scene loading:
+Full machinery for runtime scene loading:
 
 ```csharp
 // Load a scene from disk into a PackedScene
@@ -185,13 +185,13 @@ var levelInstance = scene.Instantiate<Level>();
 GetTree().Root.AddChild(levelInstance);
 ```
 
-Or, the more idiomatic pattern: change the current scene entirely:
+Or, more idiomatic pattern: change current scene entirely:
 
 ```csharp
 GetTree().ChangeSceneToFile("res://scenes/levels/level_2.tscn");
 ```
 
-`ChangeSceneToFile` unloads the current scene at the end of the frame and replaces it with the new one. This is the standard way to transition between levels, menus, and the main game.
+`ChangeSceneToFile` unloads current scene at end of frame, replaces with new one. Standard way to transition between levels, menus, main game.
 
 ```csharp
 // Or, with a pre-loaded PackedScene:
@@ -199,7 +199,7 @@ var nextScene = GD.Load<PackedScene>("res://scenes/levels/level_2.tscn");
 GetTree().ChangeSceneToPacked(nextScene);
 ```
 
-A common pattern: an autoload that handles scene changes with transitions:
+Common pattern: autoload handling scene changes with transitions:
 
 ```csharp
 // SceneSwitcher.cs (autoload)
@@ -222,17 +222,17 @@ public partial class SceneSwitcher : Node
 }
 ```
 
-For more transition patterns, see [animation-and-tweens.md](animation-and-tweens.md).
+More transition patterns: [animation-and-tweens.md](animation-and-tweens.md).
 
 ## Communicating Between Scenes
 
-A frequent question: a scene needs to react to something happening in *another* scene. How?
+Frequent question: scene needs to react to something happening in *another* scene. How?
 
 Several patterns, in order of preference:
 
 ### 1. Signal up, command down
 
-The most idiomatic Godot pattern. A child scene emits a signal; the parent connects to it and decides what to do (often passing the information to other children).
+Most idiomatic Godot pattern. Child scene emits signal; parent connects, decides what to do (often passing information to other children).
 
 ```
 Level
@@ -240,7 +240,7 @@ Level
 └── HUD (receives information from Level, displays it)
 ```
 
-The Level scene's script:
+Level scene's script:
 
 ```csharp
 public override void _Ready()
@@ -251,13 +251,13 @@ public override void _Ready()
 }
 ```
 
-The Player doesn't know about the HUD. The HUD doesn't know about the Player. The Level wires them together.
+Player doesn't know about HUD. HUD doesn't know about Player. Level wires them together.
 
-This pattern scales well because each scene only knows about its own children.
+Pattern scales well — each scene only knows about own children.
 
 ### 2. Event bus (autoload)
 
-For truly global events that don't fit a parent-child structure: a singleton autoload that holds signals.
+Truly global events not fitting parent-child structure: singleton autoload holding signals.
 
 ```csharp
 // EventBus.cs (autoload)
@@ -285,11 +285,11 @@ public override void _Ready()
 }
 ```
 
-Use this *sparingly*. The event bus is convenient but it can become a god-singleton if everything goes through it. Reserve it for events that are genuinely global or cross-cut multiple unrelated systems.
+Use *sparingly*. Event bus convenient but can become god-singleton if everything goes through it. Reserve for events genuinely global or cross-cutting multiple unrelated systems.
 
 ### 3. Groups
 
-Godot has a built-in concept of "groups" — string tags you can attach to nodes. You can then send a method call or fetch a list of all nodes in a group.
+Godot has built-in "groups" — string tags attachable to nodes. Then send method call or fetch list of all nodes in group.
 
 ```csharp
 // In an enemy:
@@ -311,11 +311,11 @@ foreach (var enemy in GetTree().GetNodesInGroup("enemies"))
 GetTree().CallGroup("enemies", "OnPlayerSpotted");
 ```
 
-Groups are useful for "all of these things at once" patterns. Avoid them for one-to-one communication where signals work better.
+Groups useful for "all of these things at once" patterns. Avoid for one-to-one communication where signals work better.
 
 ### 4. Direct references via `[Export]`
 
-When a parent needs a long-lived reference to a child of another sibling scene, the parent can hold a reference exported in the inspector:
+Parent needing long-lived reference to child of another sibling scene: parent can hold reference exported in inspector:
 
 ```csharp
 public partial class HUD : CanvasLayer
@@ -329,32 +329,32 @@ public partial class HUD : CanvasLayer
 }
 ```
 
-In the editor, drag the Player node onto the HUD's `Player` field. Now the HUD has a typed reference, no path lookup needed.
+In editor, drag Player node onto HUD's `Player` field. Now HUD has typed reference, no path lookup needed.
 
-This is brittle if the Player node is renamed or moved, but the editor catches it: the field becomes empty and you have to re-assign. Better than a string path.
+Brittle if Player node renamed or moved, but editor catches it: field becomes empty, you re-assign. Better than string path.
 
 ## Refactoring a Scene Into Reusable Parts
 
-A common task: a scene has grown too big. Here's the workflow to extract a sub-scene:
+Common task: scene grown too big. Workflow to extract sub-scene:
 
-1. **Identify the subtree** that should be its own scene. It's a logical unit; it has clear boundaries.
-2. **Right-click the root of the subtree** → "Save Branch as Scene" → name it.
-3. The original scene now contains an *instance* of the new scene where the subtree used to be.
-4. Open the new scene independently and verify it still works.
-5. Update any references in code to use scene-unique names or `[Export]` references.
+1. **Identify subtree** that should be own scene. Logical unit; clear boundaries.
+2. **Right-click root of subtree** → "Save Branch as Scene" → name it.
+3. Original scene now contains *instance* of new scene where subtree used to be.
+4. Open new scene independently; verify it still works.
+5. Update references in code to use scene-unique names or `[Export]` references.
 
-Godot handles most of the bookkeeping. The script attached to the subtree's root moves with the subtree into the new scene.
+Godot handles most bookkeeping. Script attached to subtree's root moves with subtree into new scene.
 
-**Caveat**: any signal connections from outside the extracted subtree into the inside will break. You'll need to re-wire them at the new boundary (often by emitting a new signal at the root of the extracted scene, and connecting it from the parent).
+**Caveat**: signal connections from outside extracted subtree into inside will break. Re-wire at new boundary (often by emitting new signal at root of extracted scene, connecting from parent).
 
 ## Resource References vs Scene References
 
-Don't confuse them:
+Don't confuse:
 
-- A **`PackedScene`** is a reference to a scene `.tscn` file. You instantiate it to get a tree of nodes.
-- A **`Resource`** is a reference to any other resource (texture, audio, custom data).
+- **`PackedScene`** is reference to scene `.tscn` file. Instantiate to get tree of nodes.
+- **`Resource`** is reference to any other resource (texture, audio, custom data).
 
-Both can be assigned via `[Export]`. Both can be loaded with `GD.Load<T>(...)`. They're different types and not interchangeable.
+Both assignable via `[Export]`. Both loadable with `GD.Load<T>(...)`. Different types, not interchangeable.
 
 ```csharp
 [Export] public PackedScene BulletScene { get; set; } // For spawning
@@ -365,16 +365,16 @@ Both can be assigned via `[Export]`. Both can be loaded with `GD.Load<T>(...)`. 
 ## Anti-Patterns
 
 - **God scene.** Everything in one `.tscn`. Merge conflicts; long load times; impossible to reuse.
-- **Scenes per node.** The opposite extreme: every individual node is its own scene. Excessive fragmentation; the project is hard to navigate.
+- **Scenes per node.** Opposite extreme: every individual node its own scene. Excessive fragmentation; project hard to navigate.
 - **Path-based `GetNode` everywhere.** Brittle; breaks on every refactor. Use `[Export]` references or `%UniqueName`.
-- **Reaching across the tree** (e.g., `GetNode("../../UI/HUD/Score")`). Couples the child to the parent's structure. Use signals or pass references.
-- **Modifying scene state via global state.** A scene that depends on autoload values for its initial state can't be tested or reused independently.
-- **Inheritance instead of composition.** A 3-level deep scene inheritance hierarchy. Hard to reason about; refactor into composed scenes.
-- **Hand-duplicating instead of instancing.** Two enemies that should be the same scene type, but were copy-pasted. The next change touches both files.
-- **Loading scenes with `GD.Load` in `_Process`.** Slow; allocates; the scene should be a `[Export] PackedScene` cached at `_Ready`.
-- **`Free()` instead of `QueueFree()` when removing instances.** Crashes if anyone is iterating.
-- **Forgetting to disconnect signals** between scenes that span lifetimes. Memory leaks.
-- **Editing `.tscn` files by hand.** They're text format and you *can*, but the editor is the right tool. Hand-edits often produce subtly broken scenes.
+- **Reaching across tree** (e.g., `GetNode("../../UI/HUD/Score")`). Couples child to parent's structure. Use signals or pass references.
+- **Modifying scene state via global state.** Scene depending on autoload values for initial state can't be tested or reused independently.
+- **Inheritance instead of composition.** 3-level deep scene inheritance hierarchy. Hard to reason about; refactor into composed scenes.
+- **Hand-duplicating instead of instancing.** Two enemies that should be same scene type, copy-pasted. Next change touches both files.
+- **Loading scenes with `GD.Load` in `_Process`.** Slow; allocates; scene should be `[Export] PackedScene` cached at `_Ready`.
+- **`Free()` instead of `QueueFree()` when removing instances.** Crashes if anyone iterating.
+- **Forgetting to disconnect signals** between scenes spanning lifetimes. Memory leaks.
+- **Editing `.tscn` files by hand.** Text format, you *can*, but editor is right tool. Hand-edits often produce subtly broken scenes.
 
 ## Related
 

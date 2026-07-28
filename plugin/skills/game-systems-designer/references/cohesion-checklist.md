@@ -1,118 +1,118 @@
 # Cohesion checklist
 
-Run every system in the design doc through these tests. A system that fails is either *cut* or *reworked* — silently keeping a failing system is how feature soup ships.
+Run every system in design doc through these tests. Failing system is *cut* or *reworked* — silently keeping failing system is how feature soup ships.
 
 ## The compounding test
 
-For each system, name:
+Per system, name:
 
-- **What other systems is this system *better* because of?** (which systems amplify it)
-- **What other systems does this system make *better*?** (which systems it amplifies)
+- **What other systems is this system *better* because of?** (which amplify it)
+- **What other systems does this system make *better*?** (which it amplifies)
 
-If the answer to *both* is "none," the system is isolated — cut it or merge it into a related system.
+Both answers "none" → system isolated — cut it or merge into related system.
 
-If the answer to one is "many" and the other is "none," the system is parasitic (it consumes other systems' value without giving back) or feeder (it produces value nothing consumes). Both need rework.
+One answer "many", other "none" → system parasitic (consumes value without giving back) or feeder (produces value nothing consumes). Both need rework.
 
-The healthiest systems are *both consumers and producers* of value from at least 2–3 other systems.
+Healthiest systems are *both consumers and producers* of value from at least 2–3 other systems.
 
 ## The fantasy test
 
-For each system:
-- **Which aesthetic from the design doc does this system serve?**
+Per system:
+- **Which aesthetic from design doc does this system serve?**
 - **Which player verb does this system support?**
 
-If a system serves no aesthetic and supports no verb, it's a feature without a fantasy. Cut.
+Serves no aesthetic, supports no verb → feature without fantasy. Cut.
 
 ## The cut test
 
-For each system, ask the team: *if we cut this system, what does the game lose?*
+Per system, ask team: *if we cut this system, what does the game lose?*
 
 - "Nothing important" → cut it.
-- "A whole pillar of the experience" → keep it; it's load-bearing.
-- "The game would feel less rich" → suspicious; "richness" is often a euphemism for clutter. Probe further.
+- "A whole pillar of the experience" → keep it; load-bearing.
+- "The game would feel less rich" → suspicious; "richness" often euphemism for clutter. Probe further.
 
 ## The seam test
 
-For each interaction between two systems, ask:
-- **Is the seam visible to the player?** (Do they understand that A and B are connected?)
-- **Is the seam *enjoyable*?** (Does the player like that A and B interact, or do they find it confusing/unfair?)
+Per interaction between two systems, ask:
+- **Is the seam visible to player?** (Do they understand A and B are connected?)
+- **Is the seam *enjoyable*?** (Does player like A and B interacting, or find it confusing/unfair?)
 
-Hidden, unenjoyable seams are where players say "the game is buggy" when really the systems are fighting each other.
+Hidden, unenjoyable seams are where players say "the game is buggy" when really systems fight each other.
 
 ## The currency test
 
-Count the currencies in the game (any tracked resource that gates content):
+Count currencies (any tracked resource gating content):
 
 - **1–2 currencies** — usually right
-- **3 currencies** — workable if each has a *clearly different role* (e.g. soft / hard / time)
+- **3 currencies** — workable if each has *clearly different role* (e.g. soft / hard / time)
 - **4+ currencies** — almost always broken; consolidate
 
-Each currency should have:
-- A **source** (how the player earns it) that connects to a verb
-- A **sink** (what the player spends it on) that produces meaningful choice
-- A **velocity** (how fast it accumulates and depletes) tuned to a session cadence
+Each currency needs:
+- **Source** (how player earns it) connecting to a verb
+- **Sink** (what player spends it on) producing meaningful choice
+- **Velocity** (accumulation/depletion rate) tuned to session cadence
 
 Currencies with no source / no sink / no velocity discipline are spreadsheet rows, not systems.
 
 ## The new-player test
 
-Walk a hypothetical new player through the first hour. For each system:
+Walk hypothetical new player through first hour. Per system:
 
-- **Has the player seen this system yet?**
+- **Has player seen this system yet?**
 - **Is it relevant to what they're doing right now?**
-- **If the system is gated until later, what's the unlock pacing?**
+- **Gated until later? What's the unlock pacing?**
 
-A design with 12 systems all visible from minute one is overwhelming. A design with 12 systems gated behind 30 hours of play is content-starved early. Most healthy designs reveal 2–4 systems in the first hour and the rest over the next 5–10 hours.
+12 systems all visible from minute one = overwhelming. 12 systems gated behind 30 hours = content-starved early. Most healthy designs reveal 2–4 systems in first hour, rest over next 5–10 hours.
 
 ## The team-capacity test
 
-For each system:
-- **How much engineering work is this?** (Rough order of magnitude — days, weeks, months)
-- **How much content does this system need to feel rich?** (Number of items / levels / variations)
+Per system:
+- **Engineering work?** (Rough order of magnitude — days, weeks, months)
+- **Content volume to feel rich?** (Number of items / levels / variations)
 - **Who maintains it after launch?** (Live-ops cadence, balance updates, bug fixes)
 
-A design with 8 systems where each needs months of engineering and ongoing maintenance is a 50-person studio's project. A 3-person team with the same design will ship 2 of the 8 systems, broken.
+8 systems each needing months of engineering + ongoing maintenance = 50-person studio project. 3-person team with same design ships 2 of 8, broken.
 
 ## The rails-fit test
 
-For each system, check against the chosen payment rails (from [game-concept-creator](../../game-concept-creator/SKILL.md)):
+Per system, check against chosen payment rails (from [game-concept-creator](../../game-concept-creator/SKILL.md)):
 
-- **F2P / IAP-heavy:** does this system create a *fair, optional* spending opportunity, or does it create paywalls?
-- **Premium:** does this system require live-ops to feel complete? If yes, the model is wrong, not the system.
-- **Web3 tokens:** does this system create token sinks or only token sources? (Token-source-only systems collapse the economy.)
-- **Web3 NFTs:** does this system require *rebalancing* characters/items? (NFT'd content is hard to nerf.)
-- **Subscription:** does this system give subscribers *ongoing reasons* to stay subscribed?
+- **F2P / IAP-heavy:** does system create *fair, optional* spending opportunity, or paywalls?
+- **Premium:** does system require live-ops to feel complete? If yes, model is wrong, not system.
+- **Web3 tokens:** does system create token sinks or only token sources? (Token-source-only systems collapse economy.)
+- **Web3 NFTs:** does system require *rebalancing* characters/items? (NFT'd content hard to nerf.)
+- **Subscription:** does system give subscribers *ongoing reasons* to stay subscribed?
 
-Systems that fight the rails are landmines for [game-monetization-strategist](../../game-monetization-strategist/SKILL.md) and `iap-manager` later. Surface the conflict in the design doc, don't bury it.
+Systems fighting rails are landmines for [game-monetization-strategist](../../game-monetization-strategist/SKILL.md) and `iap-manager` later. Surface conflict in design doc, don't bury it.
 
 ## The five-system limit (heuristic)
 
-For most teams and most games, the design should ship with **3–5 major systems** in the launch version. New systems can be added in updates.
+Most teams, most games: ship **3–5 major systems** in launch version. Add new systems in updates.
 
-If the design has 8+ major systems, two things are likely true:
-- The team will ship a quarter of them well and the rest poorly.
-- The player will never internalize all of them.
+Design with 8+ major systems → two things likely true:
+- Team ships a quarter of them well, rest poorly.
+- Player never internalizes all of them.
 
-The fix is *not* to add a tutorial for the extra systems. The fix is to cut them or convert them to *expansions / live-ops content* that ships after launch.
+Fix is *not* adding tutorial for extra systems. Fix: cut them or convert to *expansions / live-ops content* shipping after launch.
 
 ## What to do with a failing system
 
-When a system fails the checklist:
+System fails checklist:
 
-1. **Cut it.** Default. Most "interesting ideas" should die at the design stage.
-2. **Merge it.** Combine with a related system that's load-bearing.
-3. **Defer it.** Move to a planned post-launch update.
-4. **Rework it.** Only if the system is load-bearing and the failure is fixable.
+1. **Cut it.** Default. Most "interesting ideas" should die at design stage.
+2. **Merge it.** Combine with related load-bearing system.
+3. **Defer it.** Move to planned post-launch update.
+4. **Rework it.** Only if system load-bearing and failure fixable.
 
-"Keep it as is, we'll figure it out later" is the path that produces feature soup. Don't take it.
+"Keep it as is, we'll figure it out later" = path to feature soup. Don't take it.
 
 ## Output
 
-After running the checklist, the design doc's systems list should be:
+After checklist, design doc's systems list should be:
 
-- 3–5 systems that all pass the compounding test
-- Each labeled with the aesthetic and verb it serves
-- Each with a clear connection to at least 2 other systems
-- Each with a defensible team-capacity story
+- 3–5 systems all passing compounding test
+- Each labeled with aesthetic and verb it serves
+- Each with clear connection to at least 2 other systems
+- Each with defensible team-capacity story
 
-If the list still has 8 systems and you can't cut, route back to `game-design-shaper` for scope clarification.
+List still has 8 systems, can't cut → route back to `game-design-shaper` for scope clarification.

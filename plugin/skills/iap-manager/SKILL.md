@@ -5,66 +5,66 @@ description: Use when designing and operating the in-app purchase catalog of a g
 
 # IAP Manager
 
-Your job is the **catalog and store operations**: design the actual SKUs, set their tiers and bundles, configure the storefronts, plan price tests, and operate the catalog as a live system. You do not pick the macro monetization model ([game-monetization-strategist](../game-monetization-strategist/SKILL.md) does), tune the in-game economy rates (`game-balancer` does), or design the systems the IAP plugs into (`game-systems-designer` does).
+Own **catalog and store operations**: design actual SKUs, set tiers and bundles, configure storefronts, plan price tests, operate catalog as live system. Do not pick macro monetization model ([game-monetization-strategist](../game-monetization-strategist/SKILL.md) does), tune in-game economy rates (`game-balancer` does), or design systems IAP plugs into (`game-systems-designer` does).
 
-The two failure modes:
+Two failure modes:
 
-- **No-shape catalog.** A few SKUs picked by gut, no price-tier ladder, no segment-targeted compositions. Conversion is mediocre across the board; whales aren't served; minnows have no entry path.
-- **Theater catalog.** The catalog *looks* sophisticated but doesn't connect to player verbs, doesn't serve segment economics, and isn't tested live. The team confuses complexity with optimization.
+- **No-shape catalog.** Few SKUs picked by gut, no price-tier ladder, no segment-targeted compositions. Mediocre conversion across board; whales unserved; minnows have no entry path.
+- **Theater catalog.** Catalog *looks* sophisticated but doesn't connect to player verbs, doesn't serve segment economics, isn't tested live. Team confuses complexity with optimization.
 
-The right stance: **populate the price-tier ladder deliberately, design SKUs that match what segments want, A/B test the ones that matter most, and operate the catalog as a living system.**
+Right stance: **populate price-tier ladder deliberately, design SKUs matching segment wants, A/B test the ones that matter most, operate catalog as living system.**
 
 ## When this skill applies
 
-- A monetization strategy from [game-monetization-strategist](../game-monetization-strategist/SKILL.md) arrives with the catalog *shape* but not the per-SKU detail.
-- The team needs to build the App Store / Google Play / Steam / web catalog for launch.
-- A live game needs catalog adjustments — new bundles, re-priced SKUs, new battle pass tiering, A/B price tests.
-- A new region is being added and needs price localization.
-- A platform policy change (Apple / Google / Steam) requires re-architecting the catalog.
+- Monetization strategy from [game-monetization-strategist](../game-monetization-strategist/SKILL.md) arrives with catalog *shape* but not per-SKU detail.
+- Team needs App Store / Google Play / Steam / web catalog built for launch.
+- Live game needs catalog adjustments — new bundles, re-priced SKUs, new battle pass tiering, A/B price tests.
+- New region added, needs price localization.
+- Platform policy change (Apple / Google / Steam) requires catalog re-architecture.
 
-If the question is *which model to use*, route to [game-monetization-strategist](../game-monetization-strategist/SKILL.md). If the question is *in-game economy rates*, route to `game-balancer`. If the question is *store-page conversion (icon, screenshots, description)*, route to [game-marketer](../game-marketer/SKILL.md).
+Question is *which model to use* → route to [game-monetization-strategist](../game-monetization-strategist/SKILL.md). Question is *in-game economy rates* → route to `game-balancer`. Question is *store-page conversion (icon, screenshots, description)* → route to [game-marketer](../game-marketer/SKILL.md).
 
 ## Procedure
 
-1. **Read the monetization strategy.** Identify: catalog shape (currency packs / bundles / passes / cosmetics / ads-removal / sub), price-tier ladder intent, segment economics, KPI floors.
+1. **Read monetization strategy.** Identify: catalog shape (currency packs / bundles / passes / cosmetics / ads-removal / sub), price-tier ladder intent, segment economics, KPI floors.
 
-2. **Identify which catalog work this is.** New launch / live re-tune / new region / platform shift. Use [references/catalog-types.md](references/catalog-types.md).
+2. **Identify catalog work type.** New launch / live re-tune / new region / platform shift. Use [references/catalog-types.md](references/catalog-types.md).
 
-3. **Design the SKU list.** Use [references/sku-design-patterns.md](references/sku-design-patterns.md). For each SKU: name, segment target, content composition, price tier, store category, A/B variant if any. Fill `assets/iap-catalog-template.md`.
+3. **Design SKU list.** Use [references/sku-design-patterns.md](references/sku-design-patterns.md). Per SKU: name, segment target, content composition, price tier, store category, A/B variant if any. Fill `assets/iap-catalog-template.md`.
 
-4. **Set the price-tier ladder.** Use [references/price-tier-ladder.md](references/price-tier-ladder.md). $0.99 / $4.99 / $9.99 / $19.99 / $49.99 / $99.99 (or local equivalents). Each tier has at least one compelling SKU.
+4. **Set price-tier ladder.** Use [references/price-tier-ladder.md](references/price-tier-ladder.md). $0.99 / $4.99 / $9.99 / $19.99 / $49.99 / $99.99 (or local equivalents). Each tier ≥1 compelling SKU.
 
 5. **Compose bundles and starter packs.** Use [references/bundles-and-starter-packs.md](references/bundles-and-starter-packs.md). Bundle perceived value > sum of parts. Starter pack hits new players within first hour.
 
-6. **Tier the battle pass / season pass** if the catalog includes one. Free vs paid track structure; reward density curve; cosmetic / mechanical / status mix per tier.
+6. **Tier battle pass / season pass** if catalog includes one. Free vs paid track structure; reward density curve; cosmetic / mechanical / status mix per tier.
 
-7. **Plan the A/B price tests.** Use [references/price-testing.md](references/price-testing.md). Pick the 2–3 SKUs with the biggest revenue impact; test ±20% / ±50% with proper controls.
+7. **Plan A/B price tests.** Use [references/price-testing.md](references/price-testing.md). Pick 2–3 SKUs with biggest revenue impact; test ±20% / ±50% with proper controls.
 
 8. **Localize prices** per region. Use [references/price-localization.md](references/price-localization.md). Don't just convert USD → local — anchor to local price psychology and platform tier maps.
 
 9. **Configure storefronts.** App Store Connect, Google Play Console, Steam Partner, Stripe, web3 marketplaces if applicable. Use [references/store-config-checklist.md](references/store-config-checklist.md). Coordinate with `godot-engineer` for client-side IAP plumbing.
 
-10. **Hand off the live operations plan.** What to monitor, when to refresh the catalog (cadence), kill triggers for bad-performing SKUs.
+10. **Hand off live operations plan.** What to monitor, catalog refresh cadence, kill triggers for bad-performing SKUs.
 
 ## Universal rules
 
-- **Match SKUs to segments.** Whale SKUs serve whale motivations; minnow SKUs serve minnow motivations. A "one-size-fits-all" catalog underserves all segments.
-- **Populate the full ladder.** Mid-tier vacuum (no $4.99–$19.99 SKUs) means dolphins don't convert. Lopsided high-end means whales hit the ceiling and stop.
-- **Bundles beat singles.** A bundle of 3 items at 30% off the singles outperforms the singles. Use bundles as the *primary* SKU type, not an afterthought.
-- **Starter pack is mandatory** in F2P. The first paywall touch should have a starter pack at heavy discount with high perceived value. This single SKU is often 20–40% of new-player conversion.
-- **A/B test the few SKUs that matter.** Don't A/B test everything; test the 2–3 SKUs with the biggest revenue impact. The rest can be tuned via comp benchmarks.
-- **Don't lie about value.** Bundle comparisons must be honest. "$50 of value for $20" is fine if the parts genuinely add to $50 in the game's pricing. Inflated comparisons are detected and trust is hard to rebuild.
-- **Don't manipulate scarcity.** Real limited-time offers are fine. Fake countdowns that reset are dark patterns.
-- **Localize prices, don't translate.** Local price psychology differs (e.g. ¥120 in JP is a "small" price; $1.20 in US is "small"; converting one to the other doesn't preserve psychology).
-- **Do not change in-game economy rates.** If a SKU implies an in-game rate change, hand back to `game-balancer`.
-- **Do not change the macro model.** If the catalog implies a model change (e.g. "we need a sub tier"), hand back to [game-monetization-strategist](../game-monetization-strategist/SKILL.md).
-- **Coordinate trust on monetized content changes.** Re-pricing or re-composing existing paid bundles requires comms (route to [game-marketer](../game-marketer/SKILL.md)) and often compensation (with [game-monetization-strategist](../game-monetization-strategist/SKILL.md)).
+- **Match SKUs to segments.** Whale SKUs serve whale motivations; minnow SKUs serve minnow motivations. "One-size-fits-all" catalog underserves all segments.
+- **Populate full ladder.** Mid-tier vacuum (no $4.99–$19.99 SKUs) → dolphins don't convert. Lopsided high-end → whales hit ceiling, stop.
+- **Bundles beat singles.** Bundle of 3 items at 30% off singles outperforms singles. Bundles are *primary* SKU type, not afterthought.
+- **Starter pack mandatory** in F2P. First paywall touch should have starter pack at heavy discount, high perceived value. Often 20–40% of new-player conversion.
+- **A/B test few SKUs that matter.** Don't test everything; test 2–3 SKUs with biggest revenue impact. Rest tuned via comp benchmarks.
+- **Don't lie about value.** Bundle comparisons must be honest. "$50 of value for $20" fine if parts genuinely total $50 in game's pricing. Inflated comparisons get detected; trust hard to rebuild.
+- **Don't manipulate scarcity.** Real limited-time offers fine. Fake resetting countdowns = dark patterns.
+- **Localize prices, don't translate.** Local price psychology differs (¥120 in JP = "small"; $1.20 in US = "small"; converting one to other doesn't preserve psychology).
+- **Do not change in-game economy rates.** SKU implies rate change → hand back to `game-balancer`.
+- **Do not change macro model.** Catalog implies model change (e.g. "we need a sub tier") → hand back to [game-monetization-strategist](../game-monetization-strategist/SKILL.md).
+- **Coordinate trust on monetized content changes.** Re-pricing or re-composing existing paid bundles requires comms (route to [game-marketer](../game-marketer/SKILL.md)), often compensation (with [game-monetization-strategist](../game-monetization-strategist/SKILL.md)).
 
 ## References
 
-- [references/catalog-types.md](references/catalog-types.md) — new launch / live re-tune / new region / platform shift; how each is different
+- [references/catalog-types.md](references/catalog-types.md) — new launch / live re-tune / new region / platform shift; how each differs
 - [references/sku-design-patterns.md](references/sku-design-patterns.md) — currency packs, bundles, starter packs, passes, cosmetics, ad-removal, sub tiers, web3 SKUs
-- [references/price-tier-ladder.md](references/price-tier-ladder.md) — populating the ladder; psychology of each tier; per-platform price tier maps
+- [references/price-tier-ladder.md](references/price-tier-ladder.md) — populating ladder; per-tier psychology; per-platform price tier maps
 - [references/bundles-and-starter-packs.md](references/bundles-and-starter-packs.md) — bundle composition, perceived value, decoy effect, starter pack timing
 - [references/price-testing.md](references/price-testing.md) — A/B test design for prices, statistical power, ramp, kill criteria
 - [references/price-localization.md](references/price-localization.md) — per-region pricing, platform tier maps, currency psychology, cross-border arbitrage
@@ -75,7 +75,7 @@ If the question is *which model to use*, route to [game-monetization-strategist]
 
 ## Assets
 
-- [assets/iap-catalog-template.md](assets/iap-catalog-template.md) — the canonical catalog spec
+- [assets/iap-catalog-template.md](assets/iap-catalog-template.md) — canonical catalog spec
 - [assets/price-tier-ladder-template.md](assets/price-tier-ladder-template.md) — per-tier SKU population
 - [assets/bundle-composition-template.md](assets/bundle-composition-template.md) — bundle composition with perceived-value math
 - [assets/price-test-plan-template.md](assets/price-test-plan-template.md) — A/B price test plan with stats and kill criteria
@@ -83,12 +83,12 @@ If the question is *which model to use*, route to [game-monetization-strategist]
 
 ## Related skills
 
-- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — produces the catalog *shape* and price-tier ladder this skill populates
-- [game-balancer](../game-balancer/SKILL.md) — provides currency velocities and grind-time targets that size starter packs / bundles
-- [game-systems-designer](../game-systems-designer/SKILL.md) — the systems define what content is available to bundle
+- [game-monetization-strategist](../game-monetization-strategist/SKILL.md) — produces catalog *shape* and price-tier ladder this skill populates
+- [game-balancer](../game-balancer/SKILL.md) — provides currency velocities and grind-time targets sizing starter packs / bundles
+- [game-systems-designer](../game-systems-designer/SKILL.md) — systems define content available to bundle
 - [game-marketer](../game-marketer/SKILL.md) — store-page conversion, paywall comms, sale comms, segment messaging
 - [godot-engineer](../godot-engineer/SKILL.md) — implements client-side IAP plumbing, store SDKs, restore-purchases, anti-fraud
 - [growth-engine](../growth-engine/SKILL.md) — runs A/B price tests once live with proper statistics
 - [conversion-ops](../conversion-ops/SKILL.md) — store-side funnel optimization (CRO patterns transfer)
-- [revenue-intelligence](../revenue-intelligence/SKILL.md) — closes the loop on which SKUs drive cohort revenue
+- [revenue-intelligence](../revenue-intelligence/SKILL.md) — closes loop on which SKUs drive cohort revenue
 - [security-engineering](../security-engineering/SKILL.md) — receipt validation, anti-fraud, restore-purchase abuse, web3 wallet security

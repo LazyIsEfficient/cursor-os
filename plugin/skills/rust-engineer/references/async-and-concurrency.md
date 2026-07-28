@@ -31,8 +31,8 @@ fn main() {
 ### Worker threads, blocking pool, I/O driver
 
 - **Worker threads** — run async tasks. Never block. Count defaults to `num_cpus::get()`.
-- **Blocking thread pool** — spawned on demand by `spawn_blocking`. Threads idle-timeout and are reclaimed. Default max: 512.
-- **I/O driver** — a single background thread calling `epoll`/`kqueue`/IOCP. Wakes tasks when I/O is ready. Not a worker thread.
+- **Blocking thread pool** — spawned on demand by `spawn_blocking`. Threads idle-timeout, reclaimed. Default max: 512.
+- **I/O driver** — single background thread calling `epoll`/`kqueue`/IOCP. Wakes tasks when I/O ready. Not a worker thread.
 
 ### Runtime builder
 
@@ -47,7 +47,7 @@ let rt = tokio::runtime::Builder::new_multi_thread()
     .build()?;
 ```
 
-Use `Builder` when embedding Tokio in a library, when running multiple runtimes, or when tuning thread counts for a specific workload. `enable_all()` is shorthand for `enable_io().enable_time()`.
+Use `Builder` when embedding Tokio in library, running multiple runtimes, or tuning thread counts for specific workload. `enable_all()` shorthand for `enable_io().enable_time()`.
 
 ---
 
@@ -60,9 +60,9 @@ let handle: JoinHandle<T> = tokio::spawn(async move { ... });
 let result: Result<T, JoinError> = handle.await?;
 ```
 
-- Schedules an async task on the worker thread pool.
+- Schedules async task on worker thread pool.
 - Future must be `Send + 'static`.
-- Completes independently; dropping the handle does **not** cancel the task (detaches it).
+- Completes independently; dropping handle does **not** cancel task (detaches it).
 
 ### `tokio::task::spawn_blocking`
 
@@ -73,9 +73,9 @@ let result = tokio::task::spawn_blocking(|| {
 }).await??;
 ```
 
-- Moves the closure to the blocking thread pool, freeing the worker thread.
-- Closure need not be `async`. Return value is wrapped in `JoinHandle<T>`.
-- The `??` unwraps `JoinError` then the inner `Result`.
+- Moves closure to blocking thread pool, freeing worker thread.
+- Closure need not be `async`. Return value wrapped in `JoinHandle<T>`.
+- `??` unwraps `JoinError` then inner `Result`.
 
 ### `tokio::task::block_in_place`
 
@@ -86,8 +86,8 @@ let result = tokio::task::block_in_place(|| {
 });
 ```
 
-- Tells the runtime "this worker thread will block; migrate pending tasks elsewhere."
-- Avoids a thread hop vs `spawn_blocking`, but ties up a worker thread.
+- Tells runtime "this worker thread will block; migrate pending tasks elsewhere."
+- Avoids thread hop vs `spawn_blocking`, but ties up worker thread.
 - Prefer `spawn_blocking` in almost all cases.
 
 ### Detecting blocking in async code
@@ -98,7 +98,7 @@ Red flags inside `async fn` or `.await` chains:
 - `std::fs::*` — use `tokio::fs::*`
 - `std::net::TcpStream` — use `tokio::net::TcpStream`
 - Synchronous DB drivers (e.g., `rusqlite`, blocking `postgres`) — wrap in `spawn_blocking`
-- CPU-bound loops (encoding, hashing, compression) — `spawn_blocking` or a `rayon` threadpool
+- CPU-bound loops (encoding, hashing, compression) — `spawn_blocking` or `rayon` threadpool
 
 ---
 
@@ -106,8 +106,8 @@ Red flags inside `async fn` or `.await` chains:
 
 `tokio::spawn` requires `Future: Send + 'static`.
 
-- **`Send`**: the task may be stolen by any worker thread between `.await` points. Everything alive across an await must be `Send`.
-- **`'static`**: the task owns all its data; no borrowed references to the spawning frame.
+- **`Send`**: task may be stolen by any worker thread between `.await` points. Everything alive across await must be `Send`.
+- **`'static`**: task owns all its data; no borrowed references to spawning frame.
 
 ### Common `Send` violations
 
@@ -158,7 +158,7 @@ tokio::spawn(async move {
 });
 ```
 
-`std::sync::MutexGuard<T>` is `!Send`. The compiler rejects this when crossing a `tokio::spawn` boundary. However, within `block_in_place` or on a `current_thread` runtime it may compile but is still a latency hazard.
+`std::sync::MutexGuard<T>` is `!Send`. Compiler rejects this crossing `tokio::spawn` boundary. Within `block_in_place` or on `current_thread` runtime may compile — still latency hazard.
 
 ### `tokio::sync::Mutex`
 
@@ -173,7 +173,7 @@ tokio::spawn(async move {
 });
 ```
 
-`tokio::sync::Mutex` guard is `Send`. Use it when the lock genuinely must be held across an await (e.g., transactional reads).
+`tokio::sync::Mutex` guard is `Send`. Use when lock genuinely must be held across await (e.g., transactional reads).
 
 ### Preferred pattern: acquire-extract-release
 
@@ -185,7 +185,7 @@ let value = {
 expensive_async_operation(value).await; // no lock held
 ```
 
-Minimizes lock contention and avoids `tokio::sync::Mutex` overhead for the common case.
+Minimizes lock contention, avoids `tokio::sync::Mutex` overhead for common case.
 
 ---
 
@@ -204,7 +204,7 @@ tokio::spawn({
 
 ### Shared mutable state
 
-Reach for message passing first. When shared state is unavoidable:
+Reach for message passing first. When shared state unavoidable:
 
 ```rust
 // Arc<Mutex<T>> — exclusive access
@@ -264,7 +264,7 @@ while let Some(msg) = rx.recv().await {
 }
 ```
 
-`mpsc::unbounded_channel()` drops backpressure; use only when producers are naturally rate-limited.
+`mpsc::unbounded_channel()` drops backpressure; use only when producers naturally rate-limited.
 
 ### `oneshot`
 
@@ -316,7 +316,7 @@ loop {
 
 ## Structured Concurrency with `JoinSet`
 
-`JoinSet` owns a collection of tasks; dropping it cancels all remaining tasks.
+`JoinSet` owns collection of tasks; dropping it cancels all remaining tasks.
 
 ```rust
 use tokio::task::JoinSet;
@@ -337,7 +337,7 @@ while let Some(res) = set.join_next().await {
 }
 ```
 
-`join_next()` returns `None` when the set is empty. To abort remaining tasks on first error:
+`join_next()` returns `None` when set empty. Abort remaining tasks on first error:
 
 ```rust
 while let Some(res) = set.join_next().await {
@@ -371,12 +371,12 @@ tokio::select! {
 }
 ```
 
-- Exactly one branch executes; all others are cancelled (dropped).
-- Branches are polled in a pseudorandom order by default to avoid starvation. Use `biased;` to poll top-to-bottom.
+- Exactly one branch executes; all others cancelled (dropped).
+- Branches polled in pseudorandom order by default to avoid starvation. Use `biased;` to poll top-to-bottom.
 
 ### Cancellation safety
 
-A future is **cancellation-safe** if dropping it mid-poll loses no data and leaves no corrupted state.
+Future is **cancellation-safe** if dropping it mid-poll loses no data, leaves no corrupted state.
 
 | Primitive | Cancellation-safe? |
 |---|---|
@@ -387,7 +387,7 @@ A future is **cancellation-safe** if dropping it mid-poll loses no data and leav
 | `AsyncReadExt::read_to_end` | No — partial data discarded |
 | `AsyncWriteExt::write_all` | No — partial write possible |
 
-When using a non-cancellation-safe future in `select!`, consider using a `tokio_util::io::ReaderStream` or pinning+fusing the future outside the loop.
+Using non-cancellation-safe future in `select!` → consider `tokio_util::io::ReaderStream` or pinning+fusing future outside loop.
 
 ### Graceful shutdown pattern
 
@@ -414,7 +414,7 @@ async fn serve(shutdown: &mut watch::Receiver<bool>) {
 }
 ```
 
-`biased;` ensures the shutdown branch is checked first every poll.
+`biased;` ensures shutdown branch checked first every poll.
 
 ---
 
@@ -457,9 +457,9 @@ loop {
 }
 ```
 
-`interval` fires immediately on first `tick()`. Use `interval_at(start, period)` to delay the first tick.
+`interval` fires immediately on first `tick()`. Use `interval_at(start, period)` to delay first tick.
 
-`MissedTickBehavior::Skip` (default) catches up by skipping missed ticks; `Burst` delivers them all; `Delay` resets the interval from the current time.
+`MissedTickBehavior::Skip` (default) catches up by skipping missed ticks; `Burst` delivers them all; `Delay` resets interval from current time.
 
 ---
 
@@ -514,7 +514,7 @@ async fn good(m: Arc<std::sync::Mutex<u32>>) {
 }
 ```
 
-### Infinite loop without a yield point
+### Infinite loop without yield point
 
 ```rust
 // BAD: starves other tasks on the same thread
@@ -535,7 +535,7 @@ async fn spin() {
 
 In practice, replace hot-spin loops with `Notify`, `watch`, or `sleep`-based polling.
 
-### Not driving a future to completion
+### Not driving future to completion
 
 ```rust
 // BAD: future created but never polled — does nothing
@@ -547,4 +547,4 @@ some_async_fn().await;
 tokio::spawn(some_async_fn());
 ```
 
-Rust futures are lazy — they do nothing until polled.
+Rust futures are lazy — do nothing until polled.

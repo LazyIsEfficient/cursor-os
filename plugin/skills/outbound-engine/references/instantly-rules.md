@@ -11,13 +11,13 @@
 
 **Never use:**
 - Square-bracket placeholders like `[Competitor A]`, `[Your Company]`, `[Industry]`
-- Custom variables not listed above — they won't render in Instantly
-- If a concept can't be expressed with valid variables, rewrite the copy to not need it
+- Custom variables not listed above — won't render in Instantly
+- Concept can't be expressed with valid variables → rewrite copy to not need it
 
 ## firstName Rule (Critical)
 - **Always require firstName** during lead upload. Filter out leads without first name.
-- Do NOT rely on the `|there` fallback as a design choice — it signals a bad list.
-- If the list has >5% missing firstName, flag it before launch.
+- Do NOT rely on `|there` fallback as design choice — signals bad list.
+- List has >5% missing firstName → flag before launch.
 
 ## Sequence Structure
 
@@ -33,14 +33,14 @@
 ## A/B Testing
 - **Step 1 only:** Test 2 subject line variants (A/B)
 - Don't A/B test body copy in early campaigns — isolate subject line variable first
-- Winning subject line = whichever hits higher open rate at 100+ sends per variant
+- Winning subject line = higher open rate at 100+ sends per variant
 
 ## Signature Format
 ```
 {{sendingAccountFirstName}}
 ```
 - No company name, no title, no tagline — unless explicitly requested
-- Keep it human. Feels like it came from a person, not a company.
+- Keep human. Feels like from person, not company.
 
 ## Deliverability Rules
 
@@ -55,9 +55,9 @@
 - Accounts below 80 or under 14 days: DO NOT add to active campaigns
 
 ### Domain Setup (must verify before launch)
-- SPF: configured and passing
-- DKIM: configured and passing
-- DMARC: policy set (at minimum p=none with reporting)
+- SPF: configured + passing
+- DKIM: configured + passing
+- DMARC: policy set (minimum p=none with reporting)
 - MX records: pointing correctly
 - Custom tracking domain: set up in Instantly (subdomain, not root domain)
 

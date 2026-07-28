@@ -1,6 +1,6 @@
 # Google BigQuery Integration
 
-BigQuery serves as the analytics data warehouse. Use `@google-cloud/bigquery` for programmatic access.
+BigQuery is analytics data warehouse. Use `@google-cloud/bigquery` for programmatic access.
 
 ## Connection Pattern
 
@@ -14,7 +14,7 @@ const bigquery = new BigQuery({
 
 ## ETL to BigQuery
 
-Move data from PostgreSQL to BigQuery for analytics workloads:
+Move data PostgreSQL → BigQuery for analytics workloads:
 
 ```typescript
 // Extract from PostgreSQL
@@ -42,8 +42,8 @@ await bigquery.dataset('platform').table('point_transactions').insert(rows)
 - **Partitioned tables**: Partition by `distributed_at` or `created_at` for time-series data
 - **Clustered columns**: Cluster by `user_id`, `transaction_type` for common query patterns
 - **Denormalized models**: Flatten joins at ETL time — BigQuery prefers wide tables over joins
-- **Append-only**: Treat BigQuery tables as immutable — insert new rows, don't update
-- **Streaming vs batch**: Use streaming inserts for real-time, batch loads for bulk historical data
+- **Append-only**: Treat BigQuery tables as immutable — insert new rows, never update
+- **Streaming vs batch**: Streaming inserts for real-time, batch loads for bulk historical data
 
 ## Common Warehouse Tables
 

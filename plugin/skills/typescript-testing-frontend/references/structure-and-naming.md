@@ -2,7 +2,7 @@
 
 ## Directory Structure
 
-Tests live in co-located `__tests__/` folders next to source files:
+Tests in co-located `__tests__/` folders next to source files:
 
 ```
 apps/platform-app/

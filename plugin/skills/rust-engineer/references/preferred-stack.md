@@ -1,36 +1,36 @@
 # Preferred service stack — an opinionated workspace profile
 
-A concrete dependency profile for async Rust service workspaces, distilled
-from a production multi-crate workspace. Use it when starting a new service
-workspace or contributing to one that declares this profile. The standing
-rule: **the workspace you are in wins** — when an existing `Cargo.toml`
-declares different choices (including lint inversions, below), follow the
+Concrete dependency profile for async Rust service workspaces, distilled
+from production multi-crate workspace. Use when starting new service
+workspace or contributing to one declaring this profile. Standing
+rule: **the workspace you are in wins** — existing `Cargo.toml`
+declares different choices (including lint inversions, below) → follow
 workspace, not this document.
 
 ## Workspace conventions
 
 - `edition = "2024"`, `resolver = "2"`, shared metadata in
-  `[workspace.package]`. (The toolchain reference documents edition 2021 as
-  the general library default; this profile is newer — as always, the
-  workspace's declared edition wins. Note that edition 2024 defaults to
-  resolver `"3"` (MSRV-aware); declaring `"2"` explicitly opts out of that —
-  treat it as deliberate, don't "fix" it.)
-- **Every external version is declared once** in `[workspace.dependencies]`;
-  member crates take `dep = { workspace = true }`. A version literal inside a
-  member's `Cargo.toml` is a review finding.
-- Internal crates are also declared in `[workspace.dependencies]` as
+  `[workspace.package]`. (Toolchain reference documents edition 2021 as
+  general library default; this profile is newer — as always,
+  workspace's declared edition wins. Note edition 2024 defaults to
+  resolver `"3"` (MSRV-aware); declaring `"2"` explicitly opts out —
+  treat as deliberate, don't "fix" it.)
+- **Every external version declared once** in `[workspace.dependencies]`;
+  member crates take `dep = { workspace = true }`. Version literal inside
+  member's `Cargo.toml` is review finding.
+- Internal crates also declared in `[workspace.dependencies]` as
   `{ path = "./crate-name", version = "0.0.0" }` so members depend on them
-  uniformly. (Caveat: `version = "0.0.0"` only matches exactly 0.0.0 — this
-  convention assumes internal crates never bump independently; revisit it if
-  internals start publishing real versions to the registry.)
-- Private-registry publishing is controlled by an allowlist in
+  uniformly. (Caveat: `version = "0.0.0"` only matches exactly 0.0.0 —
+  convention assumes internal crates never bump independently; revisit if
+  internals start publishing real versions to registry.)
+- Private-registry publishing controlled by allowlist in
   `[workspace.package] publish = [...]` — never per-crate ad hoc.
-- **Pin discipline:** the default caret requirement for most deps (a bare
-  `"1.2.3"` *is* `^1.2.3` in Cargo — writing the `^` explicitly is purely
+- **Pin discipline:** default caret requirement for most deps (bare
+  `"1.2.3"` *is* `^1.2.3` in Cargo — writing `^` explicitly purely
   stylistic), and exact `=` pins for deps whose upgrades must be deliberate,
-  reviewed events (e.g. Vault clients). A git-fork dependency is acceptable
-  only as a stopgap and MUST carry a comment with the upstream PR/issue link
-  and a TODO to drop the fork once released.
+  reviewed events (e.g. Vault clients). Git-fork dependency acceptable
+  only as stopgap, MUST carry comment with upstream PR/issue link
+  and TODO to drop fork once released.
 
 ## Lint profile — note the inversion
 
@@ -41,13 +41,13 @@ unwrap_used = "allow"
 panic_in_result_fn = "warn"
 ```
 
-This profile **inverts** this skill's default rule ("no `.unwrap()`,
-`.expect("reason")` at entry points"): here `.expect()` is *denied* and
-`.unwrap()` is *allowed*. The reasoning: expect-strings rot into false
-documentation, while a bare `.unwrap()` is greppable and honest about being
-an assertion. Under this profile: propagate with `?` first; where local
-infallibility is provable, `.unwrap()` is the permitted assert; never reach
-for `.expect()`. Do not fight the workspace lints — they are CI-enforced.
+This profile **inverts** skill's default rule ("no `.unwrap()`,
+`.expect("reason")` at entry points"): here `.expect()` is *denied*,
+`.unwrap()` *allowed*. Reasoning: expect-strings rot into false
+documentation; bare `.unwrap()` is greppable, honest about being
+assertion. Under this profile: propagate with `?` first; where local
+infallibility provable, `.unwrap()` is permitted assert; never reach
+for `.expect()`. Do not fight workspace lints — CI-enforced.
 
 ## The stack, by concern
 
@@ -89,9 +89,9 @@ for `.expect()`. Do not fight the workspace lints — they are CI-enforced.
 
 ## What this profile implies in review
 
-- A new dependency outside this table needs justification (same bar as
-  the standard code-review dependency rule): what does it do that the sanctioned crate doesn't?
-- A member crate pinning its own version of a workspace dep is a finding.
+- New dependency outside this table needs justification (same bar as
+  standard code-review dependency rule): what does it do that sanctioned crate doesn't?
+- Member crate pinning own version of workspace dep is a finding.
 - New `rusoto_*` usage is a finding; migrate toward `aws-sdk-*`.
-- `.expect()` anywhere in a workspace with this lint profile is a CI failure,
-  not a style debate.
+- `.expect()` anywhere in workspace with this lint profile is CI failure,
+  not style debate.

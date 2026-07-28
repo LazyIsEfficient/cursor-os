@@ -1,6 +1,6 @@
 # Ingestion kinds and scan targets
 
-Use the **Kind** column to classify each catalog entry.
+Use **Kind** column to classify each catalog entry.
 
 | Kind | Meaning | Typical ingestion route examples |
 |---|---|---|
@@ -12,24 +12,24 @@ Use the **Kind** column to classify each catalog entry.
 
 ## What to scan in a diff
 
-Prioritize files and symbols that define **contracts**:
+Prioritize files and symbols defining **contracts**:
 
 - OpenAPI / Swagger / GraphQL schema / protobuf / Avro / JSON Schema
 - Route handlers with explicit request/response types (Express, Fastify, Axum, etc.)
 - ORM models, migrations, Prisma/Diesel/SQLAlchemy schema
 - DTO / `types.ts` / Zod / Pydantic / serde structs used at boundaries
 - Message envelope types, queue payload structs, webhook body types
-- API client interfaces that mirror server contracts
+- API client interfaces mirroring server contracts
 
 Skip: pure UI components, CSS, test fixtures **unless** they define canonical shapes used in production paths.
 
 ## Ingestion route field
 
-One line per primary entry point — how data **enters** the system for this shape:
+One line per primary entry point — how data **enters** system for this shape:
 
 - REST: method + path + status code if response-only
 - GraphQL: operation type + field name
 - Queue: broker + topic/queue name (+ schema registry subject if present)
 - DB: database + table/collection (+ migration id if new)
 
-If multiple routes share the same shape, list each on its own line in the table or use a bullet list under **Ingestion route**.
+Multiple routes sharing same shape → list each on own line in table or use bullet list under **Ingestion route**.

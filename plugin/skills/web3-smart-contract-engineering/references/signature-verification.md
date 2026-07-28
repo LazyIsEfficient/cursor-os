@@ -1,6 +1,6 @@
 # Signature Verification
 
-Used across `SignatureMinter`, `PaymentCode`, and `RewardPayout`:
+Used across `SignatureMinter`, `PaymentCode`, `RewardPayout`:
 
 ```solidity
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -29,7 +29,7 @@ usedHashes[ethSignedHash] = true;
 **Rules**:
 - Always include `block.chainid` and `address(this)` in signed data
 - Always track used hashes to prevent replay
-- Include a deadline or expiry for time-bounded claims
+- Include deadline or expiry for time-bounded claims
 - Use `ECDSA.recover` from OpenZeppelin — never roll your own
 
 ## TypeScript Signature Generation (Tests/Backend)

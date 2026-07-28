@@ -1,11 +1,11 @@
 ## Edition
 
-- Always use `edition = "2021"` in `Cargo.toml` for new projects — the current stable edition
+- Always use `edition = "2021"` in `Cargo.toml` for new projects — current stable edition
 - Edition 2021 key improvements:
-  - **Disjoint closure captures**: closures capture specific fields rather than the whole struct — `|| use_x(s.x)` no longer borrows all of `s`
+  - **Disjoint closure captures**: closures capture specific fields rather than whole struct — `|| use_x(s.x)` no longer borrows all of `s`
   - **`IntoIterator` for arrays**: `for x in [1, 2, 3]` works without `.iter()` or `.into_iter()`
   - **`or_patterns` in `let`/`for`**: `let (Ok(x) | Err(x)) = result;`
-- Edition is **per-crate** in a workspace — declare `edition = "2021"` in every member's `Cargo.toml`; there is no workspace-level default that propagates automatically
+- Edition is **per-crate** in workspace — declare `edition = "2021"` in every member's `Cargo.toml`; no workspace-level default propagates automatically
 
 ---
 
@@ -32,7 +32,7 @@ group_imports = "StdExternalCrate"  # blank lines between std / external / inter
 | `group_imports` | `"StdExternalCrate"` | separates `std`/`core`/`alloc`, external crates, and local paths with blank lines |
 
 ### Rule
-Never fight `rustfmt`. If the output looks odd, it is almost always correct — the value is **uniform consistency across the codebase**, not individual preference. Suppress a specific rule with `#[rustfmt::skip]` sparingly, never globally.
+Never fight `rustfmt`. Output looks odd → almost always correct — value is **uniform consistency across codebase**, not individual preference. Suppress specific rule with `#[rustfmt::skip]` sparingly, never globally.
 
 ---
 
@@ -71,13 +71,13 @@ cargo clippy -p my-crate -- -D warnings
 let pct = count as f64 / total as f64 * 100.0;
 ```
 
-**Rule**: every `#[allow(...)]` must have an inline comment explaining why. Bare allows are a code smell — they hide the reasoning from reviewers and future maintainers.
+**Rule**: every `#[allow(...)]` must have inline comment explaining why. Bare allows are code smell — hide reasoning from reviewers and future maintainers.
 
 ---
 
 ## `rust-analyzer`
 
-- The canonical LSP implementation; prefer it over the IntelliJ/CLion Rust plugin for feature parity and faster upstream updates
+- Canonical LSP implementation; prefer over IntelliJ/CLion Rust plugin for feature parity, faster upstream updates
 - Key editor setting: `"rust-analyzer.check.command": "clippy"` — surfaces clippy lints inline as you type; otherwise only compiler errors appear
 
 ### `cargo check` vs `cargo build`
@@ -116,7 +116,7 @@ reason = "only affects the foo feature which we do not enable"
 
 ## `cargo deny`
 
-Superset of `cargo audit` — covers advisories, license policy, banned crates, and allowed source registries.
+Superset of `cargo audit` — covers advisories, license policy, banned crates, allowed source registries.
 
 ### Setup
 ```sh
@@ -158,7 +158,7 @@ ignore = []  # prefer empty; document any exceptions in audit.toml
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 ```
 
-Use `cargo deny` **instead of or alongside** `cargo audit` in CI — it subsumes advisory scanning and adds license/ban enforcement.
+Use `cargo deny` **instead of or alongside** `cargo audit` in CI — subsumes advisory scanning, adds license/ban enforcement.
 
 ---
 
@@ -196,13 +196,13 @@ test-threads = 8
 slow-timeout = { period = "60s", terminate-after = 3 }
 ```
 
-**Limitation**: does not execute doctests. Always run `cargo test --doc` as a separate CI step.
+**Limitation**: does not execute doctests. Always run `cargo test --doc` as separate CI step.
 
 ---
 
 ## `rust-toolchain.toml`
 
-Commit this file at the workspace root. It pins the compiler version for all developers and CI.
+Commit at workspace root. Pins compiler version for all developers and CI.
 
 ```toml
 [toolchain]
@@ -215,9 +215,9 @@ targets = [
 ]
 ```
 
-- `rustup` automatically installs the declared toolchain on first use
-- Updating the pin is a deliberate, reviewable change — not a silent drift
-- CI does not need a separate `rustup install` step when `rust-toolchain.toml` is present
+- `rustup` automatically installs declared toolchain on first use
+- Updating pin is deliberate, reviewable change — not silent drift
+- CI needs no separate `rustup install` step when `rust-toolchain.toml` present
 
 ---
 
@@ -312,6 +312,6 @@ Separate cache keys for `debug` and `release` profiles if both appear in CI.
 
 ### Additional rules
 - Module files: prefer `foo/mod.rs` only when `foo` has submodules; use `foo.rs` for leaf modules (Rust 2018+ path style)
-- Avoid redundant prefixes: `http_client::HttpClient` is preferred over `http_client::HttpClientClient`; but `http_client::Client` is better still — let the module path carry context
-- Getter methods: no `get_` prefix (Rust convention); use the field name directly: `.name()` not `.get_name()`
+- Avoid redundant prefixes: `http_client::HttpClient` preferred over `http_client::HttpClientClient`; but `http_client::Client` better still — let module path carry context
+- Getter methods: no `get_` prefix (Rust convention); use field name directly: `.name()` not `.get_name()`
 - Boolean getters: prefix with `is_`, `has_`, `can_`, `should_` as appropriate

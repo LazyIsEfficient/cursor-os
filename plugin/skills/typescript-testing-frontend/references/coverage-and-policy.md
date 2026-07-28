@@ -2,7 +2,7 @@
 
 ## Coverage Configuration
 
-Coverage is **enabled by default** (`collectCoverage: true`). CI outputs JUnit XML to `test-results/jest/results.xml`. No explicit thresholds are configured.
+Coverage **enabled by default** (`collectCoverage: true`). CI outputs JUnit XML to `test-results/jest/results.xml`. No explicit thresholds configured.
 
 Excluded from coverage: `coveragePathIgnorePatterns: ['<rootDir>/test/test-utils.js']`
 
@@ -10,16 +10,16 @@ Excluded from coverage: `coveragePathIgnorePatterns: ['<rootDir>/test/test-utils
 
 ### No Snapshot Testing
 
-This codebase uses behavioral assertions exclusively. Do not introduce snapshot tests.
+Behavioral assertions exclusively. Do not introduce snapshot tests.
 
 ### Keep All Tests Active
 
-- Fix broken tests — do not use `test.skip()` or comment them out
-- Delete tests that are genuinely no longer relevant
+- Fix broken tests — never `test.skip()` or comment out
+- Delete tests genuinely no longer relevant
 
 ### Every Test Must Assert
 
-Every `it()` block must include at least one `expect()` that validates observable behavior.
+Every `it()` block must include at least one `expect()` validating observable behavior.
 
 ### Test Failure Response
 

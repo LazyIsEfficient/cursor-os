@@ -1,10 +1,10 @@
 # GDScript vs C#
 
-This skill defaults to **C#** as the primary language for Godot 4 work, but GDScript is still relevant in places. This file explains the trade-offs, when to reach for which, and how to interoperate when you have to.
+Skill defaults to **C#** as primary language for Godot 4 work, but GDScript still relevant in places. File explains trade-offs, when to reach for which, how to interoperate when you have to.
 
-The honest summary: **for a non-trivial project, C# is the better default in Godot 4.** It's faster, has better tooling, integrates with the broader .NET ecosystem, and handles complex codebases better. GDScript is still useful for tools, editor scripts, plugin development, and quick prototypes — but it's not the primary language for serious game work.
+Honest summary: **for non-trivial project, C# is better default in Godot 4.** Faster, better tooling, integrates with broader .NET ecosystem, handles complex codebases better. GDScript still useful for tools, editor scripts, plugin development, quick prototypes — but not primary language for serious game work.
 
-This is a *change* from Godot 3, where GDScript was the de facto standard and C# was a second-class citizen. Godot 4 with .NET 8 has made C# a real option, and for most production game work, it's the right one.
+This is *change* from Godot 3, where GDScript was de facto standard, C# second-class citizen. Godot 4 with .NET 8 made C# real option; for most production game work, it's right one.
 
 ## The Two Languages At a Glance
 
@@ -27,36 +27,36 @@ This is a *change* from Godot 3, where GDScript was the de facto standard and C#
 
 ## When C# Wins
 
-- **Non-trivial gameplay code.** Anything beyond a 10-scene prototype benefits from static typing and better refactoring.
-- **Performance-critical paths.** Procedural generation, large-scale simulation, real-time pathfinding, anything that loops over thousands of objects per frame.
-- **Code shared with non-game systems.** A backend, a tool, a server — if it's also .NET, you can share code.
-- **Larger teams.** Multiple engineers benefit from C#'s static checks, refactoring tools, and consistent style.
-- **Long-lived projects.** Years of iteration are easier in a typed language.
-- **NuGet packages.** Need an HTTP client? JSON parser? Compression library? NuGet has it; GDScript would force you to write it.
+- **Non-trivial gameplay code.** Anything beyond 10-scene prototype benefits from static typing and better refactoring.
+- **Performance-critical paths.** Procedural generation, large-scale simulation, real-time pathfinding, anything looping over thousands of objects per frame.
+- **Code shared with non-game systems.** Backend, tool, server — if also .NET, share code.
+- **Larger teams.** Multiple engineers benefit from C#'s static checks, refactoring tools, consistent style.
+- **Long-lived projects.** Years of iteration easier in typed language.
+- **NuGet packages.** Need HTTP client? JSON parser? Compression library? NuGet has it; GDScript would force you to write it.
 - **You already know C# / .NET.** No reason to learn GDScript when C# works.
 
 ## When GDScript Wins
 
-- **Quick prototypes.** A weekend game jam game; iteration speed matters more than scale.
-- **Editor tools and plugins.** GDScript has tighter editor integration; many plugins are written in GDScript.
-- **Simple shaders + light scripts.** A `Sprite2D` that needs a 5-line wiggle script.
-- **Tutorials and learning.** Most Godot tutorials are in GDScript; following along is easier.
-- **Quick scripts attached to specific nodes.** A button that does one thing; a particle that destroys itself after a second.
-- **`@tool` scripts** (scripts that run in the editor for procedural authoring) — easier in GDScript.
+- **Quick prototypes.** Weekend game jam game; iteration speed matters more than scale.
+- **Editor tools and plugins.** GDScript has tighter editor integration; many plugins written in GDScript.
+- **Simple shaders + light scripts.** `Sprite2D` needing 5-line wiggle script.
+- **Tutorials and learning.** Most Godot tutorials in GDScript; following along easier.
+- **Quick scripts attached to specific nodes.** Button doing one thing; particle destroying itself after a second.
+- **`@tool` scripts** (scripts running in editor for procedural authoring) — easier in GDScript.
 
 ## Mixing Both
 
-You *can* use both GDScript and C# in the same project. They interoperate via Godot's `Variant` type, which is the universal value type the engine uses internally.
+You *can* use both GDScript and C# in same project. Interoperate via Godot's `Variant` type — universal value type engine uses internally.
 
 When to mix:
 
-- A C#-primary project with a few GDScript editor tools or plugins.
-- A GDScript-primary project that drops to C# for one performance-critical system.
-- An imported asset / addon that's GDScript-based — just leave it.
+- C#-primary project with few GDScript editor tools or plugins.
+- GDScript-primary project dropping to C# for one performance-critical system.
+- Imported asset / addon that's GDScript-based — just leave it.
 
 When *not* to mix:
 
-- Throughout the gameplay code. Pick one for the main codebase or you'll fight constant interop issues.
+- Throughout gameplay code. Pick one for main codebase or fight constant interop issues.
 - For shared core data structures. Cross-language types get awkward.
 
 The interop:
@@ -75,13 +75,13 @@ cs_node.do_something(42)
 var result = cs_node.some_property
 ```
 
-Notice the conventions: GDScript uses `snake_case`, C# uses `PascalCase`. **Godot translates between them automatically** in interop calls. A C# method `DoSomething` is callable from GDScript as `do_something`.
+Notice conventions: GDScript uses `snake_case`, C# uses `PascalCase`. **Godot translates between them automatically** in interop calls. C# method `DoSomething` callable from GDScript as `do_something`.
 
-This is convenient but it's also a foot-gun: typos in the string-based call don't error at compile time, only at runtime when the method isn't found.
+Convenient but foot-gun: typos in string-based call don't error at compile time, only runtime when method not found.
 
 ## C# Code Conventions in Godot
 
-C# in Godot follows *Godot* conventions, not standard .NET conventions, in places where the engine bridges them:
+C# in Godot follows *Godot* conventions, not standard .NET conventions, where engine bridges them:
 
 | Standard C# | Godot C# |
 |---|---|
@@ -90,9 +90,9 @@ C# in Godot follows *Godot* conventions, not standard .NET conventions, in place
 | `Vector2 position { get; set; }` | `Position` (PascalCase, no underscore) |
 | `event Action OnDamaged` | `[Signal] delegate void DamagedEventHandler()` |
 
-The reason: Godot generates source code for your scripts (the `partial` part of the class) and uses these conventions internally. Following them keeps interop clean.
+Reason: Godot generates source code for your scripts (the `partial` part) and uses these conventions internally. Following them keeps interop clean.
 
-A typical C# Godot script:
+Typical C# Godot script:
 
 ```csharp
 using Godot;
@@ -135,17 +135,17 @@ public partial class Enemy : CharacterBody2D
 }
 ```
 
-A few patterns to notice:
+Patterns to notice:
 
-- **`partial`** is required because Godot generates a companion class for the script.
-- **`[Export]`** with `{ get; set; }` works for properties; with bare fields it also works but properties are more idiomatic in C#.
-- **`PackedScene`** is the type for an instanced scene reference (e.g. for spawning).
-- **`SignalName.HealthChanged`** is a generated constant for the signal name; preferable to the raw string `"HealthChanged"` because typos error at compile time.
-- **`Mathf`** is Godot's math utility class (not `System.Math` — they have slightly different functions).
+- **`partial`** required because Godot generates companion class for script.
+- **`[Export]`** with `{ get; set; }` works for properties; bare fields also work but properties more idiomatic in C#.
+- **`PackedScene`** is type for instanced scene reference (e.g. for spawning).
+- **`SignalName.HealthChanged`** is generated constant for signal name; preferable to raw string `"HealthChanged"` because typos error at compile time.
+- **`Mathf`** is Godot's math utility class (not `System.Math` — slightly different functions).
 
 ## Subscribing to Signals in C#
 
-The C# 4 idiom uses `+=` and `-=` like normal events:
+C# 4 idiom uses `+=` and `-=` like normal events:
 
 ```csharp
 public override void _Ready()
@@ -166,11 +166,11 @@ private void OnEnemyDied()
 }
 ```
 
-The `EventHandler` suffix on the delegate name is required by Godot's source generator. The `+=` connection is type-checked by the compiler.
+`EventHandler` suffix on delegate name required by Godot's source generator. `+=` connection type-checked by compiler.
 
-The older string-based approach (`Connect("HealthChanged", new Callable(this, nameof(OnEnemyHealthChanged)))`) still works but is fragile and you should avoid it in new code.
+Older string-based approach (`Connect("HealthChanged", new Callable(this, nameof(OnEnemyHealthChanged)))`) still works but fragile; avoid in new code.
 
-Always disconnect when the connection is no longer needed:
+Always disconnect when connection no longer needed:
 
 ```csharp
 public override void _ExitTree()
@@ -183,7 +183,7 @@ public override void _ExitTree()
 }
 ```
 
-If the *emitter* is freed first, the connection auto-cleans. If the *listener* is freed first without disconnecting, you get a "memory leak" in the sense that Godot keeps the connection alive. The defensive habit: disconnect in `_ExitTree`.
+*Emitter* freed first → connection auto-cleans. *Listener* freed first without disconnecting → "memory leak" in sense that Godot keeps connection alive. Defensive habit: disconnect in `_ExitTree`.
 
 ## Async/Await with Signals
 
@@ -203,33 +203,33 @@ public async void StartCutscene()
 }
 ```
 
-This is much cleaner than chaining signal callbacks for sequenced events. Use it for cutscenes, multi-step animations, dialogue systems, level transitions, anything that's "do this, then wait, then do the next thing."
+Much cleaner than chaining signal callbacks for sequenced events. Use for cutscenes, multi-step animations, dialogue systems, level transitions, anything "do this, then wait, then do next thing."
 
-A caveat: be careful with `async void` (the example above). It's necessary for event handlers but it can swallow exceptions. For non-event-handler cases, prefer `async Task` and `await` it from the caller.
+Caveat: careful with `async void` (example above). Necessary for event handlers but can swallow exceptions. Non-event-handler cases: prefer `async Task`, `await` it from caller.
 
 ## Performance Notes
 
-- **C# is faster than GDScript** for tight loops, math, and procedural code. Often 2-10x.
-- **The first-call overhead** of C# methods (JIT compile) can show up as a small startup hitch.
-- **GC pauses are real but small**. The Godot 4 .NET integration uses CoreCLR; GC is well-behaved for typical game workloads but still exists. Pre-allocate hot collections, use `Span<T>` where it helps, and don't allocate in `_Process` if you can avoid it.
-- **`Variant` boxing** crosses the C#-Godot boundary and has some overhead. Avoid passing C# `int`/`float`/`Vector2` through `Variant` in tight loops; use the typed APIs where possible.
-- **`GetNode<T>(...)`** has a string lookup cost. Cache references in `_Ready` instead of calling it every frame.
-- **For really hot paths**, you can drop into `unsafe` C# or even GDExtension (a C++ binding mechanism). Most projects never need this.
+- **C# faster than GDScript** for tight loops, math, procedural code. Often 2-10x.
+- **First-call overhead** of C# methods (JIT compile) can show up as small startup hitch.
+- **GC pauses real but small**. Godot 4 .NET integration uses CoreCLR; GC well-behaved for typical game workloads but still exists. Pre-allocate hot collections, use `Span<T>` where it helps, don't allocate in `_Process` if avoidable.
+- **`Variant` boxing** crosses C#-Godot boundary, has some overhead. Avoid passing C# `int`/`float`/`Vector2` through `Variant` in tight loops; use typed APIs where possible.
+- **`GetNode<T>(...)`** has string lookup cost. Cache references in `_Ready` instead of calling every frame.
+- **Really hot paths**: drop into `unsafe` C# or even GDExtension (C++ binding mechanism). Most projects never need this.
 
-For the deeper performance discussion, see [performance-and-profiling.md](performance-and-profiling.md).
+Deeper performance discussion: [performance-and-profiling.md](performance-and-profiling.md).
 
 ## Project Setup for C#
 
-A C# Godot project uses the **.NET version of Godot** (separate download from the standard version, also available as the "Mono" build in older releases).
+C# Godot project uses **.NET version of Godot** (separate download from standard version, also available as "Mono" build in older releases).
 
-To start a C# project:
+Start C# project:
 
-1. Use the **.NET / Mono** version of the Godot editor.
-2. Create a new project.
+1. Use **.NET / Mono** version of Godot editor.
+2. Create new project.
 3. **Project → Tools → C# → Create C# Solution**.
-4. Set the .NET SDK in the project settings.
+4. Set .NET SDK in project settings.
 
-The `.csproj` is auto-generated and minimal:
+`.csproj` auto-generated and minimal:
 
 ```xml
 <Project Sdk="Godot.NET.Sdk/4.2.0">
@@ -240,31 +240,31 @@ The `.csproj` is auto-generated and minimal:
 </Project>
 ```
 
-You can add NuGet packages like any other .NET project:
+Add NuGet packages like any other .NET project:
 
 ```bash
 dotnet add package Newtonsoft.Json
 dotnet add package System.IO.Hashing
 ```
 
-NuGet works as expected in Godot 4 — this was a frequent pain point in earlier versions.
+NuGet works as expected in Godot 4 — frequent pain point in earlier versions.
 
 ## C# Editor Workflow
 
 Most C# Godot devs use one of:
 
-- **VS Code with the C# Dev Kit** — lightweight, free, works well.
-- **JetBrains Rider** — paid (free for non-commercial), the most polished experience for C# work.
+- **VS Code with C# Dev Kit** — lightweight, free, works well.
+- **JetBrains Rider** — paid (free for non-commercial), most polished experience for C# work.
 - **Visual Studio** (Windows) — works but heavier than needed.
 
 Workflow:
 
-1. Edit the scene structure in the Godot editor.
-2. Edit C# scripts in your IDE of choice.
-3. The Godot editor watches for `.cs` changes and rebuilds when you save.
-4. Run the project from the Godot editor (F5).
+1. Edit scene structure in Godot editor.
+2. Edit C# scripts in IDE of choice.
+3. Godot editor watches for `.cs` changes, rebuilds on save.
+4. Run project from Godot editor (F5).
 
-Hot reload is *limited* in Godot 4 with C# — you can change some things at runtime, but most code changes require restarting the game. This is the main downside vs. GDScript, which hot-reloads almost everything instantly.
+Hot reload *limited* in Godot 4 with C# — some things changeable at runtime, but most code changes require restarting game. Main downside vs. GDScript, which hot-reloads almost everything instantly.
 
 ## Common Gotchas
 
@@ -282,7 +282,7 @@ public partial class Player : CharacterBody2D { ... }
 
 ### Constructors run before `_Ready`
 
-A C# constructor runs when the object is created, *before* it's added to the tree. You can't call `GetNode<T>(...)` in a constructor because the node isn't in the tree yet.
+C# constructor runs when object created, *before* added to tree. Can't call `GetNode<T>(...)` in constructor — node isn't in tree yet.
 
 ```csharp
 // Wrong
@@ -300,13 +300,13 @@ public override void _Ready()
 
 ### `[Export]` on private fields needs an underscore prefix
 
-By Godot convention, private fields start with `_`, but `[Export]` works on them anyway:
+Godot convention: private fields start with `_`, but `[Export]` works on them anyway:
 
 ```csharp
 [Export] private int _maxHealth = 100;
 ```
 
-This is the most idiomatic for C# fields. For properties, use PascalCase:
+Most idiomatic for C# fields. For properties, use PascalCase:
 
 ```csharp
 [Export] public int MaxHealth { get; set; } = 100;
@@ -314,7 +314,7 @@ This is the most idiomatic for C# fields. For properties, use PascalCase:
 
 ### Don't `new` a node directly
 
-Nodes should be created via `new ClassName()` only if you immediately add them to the tree. The preferred way to create scenes is:
+Nodes created via `new ClassName()` only if immediately added to tree. Preferred way to create scenes:
 
 ```csharp
 [Export] public PackedScene EnemyScene { get; set; }
@@ -327,12 +327,12 @@ private void SpawnEnemy()
 }
 ```
 
-Using `PackedScene.Instantiate<T>()` gives you the entire tree (root + all children, with all properties), not just an empty class instance.
+`PackedScene.Instantiate<T>()` gives entire tree (root + all children, with all properties), not just empty class instance.
 
 ### `QueueFree` vs `Free`
 
-- `QueueFree()` schedules the node to be freed at the end of the current frame. This is what you almost always want.
-- `Free()` immediately frees the node. Dangerous if any code is still iterating over the children or holding references.
+- `QueueFree()` schedules node to be freed at end of current frame. Almost always what you want.
+- `Free()` immediately frees node. Dangerous if any code still iterating over children or holding references.
 
 ```csharp
 // Right (in 99% of cases)
@@ -341,7 +341,7 @@ deadEnemy.QueueFree();
 
 ### `IsInstanceValid` for orphan checks
 
-If you're holding a reference to a node that might have been freed, check before using:
+Holding reference to node that might have been freed? Check before using:
 
 ```csharp
 if (IsInstanceValid(_target))
@@ -350,11 +350,11 @@ if (IsInstanceValid(_target))
 }
 ```
 
-Otherwise you can hit "object was freed" errors when the held reference points to a freed Godot object.
+Otherwise hit "object was freed" errors when held reference points to freed Godot object.
 
 ### `Vector2` is a struct
 
-Godot's `Vector2`, `Vector3`, `Color`, `Rect2`, etc. are *value types*. Mutating a property doesn't propagate:
+Godot's `Vector2`, `Vector3`, `Color`, `Rect2`, etc. are *value types*. Mutating property doesn't propagate:
 
 ```csharp
 // Wrong
@@ -375,23 +375,23 @@ sprite.GlobalPosition += new Vector2(10, 0);
 
 ## Anti-Patterns
 
-- **Mixing GDScript and C# in the same gameplay code.** Pick one for the main codebase; mixing for non-trivial logic produces interop pain.
-- **Using string-based signal connections** (`Connect("name", ...)`) when typed `+=` is available.
-- **Creating nodes with `new ClassName()` instead of instantiating a `PackedScene`.** Misses children and exports.
+- **Mixing GDScript and C# in same gameplay code.** Pick one for main codebase; mixing for non-trivial logic produces interop pain.
+- **Using string-based signal connections** (`Connect("name", ...)`) when typed `+=` available.
+- **Creating nodes with `new ClassName()` instead of instantiating `PackedScene`.** Misses children and exports.
 - **Doing setup in C# constructors instead of `_Ready`.** Crashes from `GetNode` calls.
 - **Forgetting `partial`.** Constant compilation errors.
 - **Calling `GetNode<T>` every frame.** Cache references in `_Ready`.
 - **`Free()` instead of `QueueFree()`.** Mid-frame crashes.
-- **Mutating `Vector2` properties as if they're references.** Compiles but doesn't do what you think.
+- **Mutating `Vector2` properties as if references.** Compiles but doesn't do what you think.
 - **Ignoring `IsInstanceValid` for held references.** "Object was freed" errors at random times.
-- **Treating C# Godot like normal C#.** Following standard .NET naming conventions where Godot uses different ones; missing the `_Process` underscore; etc.
-- **Avoiding GDScript entirely** when an editor tool or plugin would clearly be faster. Use the right tool.
+- **Treating C# Godot like normal C#.** Following standard .NET naming conventions where Godot uses different ones; missing `_Process` underscore; etc.
+- **Avoiding GDScript entirely** when editor tool or plugin would clearly be faster. Use right tool.
 - **Using GDScript for performance-critical code.** Drop to C# (or C++/GDExtension) for hot paths.
-- **Picking one language because of the tutorial you're following.** Pick based on your project's needs.
+- **Picking one language because of tutorial you're following.** Pick based on project's needs.
 
 ## Related
 
-- [godot-fundamentals.md](godot-fundamentals.md) — the engine model that both languages target
+- [godot-fundamentals.md](godot-fundamentals.md) — engine model both languages target
 - [signals-and-events.md](signals-and-events.md) — signal patterns in C#
 - [performance-and-profiling.md](performance-and-profiling.md) — when C# performance matters
 - [godot-anti-patterns.md](godot-anti-patterns.md) — broader patterns to avoid

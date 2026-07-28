@@ -2,7 +2,7 @@
 
 ## Required Patterns
 
-1. **ReentrancyGuard** — on all functions that transfer tokens or ETH
+1. **ReentrancyGuard** — on all functions transferring tokens or ETH
 2. **Pausable** — on all user-facing operations; owner can emergency-pause
 3. **AccessControl** — for multi-role permission systems (prefer over `Ownable` for complex contracts)
 4. **SafeERC20** — for all `transfer` / `transferFrom` / `approve` calls

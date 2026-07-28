@@ -1,6 +1,6 @@
 # Interview checklist
 
-For each template, these are the questions to ask when the section is missing or vague. Batch them into one `AskUserQuestion` call. Skip any whose answers are already obvious from the user's initial message.
+Per template: questions to ask when section missing or vague. Batch into one `AskUserQuestion` call. Skip any whose answers already obvious from user's initial message.
 
 ## Universal questions (any template)
 
@@ -45,17 +45,17 @@ For each template, these are the questions to ask when the section is missing or
 
 ## Domain-specific prompts
 
-If the user mentions **web3** at all, also ask:
+User mentions **web3** at all? Also ask:
 - "Why web3 — token incentive, asset ownership, secondary market liquidity, regulatory positioning, or community/marketing? The answer changes downstream design more than the label."
 - "Custodial or non-custodial wallets? Chain choice (or shortlist)?"
 - "How does the game work for players who *can't* (or won't) connect a wallet? Web2 fallback path?"
 
-If the user mentions **F2P mobile**, also ask:
+User mentions **F2P mobile**? Also ask:
 - "Soft launch geography and target CPI? D1/D7/D30 floors before global launch?"
 - "Hard currency design — single currency or multiple? Earnable in meaningful amounts or paid-only?"
 - "Live ops cadence — events, passes, season length?"
 
-If the user mentions **premium / Steam indie**, also ask:
+User mentions **premium / Steam indie**? Also ask:
 - "Wishlist target before EA / 1.0?"
 - "EA plan — what ships in EA vs at 1.0?"
 - "Deck verification target if Steam — handheld supported?"
@@ -63,8 +63,8 @@ If the user mentions **premium / Steam indie**, also ask:
 ## Question hygiene
 
 - Never ask more than ~6 questions in one batch.
-- Never ask a question whose answer is obvious from the user's message.
+- Never ask a question whose answer is obvious from user's message.
 - Prefer concrete questions ("which 2 verbs?") over open-ended ("tell me about gameplay").
-- If the user volunteered something in prose, distill it into the template — don't ask them to repeat.
-- **Push back on feature lists**. If the user gives features instead of verbs/fantasy, ask: "what does the player *do* with <feature>, and what fantasy does it serve?" The template is verb-and-fantasy-led, not feature-led.
-- **Always include the payment-rails question** even if monetization seems obvious — the answer routes balance, monetization, IAP, and marketing decisions later.
+- User volunteered something in prose? Distill it into template — don't ask them to repeat.
+- **Push back on feature lists**. User gives features instead of verbs/fantasy? Ask: "what does the player *do* with <feature>, and what fantasy does it serve?" Template is verb-and-fantasy-led, not feature-led.
+- **Always include payment-rails question** even if monetization seems obvious — answer routes balance, monetization, IAP, and marketing decisions later.

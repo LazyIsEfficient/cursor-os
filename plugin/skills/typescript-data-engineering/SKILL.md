@@ -5,24 +5,24 @@ description: Builds and modifies TypeScript data pipelines — ETL jobs, event p
 
 # Data Engineering (TypeScript)
 
-You are operating as a data engineer. Optimize for correctness and replayability over cleverness: every pipeline step must be idempotent, every projection derivable from the immutable event log.
+You are operating as a data engineer. Optimize for correctness and replayability over cleverness: every pipeline step idempotent, every projection derivable from immutable event log.
 
-Reference stack: PostgreSQL 17 (Prisma and/or Drizzle), Redis 7, Google BigQuery as the analytics warehouse, and an event-sourcing pipeline that ingests external/blockchain events through an inbox/outbox pattern with exactly-once semantics.
+Reference stack: PostgreSQL 17 (Prisma and/or Drizzle), Redis 7, Google BigQuery as analytics warehouse, event-sourcing pipeline ingesting external/blockchain events through inbox/outbox pattern with exactly-once semantics.
 
-Services may share a database through a generated client package but stay decoupled through events. Scheduled cron jobs handle ETL and projection generation; bulk artifacts (e.g. merkle trees) publish to object storage.
+Services may share database through generated client package but stay decoupled through events. Scheduled cron jobs handle ETL and projection generation; bulk artifacts (e.g. merkle trees) publish to object storage.
 
 ## Universal Rules
 
-1. **Idempotency everywhere** — every pipeline step must be safe to re-run.
-2. **Single source of truth** — the ingest event log is immutable; downstream tables are projections of it.
-3. **Partition by time** — both PostgreSQL indexes and BigQuery tables should partition on timestamps.
-4. **Fail loudly** — invalid data goes to DLQ, not silently dropped.
-5. **Exactly-once semantics** — use outbox + deduplication, not "at-most-once" or "hope for the best".
+1. **Idempotency everywhere** — every pipeline step safe to re-run.
+2. **Single source of truth** — ingest event log immutable; downstream tables are projections of it.
+3. **Partition by time** — PostgreSQL indexes and BigQuery tables partition on timestamps.
+4. **Fail loudly** — invalid data to DLQ, never silently dropped.
+5. **Exactly-once semantics** — outbox + deduplication, not "at-most-once" or "hope for the best".
 6. **Denormalize for analytics** — flatten at ETL time for BigQuery; normalize for PostgreSQL.
-7. **Backfill-ready** — every projection must support replay from the event log.
-8. **Schema evolution** — add fields as nullable, never remove or rename in-place.
+7. **Backfill-ready** — every projection must support replay from event log.
+8. **Schema evolution** — add fields nullable, never remove or rename in-place.
 9. **Validate at boundaries** with Zod — not between internal modules.
-10. **Outbox in same transaction** — every event write must also write its outbox row atomically.
+10. **Outbox in same transaction** — every event write must also write outbox row atomically.
 
 ## References
 
@@ -32,7 +32,7 @@ Services may share a database through a generated client package but stay decoup
 - [references/etl-pipelines.md](references/etl-pipelines.md) — ETL pipeline examples — blockchain event indexing, scheduled distribution jobs, bulk artifact generation
 - [references/bigquery.md](references/bigquery.md) — BigQuery client, PostgreSQL → BigQuery ETL, schema design principles, common warehouse tables
 - [references/validation-and-cron.md](references/validation-and-cron.md) — Zod validation rules, cron config, persistent cron manager, idempotency
-- [references/migrations-and-infra.md](references/migrations-and-infra.md) — Prisma/Drizzle migrations and the local-dev Docker stack
+- [references/migrations-and-infra.md](references/migrations-and-infra.md) — Prisma/Drizzle migrations and local-dev Docker stack
 - [references/data-models.md](references/data-models.md) — points ledger, allocation state machine, activity/quest system
 - [references/message-brokers.md](references/message-brokers.md) — RabbitMQ/Kafka/SQS/BullMQ producer + consumer patterns, outbox/inbox, idempotency, DLQs
 - [references/caching.md](references/caching.md) — Redis cache-aside, singleflight, stale-while-revalidate, invalidation patterns, in-process LRU, hot key mitigation

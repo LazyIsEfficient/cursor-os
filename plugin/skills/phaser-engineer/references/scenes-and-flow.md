@@ -1,22 +1,22 @@
 # Scenes and Flow
 
-In Phaser, the `Scene` is the unit of state, the unit of flow, and the unit of cleanup. Almost every architectural mistake in a Phaser project starts as a scene mistake — a god scene that owns everything, a scene that reaches into another scene's fields, a listener attached in `create` that's never removed in `shutdown`, a restart that quietly loses references because nobody re-bound them.
+In Phaser, `Scene` is unit of state, unit of flow, unit of cleanup. Almost every architectural mistake in Phaser project starts as scene mistake — god scene owning everything, scene reaching into another scene's fields, listener attached in `create` never removed in `shutdown`, restart quietly losing references because nobody re-bound them.
 
-This file is the playbook for getting scenes right: lifecycle, transitions, parallel scenes, cross-scene communication, and the cleanup discipline that keeps the whole thing from leaking.
+This file is playbook for getting scenes right: lifecycle, transitions, parallel scenes, cross-scene communication, cleanup discipline keeping whole thing from leaking.
 
 ## What a Scene Actually Is
 
 A `Phaser.Scene` is three things at once:
 
-1. **A render target.** Its own display list, cameras, input handlers. Parallel scenes render together (start order, then `bringToTop`).
+1. **A render target.** Own display list, cameras, input handlers. Parallel scenes render together (start order, then `bringToTop`).
 2. **A lifecycle host.** `init` → `preload` → `create` → `update` (per frame) → `shutdown` (on stop) → `destroy` (on game destroy).
-3. **A namespaced container.** `this.add`, `this.tweens`, `this.input`, `this.events`, `this.cameras`, `this.physics`, `this.sound`, `this.scene`, `this.registry` — each scene's factories and emitters are its own, so a tween in `GameScene` is owned by `GameScene` and dies when it shuts down.
+3. **A namespaced container.** `this.add`, `this.tweens`, `this.input`, `this.events`, `this.cameras`, `this.physics`, `this.sound`, `this.scene`, `this.registry` — each scene's factories and emitters are its own, so tween in `GameScene` owned by `GameScene`, dies when it shuts down.
 
-That third property is why `shutdown` matters. Most of what a scene creates is auto-cleaned. The few things that aren't are what leak (see [The Lifecycle Gotchas](#the-lifecycle-gotchas)).
+Third property is why `shutdown` matters. Most of what scene creates is auto-cleaned. Few things that aren't are what leak (see [The Lifecycle Gotchas](#the-lifecycle-gotchas)).
 
 ## A Scene Is a TypeScript Class
 
-Write each scene as a class extending `Phaser.Scene`. Always set the key explicitly via the constructor:
+Write each scene as class extending `Phaser.Scene`. Always set key explicitly via constructor:
 
 ```ts
 // scenes/GameScene.ts
@@ -29,11 +29,11 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-Why explicit keys: you'll use the string everywhere (`scene.start`, `scene.get`, event labels), it survives bundler mangling of class names, and registering two scenes with the same key fails loudly at startup. In larger projects, export the keys as a constant object (`SceneKeys.Game`) so `scene.start` is type-checked against typos.
+Why explicit keys: you'll use string everywhere (`scene.start`, `scene.get`, event labels), it survives bundler mangling of class names, registering two scenes with same key fails loudly at startup. Larger projects: export keys as constant object (`SceneKeys.Game`) so `scene.start` type-checked against typos.
 
 ## The Lifecycle
 
-Each scene goes through a deterministic sequence. You override the methods you need; you leave the rest alone.
+Each scene goes through deterministic sequence. Override methods you need; leave rest alone.
 
 ```ts
 export class GameScene extends Phaser.Scene {
@@ -74,16 +74,16 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-A few subtleties that bite people:
+Subtleties that bite people:
 
-- **`init` runs before `preload`.** To preload based on the launch payload, stash it in `init` (`this.levelId = data.levelId`) and read it in `preload`.
-- **`init` and `create` both receive `data`.** `init` is for "configure before assets load"; `create` is for "build the world now that they're here." A scene with no preload step can skip `init` entirely.
+- **`init` runs before `preload`.** To preload based on launch payload, stash in `init` (`this.levelId = data.levelId`), read in `preload`.
+- **`init` and `create` both receive `data`.** `init` is for "configure before assets load"; `create` is for "build world now that they're here." Scene with no preload step can skip `init` entirely.
 - **`update` does not receive `data`** — only `(time, delta)`. Stash per-launch values on `this`.
-- **`shutdown` is also an event.** Phaser emits `Phaser.Scenes.Events.SHUTDOWN` on `this.events`. Override the method or listen to the event — both work; pick one and be consistent.
+- **`shutdown` is also event.** Phaser emits `Phaser.Scenes.Events.SHUTDOWN` on `this.events`. Override method or listen to event — both work; pick one, be consistent.
 
 ## Typed Scene Data
 
-The `data` payload is a free-form `object` by default. Type it.
+`data` payload is free-form `object` by default. Type it.
 
 ```ts
 // scenes/GameScene.ts
@@ -116,9 +116,9 @@ export class GameScene extends Phaser.Scene {
 }
 ```
 
-The `!` on field declarations is the "definitely-assigned-in-init" assertion. Phaser does call `init` before anything else reaches these fields, so it's honest.
+`!` on field declarations is "definitely-assigned-in-init" assertion. Phaser does call `init` before anything else reaches these fields, so honest.
 
-To launch this scene with a typed payload from elsewhere:
+Launch scene with typed payload from elsewhere:
 
 ```ts
 this.scene.start('GameScene', {
@@ -128,36 +128,36 @@ this.scene.start('GameScene', {
 } satisfies GameSceneData);
 ```
 
-Use `satisfies`, not `as` — `satisfies` checks against the type without widening; `as` defeats the check.
+Use `satisfies`, not `as` — `satisfies` checks against type without widening; `as` defeats check.
 
 ## The Scene Manager
 
-`this.scene` (inside a scene) and `game.scene` (outside) is the `SceneManager`. It owns every method that changes which scenes are running. The methods you'll use 95% of the time:
+`this.scene` (inside scene) and `game.scene` (outside) is `SceneManager`. Owns every method changing which scenes run. Methods you'll use 95% of time:
 
 ### `start(key, data?)` — replace the current scene
 
-The default for "go to next screen." Stops the current scene (which fires `shutdown`), starts the target scene (which fires `init` → `preload` → `create`).
+Default for "go to next screen." Stops current scene (fires `shutdown`), starts target scene (fires `init` → `preload` → `create`).
 
 ```ts
 this.scene.start('GameScene', { levelId: 'forest-1', difficulty: 'normal' });
 ```
 
-After `start`, the calling scene is gone. Its event listeners are the ones you should have removed in `shutdown`.
+After `start`, calling scene gone. Its event listeners are ones you should have removed in `shutdown`.
 
 ### `launch(key, data?)` — run another scene *in parallel*
 
-Both the calling scene and the target scene run. Their `update` methods both fire each frame; their display lists both render. Use for HUDs over gameplay, modal overlays, parallel gameplay layers.
+Both calling scene and target scene run. Their `update` methods both fire each frame; display lists both render. Use for HUDs over gameplay, modal overlays, parallel gameplay layers.
 
 ```ts
 // In GameScene.create:
 this.scene.launch('HudScene', { initialScore: this.startingScore });
 ```
 
-The two scenes do not share state automatically. They communicate via events, the registry, or a shared event bus — see [Cross-Scene Communication](#cross-scene-communication).
+Two scenes do not share state automatically. Communicate via events, registry, or shared event bus — see [Cross-Scene Communication](#cross-scene-communication).
 
 ### `pause(key?)` / `resume(key?)` — freeze without unloading
 
-`pause` stops the scene's `update` and physics but leaves its display list rendered. `resume` un-pauses. Scene state is preserved. Classic use — a pause menu over gameplay:
+`pause` stops scene's `update` and physics but leaves display list rendered. `resume` un-pauses. Scene state preserved. Classic use — pause menu over gameplay:
 
 ```ts
 // In GameScene, on ESC:
@@ -169,15 +169,15 @@ this.scene.stop();
 this.scene.resume('GameScene');
 ```
 
-With no key, these methods act on the calling scene; with a key, on the named scene. Be deliberate.
+No key: methods act on calling scene; with key: on named scene. Be deliberate.
 
 ### `stop(key?)` — actually shut a scene down
 
-Triggers `shutdown`. GameObjects, tweens, timers, and scene-level listeners are released. After `stop`, `scene.start` runs `init` → `preload` → `create` from scratch. `scene.start(key)` implicitly stops the calling scene; explicit `scene.stop` is for cleaning up a *launched* parallel scene (HUD, pause menu) you're done with.
+Triggers `shutdown`. GameObjects, tweens, timers, scene-level listeners released. After `stop`, `scene.start` runs `init` → `preload` → `create` from scratch. `scene.start(key)` implicitly stops calling scene; explicit `scene.stop` is for cleaning up *launched* parallel scene (HUD, pause menu) you're done with.
 
 ### `restart(data?)` — full reset of the calling scene
 
-The "retry level" hammer. Phaser stops the scene and starts it again with new `data`. All scene state is lost; `init` and `create` run fresh.
+"Retry level" hammer. Phaser stops scene, starts again with new `data`. All scene state lost; `init` and `create` run fresh.
 
 ```ts
 this.scene.restart({ levelId: this.levelId, difficulty: this.difficulty, carryOverScore: 0 });
@@ -185,25 +185,25 @@ this.scene.restart({ levelId: this.levelId, difficulty: this.difficulty, carryOv
 
 What restart resets: GameObjects, tweens, timers, physics, animations, `this.events`, all `this.<field>` state.
 
-What restart does **not** reset: the `registry`, the global `game.events` emitter, a shared `EventBus` singleton, any other parallel scene that wasn't stopped.
+What restart does **not** reset: `registry`, global `game.events` emitter, shared `EventBus` singleton, any other parallel scene not stopped.
 
-If a `game.events.on(...)` listener was attached without a matching `off` in shutdown, restart silently double-binds it. Three retries in, the same handler runs four times per event. See [The Lifecycle Gotchas](#the-lifecycle-gotchas).
+`game.events.on(...)` listener attached without matching `off` in shutdown → restart silently double-binds it. Three retries in, same handler runs four times per event. See [The Lifecycle Gotchas](#the-lifecycle-gotchas).
 
 ### `sleep(key?)` / `wake(key?)` — pause + hide
 
-`sleep` pauses *and* removes the scene from the display list; `wake` puts it back. Less common than pause/resume; useful for "tabbed" sub-scenes you flip between without rebuilding.
+`sleep` pauses *and* removes scene from display list; `wake` puts back. Less common than pause/resume; useful for "tabbed" sub-scenes you flip between without rebuilding.
 
 ### `bringToTop(key)` — reorder parallel scenes
 
-Scenes draw in start order. `bringToTop` (and siblings `sendToBack`, `moveAbove`, `moveBelow`) force a different render order — typically the HUD on top of gameplay on top of a background.
+Scenes draw in start order. `bringToTop` (and siblings `sendToBack`, `moveAbove`, `moveBelow`) force different render order — typically HUD on top of gameplay on top of background.
 
 ### `swap(from, to)` — clean transition shorthand
 
-`scene.swap('A', 'B')` starts B if not running, brings B to top, stops A. Use it when you specifically need that dance.
+`scene.swap('A', 'B')` starts B if not running, brings B to top, stops A. Use when specifically needing that dance.
 
 ## The Parallel HUD Pattern
 
-The canonical "two scenes running together" use case is a HUD over gameplay. Concretely:
+Canonical "two scenes running together" use case: HUD over gameplay. Concretely:
 
 ```ts
 // scenes/GameScene.ts
@@ -255,18 +255,18 @@ export class HudScene extends Phaser.Scene {
 
 Two things to call out:
 
-- The HUD *observes* the game. It never writes back. Score logic stays in `GameScene`.
-- The HUD's listener on `GameScene.events` is a **cross-scene listener** — `this.events` cleanup is the HUD's own emitter, not the game's. The explicit `SHUTDOWN` handler is mandatory.
+- HUD *observes* game. Never writes back. Score logic stays in `GameScene`.
+- HUD's listener on `GameScene.events` is **cross-scene listener** — `this.events` cleanup is HUD's own emitter, not game's. Explicit `SHUTDOWN` handler mandatory.
 
-For anything more than HUD-listens-to-game telemetry, prefer a shared `EventBus` (next section). Reaching into another scene's emitter scales poorly — six scenes all listening to each other becomes a graph nobody can untangle.
+Anything more than HUD-listens-to-game telemetry: prefer shared `EventBus` (next section). Reaching into another scene's emitter scales poorly — six scenes all listening to each other becomes graph nobody can untangle.
 
 ## Cross-Scene Communication
 
-Three approaches, ranked from best to worst.
+Three approaches, ranked best to worst.
 
 ### Best: a shared `EventBus`
 
-A module-level singleton `Phaser.Events.EventEmitter`. Any scene can import it; any scene can emit or subscribe.
+Module-level singleton `Phaser.Events.EventEmitter`. Any scene can import; any scene can emit or subscribe.
 
 ```ts
 // events/EventBus.ts
@@ -287,7 +287,7 @@ export function emit<K extends keyof GameEvents>(key: K, payload: GameEvents[K])
 }
 ```
 
-Anywhere in the game:
+Anywhere in game:
 
 ```ts
 import { EventBus, emit } from '../events/EventBus';
@@ -303,11 +303,11 @@ this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
 });
 ```
 
-The `EventBus` survives scene restarts. **That's its strength and its trap.** Always pair the `on` with an `off` in `SHUTDOWN`. Skip the cleanup and you've built a leak that grows with every restart.
+`EventBus` survives scene restarts. **That's its strength and its trap.** Always pair `on` with `off` in `SHUTDOWN`. Skip cleanup → leak growing with every restart.
 
 ### OK: `this.registry`
 
-The registry is a game-wide key/value store, accessible as `this.registry` from any scene. It emits `changedata-<key>` events when values change.
+Registry is game-wide key/value store, accessible as `this.registry` from any scene. Emits `changedata-<key>` events when values change.
 
 ```ts
 // In GameScene:
@@ -325,44 +325,44 @@ this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
 });
 ```
 
-Good for: persistent state that survives scene transitions — score, lives, currency, current level, audio volume, settings.
+Good for: persistent state surviving scene transitions — score, lives, currency, current level, audio volume, settings.
 
-Bad for: rich event payloads (use `EventBus`); anything you'd be embarrassed to call "global state." The registry is convenient enough to abuse; see [phaser-anti-patterns.md](phaser-anti-patterns.md).
+Bad for: rich event payloads (use `EventBus`); anything you'd be embarrassed to call "global state." Registry convenient enough to abuse; see [phaser-anti-patterns.md](phaser-anti-patterns.md).
 
 ### Last resort: `this.scene.get('OtherScene').events`
 
-Fine for HUD-listens-to-game telemetry, where the dependency is one-way and obvious. Beyond that it's a smell — the subscriber knows the publisher's scene key, the subscriber must remember to clean up on `SHUTDOWN`, and N scenes listening to each other becomes a quadratic graph. Past the HUD case, reach for the `EventBus` or the registry.
+Fine for HUD-listens-to-game telemetry, where dependency one-way and obvious. Beyond that it's a smell — subscriber knows publisher's scene key, subscriber must remember cleanup on `SHUTDOWN`, N scenes listening to each other becomes quadratic graph. Past HUD case: reach for `EventBus` or registry.
 
 ### Anti-pattern: `this.scene.get('OtherScene').someField`
 
-Reading another scene's fields directly. Brittle; couples reader to writer's internals; breaks at the next refactor. See [phaser-anti-patterns.md](phaser-anti-patterns.md).
+Reading another scene's fields directly. Brittle; couples reader to writer's internals; breaks at next refactor. See [phaser-anti-patterns.md](phaser-anti-patterns.md).
 
 ## Scene-Level vs Game-Level Events
 
-Three emitters live in any scene. They look similar; they have very different lifetimes.
+Three emitters live in any scene. Look similar; very different lifetimes.
 
 | Emitter | Scope | Survives scene shutdown? | Use for |
 |---|---|---|---|
-| `this.events` | Per-scene | No — fresh every `create` | Within-scene events; `SHUTDOWN`, `PAUSE`, `RESUME`, `CREATE` lifecycle hooks; emitting events the HUD scene listens to |
-| `this.game.events` | Game-wide | Yes — survives every scene transition | Truly global signals — focus/blur, full game pause, save events. Cleanup is mandatory. |
-| `this.registry.events` | Game-wide | Yes — registry is game-wide | Reacting to state changes in the registry (`changedata-<key>`). Cleanup is mandatory. |
-| `EventBus` (your singleton) | Game-wide | Yes — module-level | Cross-scene event-driven communication. Cleanup is mandatory. |
+| `this.events` | Per-scene | No — fresh every `create` | Within-scene events; `SHUTDOWN`, `PAUSE`, `RESUME`, `CREATE` lifecycle hooks; emitting events HUD scene listens to |
+| `this.game.events` | Game-wide | Yes — survives every scene transition | Truly global signals — focus/blur, full game pause, save events. Cleanup mandatory. |
+| `this.registry.events` | Game-wide | Yes — registry is game-wide | Reacting to state changes in registry (`changedata-<key>`). Cleanup mandatory. |
+| `EventBus` (your singleton) | Game-wide | Yes — module-level | Cross-scene event-driven communication. Cleanup mandatory. |
 
-The pattern: anything that survives the scene's own lifetime is a leak risk. `this.events` cleans itself up; everything else needs a `SHUTDOWN` handler.
+Pattern: anything surviving scene's own lifetime is leak risk. `this.events` cleans itself up; everything else needs `SHUTDOWN` handler.
 
 ## The Lifecycle Gotchas
 
-These are the cleanup rules that keep scenes from leaking on restart. Memorize them.
+Cleanup rules keeping scenes from leaking on restart. Memorize.
 
 1. **Scene-internal listeners on `this.events` are auto-cleaned.** Dies on shutdown.
 2. **Scene-internal tweens and timers are auto-cleaned.** `this.tweens.add(...)`, `this.time.addEvent(...)` — released on shutdown.
-3. **GameObjects in the scene's display list are auto-destroyed on shutdown.** Their listeners go with them.
+3. **GameObjects in scene's display list are auto-destroyed on shutdown.** Their listeners go with them.
 4. **`this.input` listeners are auto-cleaned** — `this.input` and `this.input.keyboard` are per-scene.
-5. **External listeners are NOT auto-cleaned.** Anything attached to `this.game.events`, `this.registry.events`, the `EventBus`, or another scene's `events` survives the scene. Remove in `shutdown` or in a `SHUTDOWN` event handler.
-6. **Tweens on non-scene objects.** `this.tweens.add({ targets: external, ... })` is still owned by the scene's tween manager and gets cleaned up. But a *custom* tween loop holding a scene-local target from outside the scene inverts ownership — clean up by hand.
-7. **DOM and third-party listeners are yours.** `window.addEventListener`, observers, `setInterval`, plugin globals — Phaser doesn't know about them. You own the cleanup.
+5. **External listeners are NOT auto-cleaned.** Anything attached to `this.game.events`, `this.registry.events`, `EventBus`, or another scene's `events` survives scene. Remove in `shutdown` or in `SHUTDOWN` event handler.
+6. **Tweens on non-scene objects.** `this.tweens.add({ targets: external, ... })` still owned by scene's tween manager, gets cleaned up. But *custom* tween loop holding scene-local target from outside scene inverts ownership — clean up by hand.
+7. **DOM and third-party listeners are yours.** `window.addEventListener`, observers, `setInterval`, plugin globals — Phaser doesn't know about them. You own cleanup.
 
-The clean shutdown pattern: a single `SHUTDOWN` handler at the end of `create` that mirrors every external `on` with an `off`.
+Clean shutdown pattern: single `SHUTDOWN` handler at end of `create` mirroring every external `on` with `off`.
 
 ```ts
 create(): void {
@@ -382,15 +382,15 @@ create(): void {
 }
 ```
 
-Local to the bindings, easy to grep, survives refactors.
+Local to bindings, easy to grep, survives refactors.
 
 ## Splitting a Scene That's Grown Too Big
 
-Symptoms of a scene-too-big problem: `create` is 300+ lines; `update` mixes player logic, enemy AI, projectile updates, UI tweaks, and audio cues; the file is fighting merge conflicts. Three escape hatches, in order of preference.
+Symptoms of scene-too-big problem: `create` is 300+ lines; `update` mixes player logic, enemy AI, projectile updates, UI tweaks, audio cues; file fighting merge conflicts. Three escape hatches, in order of preference.
 
 ### 1. Extract a system into a plain TS class
 
-Best for game systems that don't render anything new and don't need a separate display list. The scene composes the system, holds a reference, calls into it.
+Best for game systems not rendering anything new, not needing separate display list. Scene composes system, holds reference, calls into it.
 
 ```ts
 // systems/SpawnSystem.ts
@@ -406,11 +406,11 @@ create(): void { this.spawns = new SpawnSystem(this, this.add.group()); }
 update(t: number, dt: number): void { this.spawns.update(t, dt); }
 ```
 
-A class, not a scene. Uses the scene's factories but has no lifecycle of its own. Test it in isolation; reuse across game scenes.
+Class, not scene. Uses scene's factories but no lifecycle of own. Test in isolation; reuse across game scenes.
 
 ### 2. Launch a sub-scene for a self-contained sub-experience
 
-Best when the sub-experience has its own input, its own UI, or its own pause/resume semantics. Examples: a minigame inside a level, a modal dialog flow, an inventory screen, a cutscene.
+Best when sub-experience has own input, own UI, own pause/resume semantics. Examples: minigame inside level, modal dialog flow, inventory screen, cutscene.
 
 ```ts
 // In GameScene, when entering a fishing minigame:
@@ -418,19 +418,19 @@ this.scene.launch('FishingMinigameScene', { lakeId: 'pond-1' });
 this.scene.pause();  // freeze the world while the minigame plays
 ```
 
-The sub-scene has its own `create`, `update`, `shutdown`. When it's done, it stops itself and resumes the parent.
+Sub-scene has own `create`, `update`, `shutdown`. When done, stops itself, resumes parent.
 
 ### 3. Promote it to a parallel HUD/overlay scene
 
-Best when the concern is purely UI rendering on top of gameplay. Score, health bar, mini-map, ability cooldowns, debug overlays — all of these are HUD scenes.
+Best when concern purely UI rendering on top of gameplay. Score, health bar, mini-map, ability cooldowns, debug overlays — all HUD scenes.
 
-The scene runs in parallel with `GameScene`, observes `EventBus` or `registry` events, renders its own display list. Detailed in [The Parallel HUD Pattern](#the-parallel-hud-pattern) above.
+Scene runs parallel with `GameScene`, observes `EventBus` or `registry` events, renders own display list. Detailed in [The Parallel HUD Pattern](#the-parallel-hud-pattern) above.
 
-The wrong move: making everything a scene because "scenes are how Phaser organizes things." A scene has overhead — its own cameras, its own input plugins, its own display list, its own update loop. A small system that doesn't need any of that should be a plain class.
+Wrong move: making everything a scene because "scenes are how Phaser organizes things." Scene has overhead — own cameras, own input plugins, own display list, own update loop. Small system not needing any of that should be plain class.
 
 ## Scene Transitions and Visual Continuity
 
-A hard cut feels jarring. The cross-fade pattern via `Cameras.main` covers 90% of cases:
+Hard cut feels jarring. Cross-fade pattern via `Cameras.main` covers 90% of cases:
 
 ```ts
 // Leaving scene:
@@ -447,18 +447,18 @@ create(): void {
 }
 ```
 
-For elaborate transitions (wipes, circle reveals), launch a dedicated `TransitionScene` in parallel that renders the effect on top and triggers `start`. You almost never need that — fade is enough.
+Elaborate transitions (wipes, circle reveals): launch dedicated `TransitionScene` in parallel rendering effect on top, triggering `start`. Almost never needed — fade is enough.
 
-For physics-heavy scenes, call `this.physics.pause()` on the way out so a body doesn't tick off-screen during the fade.
+Physics-heavy scenes: call `this.physics.pause()` on way out so body doesn't tick off-screen during fade.
 
 ## The Boot + Preload Pattern
 
-The canonical loading pattern in any non-trivial Phaser project: **two scenes before the game starts**, not one.
+Canonical loading pattern in any non-trivial Phaser project: **two scenes before game starts**, not one.
 
-- **`BootScene`** — minimal. Loads only the assets needed to render the loading screen itself: the logo, the loading-bar texture, a font. Nothing else. Then transitions to `PreloadScene`.
-- **`PreloadScene`** — loads the bulk of game assets while showing a progress bar. Subscribes to the loader's `progress` event to update the bar. When loading completes, transitions to the menu (or directly into the game on speed-runs and dev builds).
+- **`BootScene`** — minimal. Loads only assets needed to render loading screen itself: logo, loading-bar texture, font. Nothing else. Then transitions to `PreloadScene`.
+- **`PreloadScene`** — loads bulk of game assets while showing progress bar. Subscribes to loader's `progress` event to update bar. Loading completes → transitions to menu (or directly into game on speed-runs and dev builds).
 
-Why two scenes: if you put both jobs in one scene, you have a chicken-and-egg problem — the loading bar's texture isn't loaded yet when the loader starts. `BootScene` solves this by being pre-pre-load.
+Why two scenes: putting both jobs in one scene creates chicken-and-egg problem — loading bar's texture not loaded yet when loader starts. `BootScene` solves by being pre-pre-load.
 
 Skeleton:
 
@@ -527,32 +527,32 @@ new Phaser.Game({
 });
 ```
 
-Phaser starts the **first** scene in the array by default. Put `BootScene` first.
+Phaser starts **first** scene in array by default. Put `BootScene` first.
 
 Extensions that come up:
 
-- **Per-level preloading.** Global `PreloadScene` loads only the always-used assets. Per-level assets go in `GameScene.preload`, gated on `levelId` from the launch payload.
+- **Per-level preloading.** Global `PreloadScene` loads only always-used assets. Per-level assets go in `GameScene.preload`, gated on `levelId` from launch payload.
 - **Asset packs.** `this.load.pack('assets', 'assets/pack.json')` declares everything in one JSON file — cleaner than dozens of `load.image` lines.
-- **Restart is cheap.** The loader caches by key, so re-calling `this.load.image('foo', ...)` is a no-op. But dynamic keys (`level-${id}`) cache forever — call `this.textures.remove(key)` for ones you won't reuse.
+- **Restart is cheap.** Loader caches by key, so re-calling `this.load.image('foo', ...)` is no-op. But dynamic keys (`level-${id}`) cache forever — call `this.textures.remove(key)` for ones you won't reuse.
 
 ## Anti-Patterns
 
-- **God scene.** One `GameScene` owning the player, every enemy, inventory UI, pause menu, score logic, audio, save state. ~3000 lines of mixed concerns. Split via one of the escape hatches above.
+- **God scene.** One `GameScene` owning player, every enemy, inventory UI, pause menu, score logic, audio, save state. ~3000 lines of mixed concerns. Split via one of escape hatches above.
 - **Cross-scene reach-ins.** `this.scene.get('Other').player.health = 0`. Couples caller to internals; breaks at next refactor. Use `EventBus` or registry.
-- **Forgetting to remove external listeners on shutdown.** The leak that compounds on every restart. Pair every external `on` with a `SHUTDOWN`-time `off`.
-- **Module-level globals for scene state.** "I'll just stick `currentLevel` in a module variable." Restart can't reset it; tests can't isolate it. Use the registry, scene fields, or the launch payload.
+- **Forgetting to remove external listeners on shutdown.** Leak compounding on every restart. Pair every external `on` with `SHUTDOWN`-time `off`.
+- **Module-level globals for scene state.** "I'll just stick `currentLevel` in a module variable." Restart can't reset it; tests can't isolate it. Use registry, scene fields, or launch payload.
 - **Implicit Z-order from start order.** Past two parallel scenes, document intended render order with explicit `bringToTop` calls and comments — don't hope launch order matches.
-- **Heavy work in `init`.** `init` is for cheap config. No asset loading (use `preload`); no GameObjects (use `create` — `init` runs before the scene is fully wired).
-- **`scene.start` from `update` without a guard.** `start` defers to end-of-frame, but a chain of events calling `start` repeatedly produces duplicate restarts. Add `if (this.transitioning) return;`.
-- **Mutating the launch-data payload.** The object is shared with the caller. Treat it as read-only; copy to scene fields if you need to mutate.
-- **`scene.restart` to "reset state."** Correct for death/retry — but if the only reason is "I don't want to write a reset function," write the function. Restart tears down and rebuilds everything; selective reset is faster and clearer.
+- **Heavy work in `init`.** `init` is for cheap config. No asset loading (use `preload`); no GameObjects (use `create` — `init` runs before scene fully wired).
+- **`scene.start` from `update` without guard.** `start` defers to end-of-frame, but chain of events calling `start` repeatedly produces duplicate restarts. Add `if (this.transitioning) return;`.
+- **Mutating launch-data payload.** Object shared with caller. Treat as read-only; copy to scene fields if needing to mutate.
+- **`scene.restart` to "reset state."** Correct for death/retry — but if only reason is "I don't want to write reset function," write function. Restart tears down and rebuilds everything; selective reset faster and clearer.
 
-For the broader catalog (registry-as-globals, update-loop allocations, asset re-loading), see [phaser-anti-patterns.md](phaser-anti-patterns.md).
+Broader catalog (registry-as-globals, update-loop allocations, asset re-loading): see [phaser-anti-patterns.md](phaser-anti-patterns.md).
 
 ## Related
 
-- [phaser-fundamentals.md](phaser-fundamentals.md) — the engine model: `Game`, `Scene`, the loop, the loader, GameObjects, the display list
-- [project-and-vite.md](project-and-vite.md) — project scaffold; where scene files live; how the build serves them
-- [physics-arcade.md](physics-arcade.md) — physics bodies and groups within a scene's lifecycle
+- [phaser-fundamentals.md](phaser-fundamentals.md) — engine model: `Game`, `Scene`, the loop, the loader, GameObjects, the display list
+- [project-and-vite.md](project-and-vite.md) — project scaffold; where scene files live; how build serves them
+- [physics-arcade.md](physics-arcade.md) — physics bodies and groups within scene's lifecycle
 - [phaser-anti-patterns.md](phaser-anti-patterns.md) — broader patterns to avoid
-- [SKILL](../SKILL.md) — the parent Phaser engineer skill
+- [SKILL](../SKILL.md) — parent Phaser engineer skill

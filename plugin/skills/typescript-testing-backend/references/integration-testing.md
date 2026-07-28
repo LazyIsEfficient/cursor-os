@@ -1,6 +1,6 @@
 # Integration Testing with Supertest
 
-Integration tests use a real PostgreSQL database and a custom `TestServer` that simulates Next.js route handlers.
+Integration tests use real PostgreSQL database and custom `TestServer` simulating Next.js route handlers.
 
 ## Shared Test Setup
 
@@ -69,7 +69,7 @@ describe('GET /api/v1/points - Integration Tests', () => {
 
 ## TestServer Pattern
 
-The `TestServer` class in `shared/test-utils/server-mock.ts` simulates Next.js route handlers, handles dynamic route segments, parses query params, and maps error types to HTTP status codes:
+`TestServer` class in `shared/test-utils/server-mock.ts` simulates Next.js route handlers, handles dynamic route segments, parses query params, maps error types to HTTP status codes:
 
 ```typescript
 // apps/platform-app/app/api/v1/projects/__tests__/test-server.ts
@@ -88,7 +88,7 @@ export function createProjectsTestServer() {
 
 ## Authentication Mocking
 
-Use `authTestHelpers` from the shared test-utils for all auth state:
+Use `authTestHelpers` from shared test-utils for all auth state:
 
 ```typescript
 import { authTestHelpers } from '@/app/api/v1/shared/test-utils/mocks/authentication-mock'

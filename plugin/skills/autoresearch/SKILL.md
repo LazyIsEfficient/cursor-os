@@ -15,16 +15,16 @@ Every run outputs 3 files:
 
 | File | Purpose |
 |------|---------|
-| `{name}-optimized.{ext}` | The winning optimized content |
+| `{name}-optimized.{ext}` | Winning optimized content |
 | `data/{name}-experiments.json` | Full experiment log — all variants + all scores |
 | `data/{name}-optimization-report.md` | Human-readable summary with winner rationale |
 
 ## Core rules
 
-1. Intake: parse content type from file extension (HTML → landing/form page; markdown → email/ad copy). List all optimizable elements and confirm with user before starting.
-2. Score every variant against the 5-expert panel in a single batched API call per round — never one call per variant.
-3. Run up to 3 rounds per element; stop early when top variant hits the minimum score threshold (default: 80).
-4. Cross-breed only after each element has its own winner — premature cross-breeding creates incoherent combinations.
+1. Intake: parse content type from file extension (HTML → landing/form page; markdown → email/ad copy). List all optimizable elements; confirm with user before starting.
+2. Score every variant against 5-expert panel in single batched API call per round — never one call per variant.
+3. Run up to 3 rounds per element; stop early when top variant hits minimum score threshold (default: 80).
+4. Cross-breed only after each element has own winner — premature cross-breeding creates incoherent combinations.
 5. Write 3 output files: optimized content, experiments JSON, optimization report.
 6. Report back: winning score, biggest score jump, top 2 runner-ups, file paths, next step.
 
@@ -33,25 +33,25 @@ Every run outputs 3 files:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `elements` | all | Which elements to optimize |
-| `variants_per_round` | 10 | How many variants per round |
-| `min_score` | 80 | Stop when this score is hit |
+| `variants_per_round` | 10 | Variants per round |
+| `min_score` | 80 | Stop when score hit |
 | `rounds` | 3 | Max rounds before stopping |
 | `auto_apply` | false | Overwrite source file with winners |
-| `content_type` | auto-detect | Force a content type if auto-detect is wrong |
+| `content_type` | auto-detect | Force content type if auto-detect wrong |
 
 ## Quality Gates
 
-- **< 70:** Don't ship. Something fundamental is broken.
-- **70-79:** Marginal. One more round targeting the lowest-scoring dimension.
+- **< 70:** Don't ship. Something fundamental broken.
+- **70-79:** Marginal. One more round targeting lowest-scoring dimension.
 - **80-84:** Good. Shippable. Validate with real traffic.
 - **85-89:** Strong. Ship with confidence.
 - **90+:** Rare. Ship immediately.
 
 ## Anti-Patterns
 
-- Never call the API once per variant. Always batch. A 10-variant round = 1 call.
-- Don't over-optimize for one dimension — a 95 clarity + 45 trust is a misleading overall score.
-- Don't run more than 5 rounds. If not hitting 80 after 3, the problem is strategic, not tactical.
+- Never call API once per variant. Always batch. 10-variant round = 1 call.
+- Don't over-optimize one dimension — 95 clarity + 45 trust = misleading overall score.
+- Don't run more than 5 rounds. Not hitting 80 after 3 = strategic problem, not tactical.
 
 ## References
 

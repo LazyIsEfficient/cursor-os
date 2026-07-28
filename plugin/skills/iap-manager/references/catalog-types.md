@@ -1,38 +1,38 @@
 # Catalog types
 
-Four flavors of catalog work. Identify which kind before opening the spreadsheet.
+Four flavors of catalog work. Identify kind before opening spreadsheet.
 
 ## 1. New launch catalog
 
-**Signal:** game ships within months; the catalog has a *shape* from [game-monetization-strategist](../../game-monetization-strategist/SKILL.md) but no SKUs.
+**Signal:** game ships within months; catalog has *shape* from [game-monetization-strategist](../../game-monetization-strategist/SKILL.md) but no SKUs.
 
 **Inputs:** strategy doc, segment economics, price-tier-ladder intent, soft-launch KPI floors.
 
 **Outputs:** filled `iap-catalog-template.md`; per-tier SKUs populated; bundles + starter pack designed; A/B price tests planned for soft launch; storefronts configured.
 
 **Pitfalls:**
-- Skipping the starter pack (single biggest conversion lever in F2P)
+- Skipping starter pack (single biggest F2P conversion lever)
 - Mid-tier vacuum
-- Storefront config not tested in sandbox before launch
+- Storefront config not sandbox-tested before launch
 
 ## 2. Live catalog re-tune
 
-**Signal:** game is live; data shows specific SKUs are underperforming or bundles need refresh.
+**Signal:** game live; data shows specific SKUs underperforming or bundles need refresh.
 
 **Inputs:** live telemetry, IAP funnel data, segment migration data, comp-title catalog moves.
 
-**Outputs:** SKU-level changes (new bundles, retired SKUs, re-priced SKUs); A/B price tests ramped up; cadence calendar (weekly bundle / monthly themed / seasonal pass).
+**Outputs:** SKU-level changes (new bundles, retired SKUs, re-priced SKUs); A/B price tests ramped; cadence calendar (weekly bundle / monthly themed / seasonal pass).
 
 **Pitfalls:**
 - Re-pricing existing paid bundles without comms (trust break)
-- Killing a SKU without measuring whether it's serving a small but sticky segment
-- Bundle bloat (catalog gets bigger, conversion drops because choice paralysis)
+- Killing SKU without measuring whether it serves small-but-sticky segment
+- Bundle bloat (catalog grows, conversion drops from choice paralysis)
 
 ## 3. New region
 
-**Signal:** game expanding to a new region (e.g. Brazil, India, Korea, China).
+**Signal:** game expanding to new region (e.g. Brazil, India, Korea, China).
 
-**Inputs:** local market data, platform tier maps for the region, local payment rails (PayPay in JP, Pix in BR, UPI in IN), local price-psychology research.
+**Inputs:** local market data, platform tier maps for region, local payment rails (PayPay in JP, Pix in BR, UPI in IN), local price-psychology research.
 
 **Outputs:** region price table; localized SKU names; region-specific bundles (local holidays, local cosmetic themes); local payment-rails integration (with `godot-engineer`).
 
@@ -50,6 +50,6 @@ Four flavors of catalog work. Identify which kind before opening the spreadsheet
 **Outputs:** catalog-shape change; SKU migration plan; player communication; rollout timeline.
 
 **Pitfalls:**
-- Missing the deprecation deadline (catastrophic — payments stop)
+- Missing deprecation deadline (catastrophic — payments stop)
 - Not coordinating with engineering for SDK migration
-- Player-visible disruption without comms (especially around restore-purchases)
+- Player-visible disruption without comms (especially restore-purchases)

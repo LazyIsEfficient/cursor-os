@@ -5,46 +5,46 @@ description: Design, analyze, and optimize cold outbound email campaigns on Inst
 
 # Outbound Engine
 
-End-to-end cold outbound: ICP definition, expert panel copy scoring (recursive to 90+), infrastructure audit, capacity planning, and an implementation doc. This skill **produces a strategy doc and ready-to-load copy for human review** — it does not send. See `references/workflow.md` for the full procedure.
+End-to-end cold outbound: ICP definition, expert panel copy scoring (recursive to 90+), infrastructure audit, capacity planning, implementation doc. Skill **produces strategy doc + ready-to-load copy for human review** — does not send. See `references/workflow.md` for full procedure.
 
 ## Core Rules
 
 1. Determine mode first (existing Instantly account with API key, or starting from scratch) before any other step.
-2. Run the three-phase workflow: Discovery & Audit → Expert Panel Recursive Scoring → Deliverables.
-3. Expert panel scoring target is 90/100 — non-negotiable. Iterate until reached.
-4. Show every scoring round in the final doc — the iteration trail is part of the value.
-5. **Never send or push to the platform autonomously.** This skill's output is a doc for human review. Writes/sends happen only after explicit human approval — see the Sending gate below.
-6. Use capacity math to set realistic volume and pipeline projections.
+2. Run three-phase workflow: Discovery & Audit → Expert Panel Recursive Scoring → Deliverables.
+3. Expert panel scoring target 90/100 — non-negotiable. Iterate until reached.
+4. Show every scoring round in final doc — iteration trail is part of value.
+5. **Never send or push to platform autonomously.** Output is doc for human review. Writes/sends only after explicit human approval — see Sending gate below.
+6. Use capacity math to set realistic volume + pipeline projections.
 
 ## Operating Modes
 
-**Optimize existing** — there is a live account to learn from. First questions: (1) Do you have an Instantly API key? (2) Which campaigns are underperforming, and on what metric? (3) Is there historical data to pull? With an API key, run `scripts/instantly-audit.py` to pull campaigns, account inventory, and warmup scores before touching copy.
+**Optimize existing** — live account to learn from. First questions: (1) Do you have Instantly API key? (2) Which campaigns underperform, on what metric? (3) Historical data to pull? With API key, run `scripts/instantly-audit.py` to pull campaigns, account inventory, warmup scores before touching copy.
 
-**Start from scratch** — no campaigns yet. First questions: (1) Who is the ICP (titles, industries, company size)? (2) What do you sell, in one jargon-free sentence, and what is the primary offer (audit, trial, demo, call)? (3) What proof points are real and linkable? Use `assets/icp-template.md` to collect the ICP before writing copy.
+**Start from scratch** — no campaigns yet. First questions: (1) Who is ICP (titles, industries, company size)? (2) What do you sell, one jargon-free sentence, primary offer (audit, trial, demo, call)? (3) What proof points real + linkable? Use `assets/icp-template.md` to collect ICP before writing copy.
 
 ## The Three Phases (summary)
 
-1. **Discovery & Audit** — Determine mode. If audit mode, run the Instantly audit and flag any account with warmup score <80 or <14 days as NOT ready. Define the ICP, capture business context (offer, real URLs, proof points), and confirm the expert-panel roster. Detail in `references/workflow.md`; ICP fields in `assets/icp-template.md`.
-2. **Expert Panel Recursive Scoring** — Draft the sequence, then score it with the 10-expert panel (`references/expert-panel.md`), each scoring through their own lens. Each round emits a per-panelist score table, an aggregate, the top weaknesses, the edits made, and the revised copy. Score honestly — no padding to 90. Below 90: fix the top 3 weaknesses and run another round. At ≥90: finalize. Copy must follow `references/copy-rules.md` (and `references/instantly-rules.md` for Instantly variable/deliverability rules).
-3. **Deliverables** — Produce the strategy doc: brutal-truth analysis, ICP summary, infrastructure status, every scoring round, final copy for every step, implementation plan, capacity math, weekly metric targets, and STOP/START lists. Full doc structure in `references/workflow.md`.
+1. **Discovery & Audit** — Determine mode. Audit mode → run Instantly audit; flag any account warmup score <80 or <14 days as NOT ready. Define ICP, capture business context (offer, real URLs, proof points), confirm expert-panel roster. Detail `references/workflow.md`; ICP fields `assets/icp-template.md`.
+2. **Expert Panel Recursive Scoring** — Draft sequence, score with 10-expert panel (`references/expert-panel.md`), each scoring through own lens. Each round emits per-panelist score table, aggregate, top weaknesses, edits made, revised copy. Score honestly — no padding to 90. Below 90 → fix top 3 weaknesses, run another round. At ≥90 → finalize. Copy must follow `references/copy-rules.md` (+ `references/instantly-rules.md` for Instantly variable/deliverability rules).
+3. **Deliverables** — Produce strategy doc: brutal-truth analysis, ICP summary, infrastructure status, every scoring round, final copy for every step, implementation plan, capacity math, weekly metric targets, STOP/START lists. Full doc structure `references/workflow.md`.
 
 ## What the 90/100 Gate Means
 
-90 is an operational gate, not a vibe. It means the aggregate average across all panelists hit 90 in a single round with no score padded to get there. Below 90, the copy is not done — identify the lowest-scoring lenses, address those specific weaknesses, and re-run. The point of the recursive trail is that each round names a concrete weakness and the edit that fixed it; ship the trail, not just the final copy.
+90 is operational gate, not vibe. Aggregate average across all panelists hit 90 in single round, no score padded. Below 90 → copy not done: identify lowest-scoring lenses, address those specific weaknesses, re-run. Recursive trail: each round names concrete weakness + edit that fixed it; ship trail, not just final copy.
 
 ## Sending Gate (resolves Rule 5)
 
-`scripts/cold-outbound-sender.py` and the write paths in `scripts/instantly-audit.py` exist but are **gated**. The default deliverable is the strategy doc. Do not invoke the sender or perform any platform write autonomously. Invoke `cold-outbound-sender.py` only when the human has explicitly confirmed the strategy doc is reviewed and approved AND explicitly asks to send. Always run `--dry-run` first and show the result before a live send. Never treat "build the campaign" as authorization to send.
+`scripts/cold-outbound-sender.py` + write paths in `scripts/instantly-audit.py` exist but **gated**. Default deliverable = strategy doc. Do not invoke sender or perform any platform write autonomously. Invoke `cold-outbound-sender.py` only when human explicitly confirmed strategy doc reviewed + approved AND explicitly asks to send. Always run `--dry-run` first, show result before live send. Never treat "build the campaign" as authorization to send.
 
 ## Scope Note
 
-The core skill is the three-phase design workflow above. Three scripts ship in this directory but sit **outside** that workflow and should not run unprompted: `scripts/lead-pipeline.py` (Apollo→LeadMagic→Instantly sourcing), `scripts/competitive-monitor.py` (competitor tracking), and `scripts/cross-signal-detector.py` (multi-source signal detection). Use them only on an explicit, specific request for that function.
+Core skill = three-phase design workflow above. Three scripts ship in this directory but sit **outside** that workflow — do not run unprompted: `scripts/lead-pipeline.py` (Apollo→LeadMagic→Instantly sourcing), `scripts/competitive-monitor.py` (competitor tracking), `scripts/cross-signal-detector.py` (multi-source signal detection). Use only on explicit, specific request for that function.
 
 ## Reference Files
 
 | File | Purpose |
 |------|---------|
-| `references/workflow.md` | Full three-phase workflow with scoring criteria and doc structure |
+| `references/workflow.md` | Full three-phase workflow with scoring criteria + doc structure |
 | `references/capacity-math.md` | Capacity formula, weekly metrics targets, add-on recommendations |
 | `references/instantly-rules.md` | Instantly variable syntax, sequence structure, deliverability rules |
 | `references/expert-panel.md` | Default 10-expert roster with scoring lenses |
@@ -55,5 +55,5 @@ The core skill is the three-phase design workflow above. Three scripts ship in t
 
 ## Related skills
 
-- [content-ops](../content-ops/SKILL.md) — expert-panel quality gate; the recursive 90+ scoring of sequence copy is a content-ops review pass
-- [marketing-shaper](../marketing-shaper/SKILL.md) — produces the scoped outbound brief (ICP, goal, structure) this skill executes from
+- [content-ops](../content-ops/SKILL.md) — expert-panel quality gate; recursive 90+ scoring of sequence copy is a content-ops review pass
+- [marketing-shaper](../marketing-shaper/SKILL.md) — produces scoped outbound brief (ICP, goal, structure) this skill executes from
