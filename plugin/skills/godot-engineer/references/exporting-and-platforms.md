@@ -85,7 +85,6 @@ Worried about reverse engineering or want to obfuscate game data → enable PCK 
 Signing/notarization workflow automatable:
 
 ```bash
-# After Godot exports to MyGame.app:
 codesign --deep --force --options runtime --sign "Developer ID Application: Your Name" MyGame.app
 ditto -c -k --sequesterRsrc --keepParent MyGame.app MyGame.zip
 xcrun notarytool submit MyGame.zip --apple-id you@example.com --password APP_PASSWORD --team-id TEAMID --wait
@@ -131,7 +130,6 @@ Mobile-specific things:
 Typical web hosting setup:
 
 ```nginx
-# nginx config snippet for hosting a Godot web export
 server {
     listen 443 ssl http2;
     server_name game.example.com;

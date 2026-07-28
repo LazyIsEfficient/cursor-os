@@ -37,15 +37,12 @@ public partial class Player : CharacterBody2D
     {
         var velocity = Velocity;
 
-        // Gravity
         if (!IsOnFloor())
             velocity.Y += Gravity * (float)delta;
 
-        // Jump
         if (Input.IsActionJustPressed("jump") && IsOnFloor())
             velocity.Y = JumpVelocity;
 
-        // Horizontal movement
         var direction = Input.GetAxis("move_left", "move_right");
         if (direction != 0)
             velocity.X = direction * Speed;

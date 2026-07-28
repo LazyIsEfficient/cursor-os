@@ -1,6 +1,6 @@
 ---
 name: content-pipeline
-description: "Non-interactive content-production toolkit: mine quotable moments from podcast RSS feeds and meeting notes, discover clip-worthy moments in video transcripts, repurpose long-form source into platform-native drafts (X, LinkedIn, YouTube Shorts, newsletter), and batch-score/gate those drafts before publish. Use when asked to \"mine quotes from this podcast\", \"find clips in this video\", \"repurpose this into a thread / LinkedIn post / Short\", \"turn this transcript into posts\", \"extract viral moments\", or \"gate this batch of drafts\". Runs Python scripts end to end. For interactive expert-panel scoring of a single artifact see content-ops."
+description: "Non-interactive content-production toolkit: mine quotable moments from podcast RSS feeds and meeting notes, discover clip-worthy moments in video transcripts, repurpose long-form source into platform-native drafts (X, LinkedIn, YouTube Shorts, newsletter), batch-score/gate drafts before publish. Use when asked to \"mine quotes from this podcast\", \"find clips in this video\", \"repurpose this into a thread / LinkedIn post / Short\", \"turn this transcript into posts\", \"extract viral moments\", or \"gate this batch of drafts\". Runs Python scripts end to end. For interactive expert-panel scoring of a single artifact see content-ops."
 ---
 
 # Content Pipeline
