@@ -28,9 +28,9 @@ apps/platform-app/
 │   │       ├── faq.service.test.ts
 │   │       └── faq.controller.test.ts
 │   ├── points/
-│   └── __tests__/
-│       ├── get-points.integration.test.ts
-│       └── shared-test-setup.ts
+│   │   └── __tests__/
+│   │       ├── get-points.integration.test.ts
+│   │       └── shared-test-setup.ts
 │   └── shared/test-utils/        ← Shared backend test utilities
 │       ├── test-database.ts
 │       ├── server-mock.ts

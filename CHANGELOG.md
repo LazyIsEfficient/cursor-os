@@ -25,19 +25,6 @@ here therefore corresponds to a single consistent version across the repository.
   information content), before/after examples.
 - **Concision directive in `communication` rule:** same directive prepended to
   the `plugin/rules/communication.mdc` body.
-
-### Changed
-
-- **`skill-new` command** requires newly authored skills follow
-  `plugin/references/caveman-style.md`.
-- **Plugin skills (46) rewritten in caveman style** — all `SKILL.md` and
-  `references/*.md` telegraphic per `plugin/references/caveman-style.md`;
-  frontmatter `name`/`description` unchanged (routing safe), normative
-  directives and code blocks preserved. 4 waves per
-  `openspec/changes/cavemen-style-rewrite/`.
-
-### Added
-
 - **OpenSpec first-class planning:** engineering planning artifacts now live
   on disk under `openspec/` in the consuming repository, validated by the
   external `openspec` CLI (`@fission-ai/openspec`, global prerequisite like
@@ -51,6 +38,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Changed
 
+- **`skill-new` command** requires newly authored skills follow
+  `plugin/references/caveman-style.md`.
+- **Plugin skills (46) rewritten in caveman style** — all `SKILL.md` and
+  `references/*.md` telegraphic per `plugin/references/caveman-style.md`;
+  frontmatter `name`/`description` unchanged (routing safe), normative
+  directives and code blocks preserved. 4 waves per
+  `openspec/changes/cavemen-style-rewrite/`.
 - **`prompt-shaping` output artifact** is now
   `openspec/changes/<id>/proposal.md` (was a chat-YAML brief); the 7-field
   dispatchability gate survives as the proposal completeness check.
