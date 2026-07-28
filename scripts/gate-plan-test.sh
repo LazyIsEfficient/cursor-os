@@ -29,6 +29,34 @@ else
   fail "docs-only skip"
 fi
 
+out="$(SHIP_GATES_CHANGED_FILES="openspec/changes/foo/proposal.md openspec/changes/foo/.openspec.yaml" bash "$PLAN")"
+if printf '%s' "$out" | grep -q 'skip_docs_only=true'; then
+  pass "openspec docs-only skip"
+else
+  fail "openspec docs-only skip"
+fi
+
+# Dispatch briefs are sensitive (compiled into Task prompts): gates, no code-reviewer.
+out="$(SHIP_GATES_CHANGED_FILES="openspec/changes/foo/dispatch/T-parser.md" bash "$PLAN")"
+assert_contains "$out" "skip_docs_only=false" "openspec dispatch brief gates"
+assert_contains "$out" "security-reviewer" "openspec dispatch security-reviewer"
+assert_contains "$out" "data-model-documenter" "openspec dispatch documenter"
+assert_not_contains "$out" "wave_1=code-reviewer" "openspec dispatch no code-reviewer"
+
+# Main specs are sensitive (archive PRs mutate the source of truth).
+out="$(SHIP_GATES_CHANGED_FILES="openspec/specs/planning/spec.md" bash "$PLAN")"
+assert_contains "$out" "skip_docs_only=false" "openspec main spec gates"
+assert_contains "$out" "security-reviewer" "openspec main spec security-reviewer"
+assert_not_contains "$out" "wave_1=code-reviewer" "openspec main spec no code-reviewer"
+
+# Fail closed: non-docs file types under openspec/ are code changes, not docs.
+out="$(SHIP_GATES_CHANGED_FILES="openspec/hooks/evil.sh" bash "$PLAN")"
+assert_contains "$out" "skip_docs_only=false" "openspec non-docs is a code change"
+assert_contains "$out" "code-reviewer" "openspec non-docs wave_1"
+
+out="$(SHIP_GATES_CHANGED_FILES="openspec/config.yaml" bash "$PLAN")"
+assert_contains "$out" "skip_docs_only=false" "openspec config.yaml is a code change"
+
 out="$(SHIP_GATES_CHANGED_FILES="scripts/validate.mjs" bash "$PLAN")"
 assert_contains "$out" "code-reviewer" "validate.mjs wave_1"
 assert_contains "$out" "security-reviewer" "validate.mjs wave_1"

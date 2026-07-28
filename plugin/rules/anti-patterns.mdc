@@ -7,6 +7,7 @@ alwaysApply: true
 
 - Spawning agents that all edit the same files without worktree isolation (`best-of-n-runner`). They will stomp on each other.
 - Skipping the shaper because "I know what I want." If you knew, the brief would already exist. Write it.
+- Skipping the OpenSpec proposal/plan and "planning in chat" for engineering work. If there is no `openspec/changes/<id>/` on disk, there is no plan (domain shapers exempt).
 - Producing content artifacts (series plans, post drafts, indexes) without the shaper because "I know the material." Knowing the topic is not a scoped brief.
 - Treating subagent summaries as ground truth without reading the diff.
 - Writing memory for things derivable from the repo (file paths, conventions, architecture).

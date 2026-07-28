@@ -43,12 +43,25 @@ gate_plan_classify_paths() {
       SECURITY.md) GATE_IS_SENSITIVE=true ;;
       scripts/release.mjs) GATE_IS_SENSITIVE=true ;;
       .github/workflows/*) GATE_IS_SENSITIVE=true ;;
+      # OpenSpec dispatch briefs compile verbatim into implementation Task
+      # prompts (stored prompt-injection surface), and openspec/specs/** is the
+      # merged source of truth mutated by archive PRs — both are sensitive.
+      # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
+      openspec/changes/*/dispatch/*) GATE_IS_SENSITIVE=true ;;
+      openspec/specs/*) GATE_IS_SENSITIVE=true ;;
       # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
       .cursor/dispatch-gate.json|plugin/.cursor/dispatch-gate.json) GATE_IS_SENSITIVE=true ;;
       scripts/lib/dispatch-gate*|plugin/scripts/lib/dispatch-gate*|plugin/scripts/dispatch-gate*|scripts/dispatch-gate*) GATE_IS_SENSITIVE=true ;;
     esac
     case "$f" in
       DATA_MODEL.md) GATE_IS_CODE_CHANGE=true; GATE_HAS_DATA_MODEL=true; continue ;;
+      # OpenSpec planning docs (proposal/design/tasks/delta specs, markdown
+      # anywhere under openspec/, .openspec.yaml metadata) are docs-only.
+      # dispatch/** and specs/** were flagged sensitive above and still gate;
+      # any other file type under openspec/ (config.yaml, scripts) fails
+      # closed to code. Bash `*` matches `/`, so nested paths are covered.
+      # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
+      openspec/*.md|openspec/*.mdc|*/.openspec.yaml) continue ;;
       *.md|*.mdc|LICENSE|NOTICE) continue ;;
       docs/*) continue ;;
       .claude/memory/*) continue ;;

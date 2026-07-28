@@ -48,8 +48,8 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `technical-pm`, `marketer`, and `game-design-shaper` for domain shaping; and
   `capability-probe` for capability
   detection;<!-- components:agent:end -->
-- <!-- components:skill:start -->forty-five skills: `prompt-shaping`,
-  `planning-and-task-breakdown`, `incremental-implementation`,
+- <!-- components:skill:start -->forty-six skills: `prompt-shaping`,
+  `planning-and-task-breakdown`, `openspec-planning`, `incremental-implementation`,
   `code-review-and-quality`, and `security-engineering` for the core
   shape/plan/implement/review path; `data-model-documentation`,
   `data-model-verification`, and `skill-library-review` for catalog and
@@ -71,9 +71,10 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
   `autoresearch`, `codebase-cost-estimator`, `security`, and `telemetry` for
   marketing, growth, measurement, and sanitization;<!-- components:skill:end -->
-- <!-- components:command:start -->seven commands: `/review-gate`,
+- <!-- components:command:start -->ten commands: `/review-gate`,
   `/triage-findings`, `/state`, `/skill-new`, `/agent-new`,
-  `/audit-library`, and `/eval-harness`;<!-- components:command:end -->
+  `/audit-library`, `/eval-harness`, `/openspec-propose`,
+  `/openspec-apply`, and `/openspec-archive`;<!-- components:command:end -->
 - always-applied factual-correctness, orchestration, review-tier,
   actual-diff, anti-patterns, and briefing rules; and
 - nine hook events backed by dependency-free Node scripts: a fail-closed
@@ -196,6 +197,16 @@ issue — see [Reporting a vulnerability](SECURITY.md#reporting-a-vulnerability)
 ## Development and deterministic checks
 
 Node.js 22 is required. The lockfile has zero third-party dependencies.
+
+**External prerequisite for the planning workflow:** the `openspec` CLI
+(`@fission-ai/openspec`, requires Node >= 20.19) is a global prerequisite like
+`git` or `gh` — install with `npm install -g @fission-ai/openspec`. It is never
+a package.json dependency here or in consumer repos. Engineering planning
+artifacts live under `openspec/` in the consuming repository and are validated
+with `openspec validate <change-id> --strict`; see
+[`openspec-planning`](plugin/skills/openspec-planning/SKILL.md). The maintainer
+checks below do not require it. The CLI collects anonymous usage stats with a
+printed notice on every invocation — opt out with `export OPENSPEC_TELEMETRY=0`.
 
 ```sh
 npm ci --ignore-scripts

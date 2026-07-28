@@ -17,11 +17,12 @@ Attribution: Cursor Harness contributors
   `library-reviewer`, `adversarial-claims-reviewer`, `technical-pm`,
   `marketer`, `game-design-shaper`, and
   `capability-probe`.<!-- components:agent:end -->
-- **Skills:** <!-- components:skill:start -->forty-five skills.
-  Workflow: `prompt-shaping` (ambiguous request to a cold-context-complete
-  brief), `planning-and-task-breakdown` (brief to a dependency-aware task
-  graph), `incremental-implementation` (small tested increments with
-  risk-proportional verification), `session-state` (state that survives
+- **Skills:** <!-- components:skill:start -->forty-six skills.
+  Workflow: `prompt-shaping` (ambiguous request to an OpenSpec change
+  proposal), `planning-and-task-breakdown` (proposal to `tasks.md`, spec
+  deltas, and dispatch briefs), `openspec-planning` (OpenSpec artifacts and
+  CLI-validated lifecycle under `openspec/`), `incremental-implementation`
+  (small tested increments with risk-proportional verification), `session-state` (state that survives
   compaction), `memory-extraction` (durable cross-session facts), and
   `findings-ledger` (recurrence-based triage of advisory findings).
   Review and audit: `code-review-and-quality` (multi-axis review method),
@@ -49,9 +50,10 @@ Attribution: Cursor Harness contributors
   `marketing-shaper`, `content-ops`, `content-pipeline`, `conversion-ops`,
   `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
   `autoresearch`, and `telemetry`.<!-- components:skill:end -->
-- **Commands:** <!-- components:command:start -->seven commands —
+- **Commands:** <!-- components:command:start -->ten commands —
   `/review-gate`, `/triage-findings`, `/state`, `/skill-new`,
-  `/agent-new`, `/audit-library`, and `/eval-harness`.<!-- components:command:end -->
+  `/agent-new`, `/audit-library`, `/eval-harness`, `/openspec-propose`,
+  `/openspec-apply`, and `/openspec-archive`.<!-- components:command:end -->
 - **Rules:** factual correctness, grounding, communication, memory discipline,
   orchestrator-first dispatch, deterministic diff verification, evidence
   review tiers, anti-patterns, and briefing.
@@ -66,6 +68,29 @@ Attribution: Cursor Harness contributors
 The workflow ranks correctness before speed, quality, security observations,
 and resource use. Deterministic failures and judgment backed by reproducible
 counterevidence can gate work; unevidenced model judgment remains advisory.
+
+## External prerequisites
+
+The `openspec` CLI (`@fission-ai/openspec`, Node >= 20.19) is required for the
+engineering planning workflow (`openspec-planning` skill and the
+`/openspec-*` commands). Install it globally like `git` or `gh`:
+
+```sh
+npm install -g @fission-ai/openspec
+```
+
+It is never added to package.json dependencies — the zero-third-party-
+dependency rule is intact. Planning artifacts live under `openspec/` in the
+consuming repository (`openspec init --tools cursor` scaffolds it) and are
+validated with `openspec validate <change-id> --strict`. Every other component
+works without it.
+
+**Telemetry:** the `openspec` CLI prints a notice on every invocation and
+collects anonymous usage stats unless you opt out:
+
+```sh
+export OPENSPEC_TELEMETRY=0
+```
 
 ## Scope and permissions
 
