@@ -46,6 +46,9 @@ gate_plan_classify_paths() {
       # OpenSpec dispatch briefs compile verbatim into implementation Task
       # prompts (stored prompt-injection surface), and openspec/specs/** is the
       # merged source of truth mutated by archive PRs — both are sensitive.
+      # The `*` requires a non-empty span between changes/ and /dispatch/, so a
+      # bare `openspec/changes/dispatch/foo.md` is NOT a brief; the JS twin
+      # uses /^openspec\/changes\/.+\/dispatch\// to keep parity.
       # Keep in sync with plugin/scripts/lib/dispatch-gate-plan-lib.mjs
       openspec/changes/*/dispatch/*) GATE_IS_SENSITIVE=true ;;
       openspec/specs/*) GATE_IS_SENSITIVE=true ;;

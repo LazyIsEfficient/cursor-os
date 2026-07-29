@@ -3,7 +3,7 @@
  * Path expectations use plugin/skills|agents (cursor-os), not .claude/.
  */
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +22,9 @@ import {
   dispatchGateImplDenied,
   dispatchGateInitLedger,
   dispatchGateIsEnabled,
+  dispatchGateLedgerPath,
+  dispatchGateLock,
+  dispatchGateUnlock,
   dispatchGateLoadJsonFile,
   dispatchGateMissingReviewersForWorktree,
   dispatchGateNormalizeRelPath,
@@ -248,6 +251,20 @@ test("eval metrics runs classify as code (aligned with bash gate-plan)", () => {
   // bash gate-plan-lib treats eval/metrics/runs/** as code; JS stays aligned.
   assert.equal(plan.isCodeChange, true);
   assert.equal(plan.skipDocsOnly, false);
+});
+
+test("dispatch-brief classification requires a change-id segment (bash parity)", () => {
+  // Real briefs gate as sensitive.
+  const brief = dispatchPlanRun("openspec/changes/foo/dispatch/T-parser.md");
+  assert.equal(brief.isSensitive, true);
+  assert.equal(brief.skipDocsOnly, false);
+
+  // Bare openspec/changes/dispatch/foo.md has no change-id segment — bash
+  // `openspec/changes/*/dispatch/*` does not match it, so JS must not either;
+  // it falls through to openspec docs-only.
+  const bare = dispatchPlanRun("openspec/changes/dispatch/foo.md");
+  assert.equal(bare.isSensitive, false);
+  assert.equal(bare.skipDocsOnly, true);
 });
 
 test("path traversal through exempt prefix is blocked", () => {

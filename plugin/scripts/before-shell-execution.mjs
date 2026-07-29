@@ -644,6 +644,53 @@ function ghCommand(arguments_) {
   };
 }
 
+// True when `gh api` mutates GitHub state: an explicit mutating -X/--method,
+// or the implicit POST gh performs when body flags (-f/--field, -F/--raw-field,
+// --input) are present. Read-only forms (no method flags, GET) return false.
+function ghApiIsMutation(arguments_) {
+  let explicitMethod = null;
+  let hasBodyFlags = false;
+
+  for (let index = 0; index < arguments_.length; index += 1) {
+    const argument = arguments_[index];
+    if (argument === "-X" || argument === "--method") {
+      explicitMethod = (arguments_[index + 1] ?? "").toUpperCase();
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("--method=")) {
+      explicitMethod = argument.slice("--method=".length).toUpperCase();
+      continue;
+    }
+    if (/^-X[A-Za-z]/u.test(argument)) {
+      // Glued shorthand: -XPOST
+      explicitMethod = argument.slice(2).toUpperCase();
+      continue;
+    }
+    if (
+      ["-f", "-F", "--field", "--raw-field", "--input"].includes(argument)
+    ) {
+      hasBodyFlags = true;
+      index += 1;
+      continue;
+    }
+    if (
+      argument.startsWith("--field=") ||
+      argument.startsWith("--raw-field=") ||
+      argument.startsWith("--input=") ||
+      /^-[fF]./u.test(argument)
+    ) {
+      // --field=K=V / glued -fK=V forms.
+      hasBodyFlags = true;
+    }
+  }
+
+  if (explicitMethod !== null) {
+    return ["POST", "PUT", "PATCH", "DELETE"].includes(explicitMethod);
+  }
+  return hasBodyFlags;
+}
+
 function isRecursiveForceDelete(arguments_) {
   const recursive =
     arguments_.includes("--recursive") ||
@@ -656,7 +703,8 @@ function isRecursiveForceDelete(arguments_) {
 
 // High-impact shapes that remain denied even when the command word is a literal
 // allowlisted form. Compose after named exceptions and expansion denial.
-// `workspaceRoot` is used for the verify-ledger PR gate (`gh pr create|ready`).
+// `workspaceRoot` is used for the verify-ledger PR gate (`gh pr create|ready`
+// and mutating `gh api` calls).
 function highImpactRule(segment, executable, arguments_, workspaceRoot) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
@@ -709,6 +757,17 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
     if (parsed.subcommand === "push" && forcePush) {
       return "git-history-rewrite";
     }
+    // Remote ref deletion: `git push origin :ref` (empty-src refspec) and
+    // `git push [--delete|-d] <remote> <ref>` rewrite shared state like a
+    // force push — deny alongside it.
+    if (
+      parsed.subcommand === "push" &&
+      (parsed.arguments.includes("--delete") ||
+        hasShortFlag(parsed.arguments, "d") ||
+        parsed.arguments.some((argument) => argument.startsWith(":")))
+    ) {
+      return "git-remote-ref-delete";
+    }
     if (
       parsed.subcommand === "branch" &&
       (parsed.arguments.includes("-D") ||
@@ -734,6 +793,16 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
       parsed.subcommand === "pr" &&
       (parsed.arguments[0] === "create" || parsed.arguments[0] === "ready")
     ) {
+      const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+      if (!allow.ok) {
+        return GH_PR_WITHOUT_VERIFY_RULE;
+      }
+    }
+
+    // `gh api` is a raw escape hatch around the pr/repo/release gates:
+    // `gh api repos/{o}/{r}/pulls -f head=...` creates a PR ungated. Route
+    // every mutating call through the same verify ledger as `gh pr create`.
+    if (parsed.subcommand === "api" && ghApiIsMutation(parsed.arguments)) {
       const allow = verifyLedgerAllowsGhPr(workspaceRoot);
       if (!allow.ok) {
         return GH_PR_WITHOUT_VERIFY_RULE;
