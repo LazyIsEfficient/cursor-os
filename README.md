@@ -1,6 +1,6 @@
 # Cursor Harness
 
-Cursor Harness v0.1.0 is a dependency-free Cursor plugin and benchmark for
+Cursor Harness v0.2.0 is a dependency-free Cursor plugin and benchmark for
 correctness-first software-engineering workflows. It coordinates scoped
 implementation, deterministic verification, read-only review, security
 controls, and evidence-based release decisions.
@@ -75,8 +75,9 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `/triage-findings`, `/state`, `/skill-new`, `/agent-new`,
   `/audit-library`, `/eval-harness`, `/openspec-propose`,
   `/openspec-apply`, and `/openspec-archive`;<!-- components:command:end -->
-- always-applied factual-correctness, orchestration, review-tier,
-  actual-diff, anti-patterns, and briefing rules; and
+- always-applied factual-correctness, grounding, communication,
+  memory-discipline, orchestration, review-tier, actual-diff, anti-patterns,
+  and briefing rules; and
 - nine hook events backed by dependency-free Node scripts: a fail-closed
   `beforeShellExecution` guard; advisory `sessionStart` / `preCompact` /
   `stop` (and related) hooks that fail open; plus an **opt-in** dispatch-gate
@@ -91,7 +92,7 @@ advisory and is tracked for recurrence.
 
 ## Supported scope
 
-The intended v0.1.0 scope is local Cursor Editor and Cursor CLI operation.
+The intended v0.2.0 scope is local Cursor Editor and Cursor CLI operation.
 Repository contracts verify plugin layout, component metadata, hook behavior,
 benchmark isolation, and CLI feature detection. Actual Editor loading and
 authenticated CLI outcomes remain manual or unverified. `npm run
@@ -146,11 +147,9 @@ Experienced Cursor users often already have global agents, rules, and hooks.
 Symlink install does **not** replace that tree; it only adds a plugin path.
 Predict collisions before you rely on a name:
 
-- **Agent and rule names may collide.** Eight of nine plugin agents share
-  common global names:
-  `adversarial-claims-reviewer`, `code-reviewer`, `engineer`, `godot-engineer`,
-  `library-investigator`, `phaser-engineer`, `rust-engineer`, and
-  `security-reviewer`. Only `capability-probe` is plugin-unique. The same
+- **Agent and rule names may collide.** Seventeen plugin agents total; all
+  except `capability-probe` may collide with names under a user's global
+  `~/.cursor/agents/`. The same
   question applies to `factual-correctness.mdc` among the rules.
   **UNVERIFIED:** this repository has no proven Cursor precedence rule for
   plugin vs global agents/rules (shadow, reverse, or both listed). Do not
@@ -252,7 +251,7 @@ workspaces, and Cursor config homes are never upload paths. `smoke-24` is
 integration evidence only; `release-72` repeats the 12-fixture paired corpus
 three times but does not establish generality.
 
-Release packaging validates first, checks all v0.1.0 metadata, and emits a
+Release packaging validates first, checks all v0.2.0 metadata, and emits a
 deterministic `.tar.gz`, SHA-256 file, and machine-readable release manifest.
 It packages only the plugin consumer payload and license; it does not publish,
 tag, submit to Marketplace, or create a GitHub release.

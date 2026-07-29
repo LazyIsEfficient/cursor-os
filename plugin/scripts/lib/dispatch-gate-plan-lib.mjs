@@ -56,8 +56,12 @@ export function dispatchPlanClassifyPaths(changedRaw) {
       // OpenSpec dispatch briefs compile verbatim into implementation Task
       // prompts (stored prompt-injection surface); openspec/specs/** is the
       // merged source of truth mutated by archive PRs. Both sensitive.
+      // Bash `*` matches `/` and requires at least the literal segments, so
+      // `openspec/changes/*/dispatch/*` demands a non-empty span between
+      // `changes/` and `/dispatch/` — `.+` below keeps parity (a bare
+      // `openspec/changes/dispatch/foo.md` is NOT a dispatch brief).
       // Keep in sync with scripts/lib/gate-plan-lib.sh.
-      (f.startsWith("openspec/changes/") && f.includes("/dispatch/")) ||
+      /^openspec\/changes\/.+\/dispatch\//u.test(f) ||
       f.startsWith("openspec/specs/") ||
       f === ".cursor/dispatch-gate.json" ||
       f === "plugin/.cursor/dispatch-gate.json" ||

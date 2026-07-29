@@ -9,6 +9,12 @@
   },
   "components": [
     {
+      "id": "dispatch-gate",
+      "kind": "reference",
+      "path": "plugin/.cursor/dispatch-gate.json",
+      "sha256": "3515cf954c49dcfa99d597d7ad3b6508b6c7f7572a35d6072eb687aa51c86e1f"
+    },
+    {
       "id": "adversarial-claims-reviewer",
       "kind": "agent",
       "path": "plugin/agents/adversarial-claims-reviewer.md",
@@ -54,7 +60,7 @@
       "id": "game-design-shaper",
       "kind": "agent",
       "path": "plugin/agents/game-design-shaper.md",
-      "sha256": "29fc7e3f32703fa57ad8ffcb146c46836df3f801d740bb3af2bf38fe81147b6a"
+      "sha256": "76a4567602d480c62943bfa718f574ea4ce08c3e88eca2efd89d55b7b7b5be09"
     },
     {
       "id": "godot-engineer",
@@ -156,7 +162,7 @@
       "id": "skill-new",
       "kind": "command",
       "path": "plugin/commands/skill-new.md",
-      "sha256": "59899734d2bc84f4d67618e6784b74440bd8b05e95250b374ac31b8c47203a8e"
+      "sha256": "5bc91c460fe684d82117cd033f82f91acbb03c2b21f77b71048471baf1f4af18"
     },
     {
       "id": "state",
@@ -175,6 +181,18 @@
       "kind": "hook",
       "path": "plugin/hooks/hooks.json",
       "sha256": "977e590b19cb1eea2e6bbfa44b0b3f4891287b5ccaa1c4368d1936b79dad85f3"
+    },
+    {
+      "id": "caveman-style",
+      "kind": "reference",
+      "path": "plugin/references/caveman-style.md",
+      "sha256": "7cc1f0a0b236968d54b4cead23caa0ff6f2cf2301a89756a1ce861bdd835c1d3"
+    },
+    {
+      "id": "gate-dag",
+      "kind": "reference",
+      "path": "plugin/references/gate-dag.md",
+      "sha256": "02caed9a7d9f8d0bb0e405ca1a954f41efb6a2af207156bcf0c75d326b04627c"
     },
     {
       "id": "actual-diff-verification",
@@ -234,7 +252,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "808ca763cb6b849f4d5fa83eac7c0bc245f8b4b2571ecf19e769edc2430232d2"
+      "sha256": "dace011ba1aa58aea0c18dfb74e07e26fa6c838411d01349a8d2c18b064bb397"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -282,19 +300,19 @@
       "id": "dispatch-gate-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-lib.mjs",
-      "sha256": "94192e6508f40389a35765d98dfe75f74a9b4782befe1592a7077daaaf5a5ea6"
+      "sha256": "222a3b42958709886c85e9a3667fed8d3d953dbbcc24bb9fd7f50c9c7ccbadc4"
     },
     {
       "id": "dispatch-gate-plan-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-plan-lib.mjs",
-      "sha256": "4cc2cd25413565e20c96d9374d5441d473371b975047f364eeb1dda14dd97955"
+      "sha256": "1dc32e7ad46ac9120237cc90bbe94c08ada38d7cf708bc8fb5cc964303eea562"
     },
     {
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "2bbd3ddaa215db391096ebea1a4d18e29d12c45f4685162128d0d36aeeb3a948"
+      "sha256": "19c8eb31550845b198b9dc60088186c2279cc82ca1b1814f7f6d3633df742178"
     },
     {
       "id": "memory-extract-nudge",
@@ -330,7 +348,7 @@
       "id": "adversarial-claims-reviewer",
       "kind": "skill",
       "path": "plugin/skills/adversarial-claims-reviewer/SKILL.md",
-      "sha256": "98a4d733413003d85ae994a2ffb83a36cc7a28483d3e83d8b75fd4628b3a8412"
+      "sha256": "a634c6629ad1935ee7dc05d8b41298cdd17ce1aafcf2b906a832f1474c02d83a"
     },
     {
       "id": "skills-adversarial-claims-reviewer-assets-report-template",
@@ -750,7 +768,7 @@
       "id": "game-balancer",
       "kind": "skill",
       "path": "plugin/skills/game-balancer/SKILL.md",
-      "sha256": "f1a882b1659b90544847b83657cf627d4009ddc8e916f364208ca4f9fc3d9bf5"
+      "sha256": "5b5f7546abcfd68255177064e3cdc9a44a5c8003368f57fcabd47cba664781f7"
     },
     {
       "id": "skills-game-balancer-assets-balance-pass-checklist",
@@ -1158,7 +1176,7 @@
       "id": "godot-engineer",
       "kind": "skill",
       "path": "plugin/skills/godot-engineer/SKILL.md",
-      "sha256": "408bd9948f73a1325b5f18f9fa9711acb266a76e77c8fdc7c85a036a39a18fe4"
+      "sha256": "8531cfbec0c993b9019d0049e174ecc3d9be2359d4db9776a22b849c9ee58e58"
     },
     {
       "id": "skills-godot-engineer-assets-feature-checklist",
@@ -1392,7 +1410,7 @@
       "id": "library-investigator",
       "kind": "skill",
       "path": "plugin/skills/library-investigator/SKILL.md",
-      "sha256": "a2847452f6535391ad8ce6ff8c310e0f038d704e494b9e13d8712a7e7701f276"
+      "sha256": "f9eefaaa70f9bf543b5f413c8dd102776a1a97b76dfafcb7e7f952a9a37ed12d"
     },
     {
       "id": "skills-library-investigator-assets-investigation-report-template",
@@ -1536,7 +1554,7 @@
       "id": "phaser-engineer",
       "kind": "skill",
       "path": "plugin/skills/phaser-engineer/SKILL.md",
-      "sha256": "b7284b9909e5b2162c438dadab438872ef95d2efbf4413d2115cd73294069246"
+      "sha256": "edaa6be2cfed5ff8c5f462a04da543192427d86e1bf506c99b34c4f548b455bc"
     },
     {
       "id": "skills-phaser-engineer-assets-feature-checklist",
@@ -1698,7 +1716,7 @@
       "id": "security-engineering",
       "kind": "skill",
       "path": "plugin/skills/security-engineering/SKILL.md",
-      "sha256": "43586a6767db3113f1a12164970b5f0f4efa3d2ab2b656a5018ed28ba6547704"
+      "sha256": "0e1e397fe30c448b7488b659a519ab872d4030daccd07a28c9c22d239d8482aa"
     },
     {
       "id": "skills-security-engineering-references-agentic-ai-security",

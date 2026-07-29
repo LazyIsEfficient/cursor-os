@@ -16,6 +16,37 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **Audit Tier 1 fixes (full-repo best-practice sweep):** mutating `gh api`
+  (POST/PUT/PATCH/DELETE, implicit POST via field flags) now requires a valid
+  verify ledger; `git push :ref` / `--delete` remote-ref deletion denied by
+  the shell guard; `ci.yml` pull_request trigger gains `edited` +
+  `ready_for_review`; `release.yml` gains a tag-from-main guard
+  (`git merge-base --is-ancestor`); openspec `specs/pr-gates/` spec via
+  `openspec/changes/audit-tier1-fixes/`.
+- **Inventory covers `plugin/references/*` and `plugin/.cursor/*`** as hashed
+  components (372 total) — gate-dag.md, caveman-style.md, dispatch-gate.json
+  no longer ship untracked.
+
+### Fixed
+
+- **Gate twin parity:** JS dispatch-gate planner now requires a change-id
+  segment in `openspec/changes/*/dispatch/**`, matching the bash twin.
+- **Verify-ledger hardening:** custom-profile coverage requires meaningful
+  subcommands (`go version`/`go env` no longer count); stale lock dirs
+  (>30s mtime) self-recover in both lock implementations; re-recording an
+  identical command supersedes its prior entry (a superseded flaky failure
+  no longer poisons the HEAD permanently).
+- **Doc drift:** v0.2.0 prose (was v0.1.0 in 5 places), 17-agent collision
+  counts, ten test globs, dispatch-enforcement + gate-dag classification
+  tables aligned to the planners (incl. openspec rows, eval/metrics as
+  code), stop-hook wording, rules list (nine).
+- **Library:** 7 routing descriptions trimmed ≤800 chars (triggers verified
+  preserved), `game-balancer` frontmatter `<TBD>` angle brackets removed,
+  `skill-new` cites `scripts/validate.mjs` (was nonexistent `.sh`), dead
+  `write_tools`/`research_tools` keys removed from `dispatch-gate.json`.
+
+### Added
+
 - **`AGENTS.md` at repo root:** load-first concision directive ("Be extremely
   concise. Sacrifice grammar for concision. No filler, no pleasantries, no
   hedging. Answer first.") plus pointers to CONTRIBUTING.md and plugin/rules/.

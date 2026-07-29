@@ -117,6 +117,8 @@ test("allows benign everyday commands", () => {
     "git status",
     "git status --short",
     "git push origin feature/safe-update",
+    "git push origin HEAD:refs/heads/feature",
+    "git push origin main --set-upstream",
     "npm test",
     "npm run validate",
     "node --test tests/security/*.test.mjs",
@@ -166,6 +168,15 @@ test("denies high-impact literal command shapes", () => {
     `env MODE=test git "push" --force-with-lease origin main`,
     `sh -c 'git push origin +main'`,
     "git branch -D abandoned-work",
+    "git push origin :feat/old",
+    "git push origin ':refs/heads/old'",
+    "git push --delete origin feat/old",
+    "git push -d origin feat/old",
+    "git push -qd origin feat/old",
+    "git push origin --prune",
+    "git push --prune origin",
+    "git push --mirror origin",
+    "git push origin --mirror",
     "gh repo delete owner/repository",
     "npm publish",
     "rm tests/evaluators/hidden-check.mjs",
@@ -411,6 +422,87 @@ test("allows gh pr create|ready with a valid verify ledger for HEAD", () => {
     const headSha = gitHeadSha(root);
     writeValidVerifyLedger(root, headSha);
     for (const command of ["gh pr create", "gh pr ready"]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("denies mutating gh api calls without a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    for (const command of [
+      "gh api repos/owner/repo/pulls -f head=feat:x -f base=main -f title=t",
+      "gh api repos/owner/repo/pulls -F head=feat:x",
+      "gh api --field head=feat:x repos/owner/repo/pulls",
+      "gh api -X POST repos/owner/repo/issues",
+      "gh api -XPOST repos/owner/repo/issues",
+      "gh api --method=PUT repos/owner/repo/contents/file.txt",
+      "gh api -X PATCH repos/owner/repo/pulls/1",
+      "gh api -X DELETE repos/owner/repo/git/refs/heads/old",
+      "gh -R owner/repo api repos/owner/repo/pulls -f head=feat:x",
+      "gh api repos/owner/repo/actions/runs/1/rerun -f x=y --hostname example.com",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+
+    // Invalid ledger (head mismatch) is equally denied.
+    writeValidVerifyLedger(root, "0".repeat(40));
+    const stale = commandDecision(
+      "gh api repos/owner/repo/pulls -f head=feat:x",
+      { cwd: root },
+    );
+    assert.equal(stale.permission, "deny");
+    assert.match(
+      stale.user_message,
+      new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+    );
+  });
+});
+
+test("allows read-only gh api calls without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh api repos/owner/repo",
+      "gh api repos/owner/repo/pulls",
+      "gh api repos/owner/repo/pulls --paginate",
+      "gh api -X GET repos/owner/repo/pulls",
+      "gh api --method GET repos/owner/repo",
+      "gh api -X GET -f per_page=100 repos/owner/repo/pulls",
+      "gh api repos/owner/repo --jq .full_name",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("allows mutating gh api calls with a valid verify ledger for HEAD", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh api repos/owner/repo/pulls -f head=feat:x -f base=main -f title=t",
+      "gh api -X DELETE repos/owner/repo/git/refs/heads/old",
+      "gh api --method=POST repos/owner/repo/issues",
+    ]) {
       assert.deepEqual(
         commandDecision(command, { cwd: root }),
         { permission: "allow" },

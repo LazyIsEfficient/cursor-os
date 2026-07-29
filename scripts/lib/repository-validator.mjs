@@ -418,6 +418,24 @@ async function discoverComponents(repositoryRoot, pluginRoot, manifest) {
     add("script", path, basenameWithoutExtension(path));
   }
 
+  // plugin/references/* and plugin/.cursor/* ship inside the plugin tree (the
+  // local-install adapter copies all of plugin/) but were never discovered, so
+  // hash drift went untracked. Model them as inert `reference` components —
+  // README fencing and loadability checks key off other kinds.
+  for (const path of await filesFromConfiguredPaths(
+    [join(pluginRoot, "references")],
+    COMPONENT_EXTENSIONS,
+  )) {
+    add("reference", path, basenameWithoutExtension(path));
+  }
+
+  for (const path of await filesFromConfiguredPaths(
+    [join(pluginRoot, ".cursor")],
+    new Set([".json"]),
+  )) {
+    add("reference", path, basenameWithoutExtension(path));
+  }
+
   // Code-unit ordering, matching listFiles at :286 and the determinism
   // assertion in tests/validator/validator.test.mjs. localeCompare sorts by
   // primary alphabetic weight, so it placed `assets/…` and `references/…`

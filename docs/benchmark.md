@@ -5,7 +5,7 @@ paired harness-off and harness-on trials. It is designed to reject incorrect
 or unsafe speedups, preserve failed trials, and make every eligibility decision
 reproducible.
 
-No live authenticated benchmark success is claimed for v0.1.0. The
+No live authenticated benchmark success is claimed for v0.2.0. The
 deterministic corpus smoke verifies runner, fixture, evaluator, integrity, and
 reporting contracts without model calls.
 

@@ -25,17 +25,6 @@
   "documenter_subagent_types": [
     "data-model-documenter"
   ],
-  "write_tools": [
-    "Write",
-    "StrReplace",
-    "Delete"
-  ],
-  "research_tools": [
-    "Read",
-    "Grep",
-    "Glob",
-    "SemanticSearch"
-  ],
   "code_path_prefixes": [
     "plugin/skills/",
     "plugin/agents/",

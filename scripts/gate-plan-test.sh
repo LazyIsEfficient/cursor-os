@@ -43,6 +43,16 @@ assert_contains "$out" "security-reviewer" "openspec dispatch security-reviewer"
 assert_contains "$out" "data-model-documenter" "openspec dispatch documenter"
 assert_not_contains "$out" "wave_1=code-reviewer" "openspec dispatch no code-reviewer"
 
+# A bare openspec/changes/dispatch/*.md (no change-id segment) is NOT a brief:
+# `*` requires a segment, so it falls through to openspec docs-only. The JS
+# twin regex /^openspec\/changes\/.+\/dispatch\// keeps the same parity.
+out="$(SHIP_GATES_CHANGED_FILES="openspec/changes/dispatch/foo.md" bash "$PLAN")"
+if printf '%s' "$out" | grep -q 'skip_docs_only=true'; then
+  pass "openspec bare dispatch path is docs-only"
+else
+  fail "openspec bare dispatch path is docs-only"
+fi
+
 # Main specs are sensitive (archive PRs mutate the source of truth).
 out="$(SHIP_GATES_CHANGED_FILES="openspec/specs/planning/spec.md" bash "$PLAN")"
 assert_contains "$out" "skip_docs_only=false" "openspec main spec gates"

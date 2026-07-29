@@ -69,6 +69,36 @@ test("authenticated profiles use protected pre-authenticated config and sanitize
   assert.doesNotMatch(workflow, /\bnpm publish\b|\bgh release create\b|\bgit push\b/u);
 });
 
+test("CI pull_request trigger includes edited so PR-body checkbox edits re-run gates", async () => {
+  const workflow = await readWorkflow("ci.yml");
+  assert.match(
+    workflow,
+    /pull_request:\n\s+#[^\n]*\n?\s+types:\s*\[[^\]]*\]/u,
+    "pull_request trigger must declare explicit types",
+  );
+  const trigger = workflow.match(/types:\s*\[([^\]]*)\]/u);
+  assert.ok(trigger, "explicit pull_request types missing");
+  for (const type of ["opened", "synchronize", "reopened", "edited", "ready_for_review"]) {
+    assert.ok(trigger[1].includes(type), `pull_request types missing ${type}`);
+  }
+});
+
+test("ship-gates run gate scripts from the base ref, not the PR merge tree", async () => {
+  const workflow = await readWorkflow("ci.yml");
+  const job = workflow.slice(workflow.indexOf("\n  ship-gates:"));
+  assert.match(
+    job,
+    /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/u,
+    "gate scripts must be checked out from the base ref (fork PRs can edit the script)",
+  );
+  assert.match(job, /path: gate-src/u);
+  assert.match(job, /bash gate-src\/scripts\/check-pr-ship-gates\.sh/u);
+  // Changed-files diff is computed on the merge tree and injected, so the
+  // base-ref script never needs PR-tree git state.
+  assert.match(job, /SHIP_GATES_CHANGED_FILES=/u);
+  assert.match(job, /git diff --name-only "\$BASE_SHA" "\$HEAD_SHA"/u);
+});
+
 test("workflows use only immutable first-party action pins", async () => {
   for (const name of ["ci.yml", "authenticated-benchmark.yml"]) {
     const workflow = await readWorkflow(name);

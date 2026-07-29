@@ -3,7 +3,7 @@
  * Path expectations use plugin/skills|agents (cursor-os), not .claude/.
  */
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +22,9 @@ import {
   dispatchGateImplDenied,
   dispatchGateInitLedger,
   dispatchGateIsEnabled,
+  dispatchGateLedgerPath,
+  dispatchGateLock,
+  dispatchGateUnlock,
   dispatchGateLoadJsonFile,
   dispatchGateMissingReviewersForWorktree,
   dispatchGateNormalizeRelPath,
@@ -250,6 +253,20 @@ test("eval metrics runs classify as code (aligned with bash gate-plan)", () => {
   assert.equal(plan.skipDocsOnly, false);
 });
 
+test("dispatch-brief classification requires a change-id segment (bash parity)", () => {
+  // Real briefs gate as sensitive.
+  const brief = dispatchPlanRun("openspec/changes/foo/dispatch/T-parser.md");
+  assert.equal(brief.isSensitive, true);
+  assert.equal(brief.skipDocsOnly, false);
+
+  // Bare openspec/changes/dispatch/foo.md has no change-id segment — bash
+  // `openspec/changes/*/dispatch/*` does not match it, so JS must not either;
+  // it falls through to openspec docs-only.
+  const bare = dispatchPlanRun("openspec/changes/dispatch/foo.md");
+  assert.equal(bare.isSensitive, false);
+  assert.equal(bare.skipDocsOnly, true);
+});
+
 test("path traversal through exempt prefix is blocked", () => {
   const root = fixtureRoot();
   const cfg = dispatchGateLoadJsonFile(join(root, ".cursor", "dispatch-gate.json"));
@@ -431,4 +448,21 @@ test("corrupt config: HandlePreTool and HandleBeforeRead DENY", () => {
   );
   assert.equal(writeDeny.permission, "deny");
   assert.match(String(writeDeny.agent_message), /corrupt/iu);
+});
+
+test("stale dispatch-gate lock is broken and re-acquired", () => {
+  const root = fixtureRoot();
+  const lock = `${dispatchGateLedgerPath(root)}.lock`;
+  mkdirSync(lock);
+  const past = new Date(Date.now() - 60_000);
+  utimesSync(lock, past, past);
+  // Killed-hook leftover (mtime > 30s) must not permanently deny Reads.
+  dispatchGateLock(root);
+  dispatchGateUnlock(root);
+});
+
+test("fresh dispatch-gate lock is not broken (ledger lock timeout)", () => {
+  const root = fixtureRoot();
+  mkdirSync(`${dispatchGateLedgerPath(root)}.lock`);
+  assert.throws(() => dispatchGateLock(root), /lock timeout/u);
 });

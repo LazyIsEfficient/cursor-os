@@ -46,6 +46,19 @@ test("release keeps write access scoped to the publishing job", async () => {
   assert.doesNotMatch(publishJob, /npm (?:ci|run|test)/u);
 });
 
+test("release refuses to tag a commit that is not on main (tag-from-main guard)", async () => {
+  const workflow = await readWorkflow("release.yml");
+  const publishJob = workflow.slice(workflow.indexOf("\n  publish:"));
+  assert.match(publishJob, /git merge-base --is-ancestor "\$RELEASE_COMMIT" origin\/main/u);
+  const guardIndex = publishJob.indexOf("git merge-base --is-ancestor");
+  const releaseIndex = publishJob.indexOf("gh release create");
+  assert.ok(guardIndex >= 0, "tag-from-main guard missing");
+  assert.ok(
+    releaseIndex > guardIndex,
+    "tag-from-main guard must run before gh release create",
+  );
+});
+
 test("release pins immutable first-party actions and never interpolates dispatch input into run blocks", async () => {
   const workflow = await readWorkflow("release.yml");
   const uses = [...workflow.matchAll(/uses:\s+([^\s]+)/gu)].map((match) => match[1]);
