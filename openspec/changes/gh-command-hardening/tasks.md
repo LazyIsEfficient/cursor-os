@@ -15,3 +15,9 @@
 - [x] 3.1 `DATA_MODEL.md` `BeforeShellExecutionHook` section: Tier A rules + Tier B gated mutations with file:line sources
 - [x] 3.2 `CHANGELOG.md` Unreleased `### Security` entry
 - [x] 3.3 Regenerate `plugin/.cursor-plugin/inventory.json`; `npm run validate` green
+
+## 4. Position-aware verb resolution (flag-before-verb evasion fix)
+
+- [x] 4.1 Resolve the post-group verb via `resolveGhVerb` (first non-flag word, consuming `-R`/`--repo`/`--hostname` values incl. glued `-Ro/r` / `--repo=o/r`); all Tier A/B checks and `gh repo delete` / `gh release delete` test the resolved verb; unresolvable verb position fails closed (Tier-A-shaped groups hard-deny, Tier-B-shaped groups ledger-gate)
+- [x] 4.2 Add `gh release upload` / `gh release delete-asset` to `gh-release-mutation`
+- [x] 4.3 Regression tests: flag-before-verb forms of every Tier A rule denied (with ledger), Tier B forms denied without / allowed with a ledger, glued forms, read-only flag forms allowed, flag-before-verb `repo delete` / `release delete` denied

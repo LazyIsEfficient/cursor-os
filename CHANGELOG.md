@@ -33,14 +33,26 @@ here therefore corresponds to a single consistent version across the repository.
   (no verify-ledger exception) — `gh ssh-key add` / `gh gpg-key add`
   (`gh-account-key-add`), `gh extension install|upgrade`
   (`gh-extension-install`), `gh alias set|delete` (`gh-alias-mutation`),
-  all `gh pr merge` forms (`gh-pr-merge`), `gh release create|edit`
-  (`gh-release-mutation`), `gh auth token` (`gh-auth-token`). Tier B
+  all `gh pr merge` forms (`gh-pr-merge`),
+  `gh release create|edit|upload|delete-asset` (`gh-release-mutation`),
+  `gh auth token` (`gh-auth-token`). Tier B
   verify-ledger gates (same `gh-pr-without-verify` rule as `gh pr create`) —
   `gh secret set|delete`, `gh variable set|delete`,
   `gh workflow run|disable|enable`, `gh pr close|reopen`,
   `gh pr review --approve|--request-changes`, `gh repo create|fork|rename`.
   Read-only `gh` forms stay ungated. Spec via
   `openspec/changes/gh-command-hardening/`.
+- **Flag-position evasion closed in the `gh` hardening:** all Tier A/B checks
+  (and the `gh repo delete` / `gh release delete` denials) now resolve the
+  verb positionally — the first non-flag word after the group name, consuming
+  `-R`/`--repo`/`--hostname` values including glued `-Ro/r` and `--repo=o/r`
+  forms — so flags between the group name and the verb
+  (e.g. `gh pr -R owner/repo merge 12`, `gh auth --hostname x token`) no
+  longer bypass the guard. An unresolvable verb position fails closed:
+  Tier-A-shaped groups deny with their most restrictive rule, Tier-B-shaped
+  groups require the verify ledger. `gh release upload` and
+  `gh release delete-asset` are now hard-denied alongside `create|edit` —
+  they mutate assets on releases owned by `release.yml`.
 
 ### Fixed
 
