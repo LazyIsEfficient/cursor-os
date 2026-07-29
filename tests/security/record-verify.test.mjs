@@ -6,6 +6,7 @@ import {
   readFileSync,
   rmSync,
   utimesSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -555,6 +556,28 @@ test("custom profile rejects inert go/cmake/make/ninja invocations (Tier 1)", ()
   );
 });
 
+test("custom profile rejects build-flag values misread as targets (Tier 1)", () => {
+  const at = new Date().toISOString();
+  const spawned = (cmd) => ({ cmd, exit_code: 0, at, spawned: true });
+  const coverage = (cmds) =>
+    verifyLedgerProfileCoverage("custom", cmds.map(spawned));
+  // Reviewer probe battery: flag values (-C src, -f mk, -j 8) are not
+  // targets; flag-only make/ninja runs are semantically bare.
+  assert.equal(coverage(["make", "make"]), false);
+  assert.equal(coverage(["make -C src", "ninja -C build"]), false);
+  assert.equal(coverage(["make -f mk"]), false);
+  assert.equal(coverage(["ninja -j 8"]), false);
+  assert.equal(coverage(["ninja -t list", "make test"]), false);
+  // Standalone non-value flags do not count as targets either.
+  assert.equal(coverage(["make -k", "ninja -w dupbuild=warn"]), false);
+  // Real workloads keep passing.
+  assert.equal(coverage(["make test", "make check"]), true);
+  assert.equal(coverage(["go build ./...", "go vet ./..."]), true);
+  assert.equal(coverage(["go version", "go env"]), false);
+  assert.equal(coverage(["make -C src test", "ninja -C build check"]), true);
+  assert.equal(coverage(["make -j 4 check", "ninja -j8 all"]), true);
+});
+
 test("stale verify-ledger lock is broken and re-acquired", () => {
   withTempProjectRoot((root) => {
     mkdirSync(join(root, ".cursor"), { recursive: true });
@@ -602,6 +625,53 @@ test("re-record supersedes identical cmd — flaky failure cannot block HEAD", (
       ledger.commands.filter((entry) => entry.cmd === "npm test").length,
       1,
     );
+    assert.equal(ledger.impl_verified, true);
+    assert.equal(verifyLedgerIsValidForHead(root).ok, true);
+  });
+});
+
+test("supersede replaces ALL duplicate cmd entries — legacy ledger recovers", () => {
+  withTempProjectRoot((root) => {
+    // Seed a legacy ledger with duplicate failing entries (pre-supersede
+    // appends left both behind; replacing only the first stays poisoned).
+    const head = spawnSync("git", ["-C", root, "rev-parse", "HEAD"], {
+      encoding: "utf8",
+    }).stdout.trim();
+    const at = new Date().toISOString();
+    mkdirSync(join(root, ".cursor"), { recursive: true });
+    writeFileSync(
+      verifyLedgerPath(root),
+      `${JSON.stringify(
+        {
+          version: 2,
+          profile: "node-harness",
+          conversation_id: "",
+          impl_verified: false,
+          verified_at: null,
+          head_sha: head,
+          commands: [
+            { cmd: "npm test", exit_code: 1, at, spawned: true },
+            { cmd: "npm test", exit_code: 1, at, spawned: true },
+            { cmd: "npm run validate", exit_code: 0, at, spawned: true },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    assert.equal(verifyLedgerIsValidForHead(root).ok, false);
+
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm test",
+      exitCode: 0,
+      spawned: true,
+    });
+    const ledger = verifyLedgerLoad(root);
+    assert.equal(
+      ledger.commands.filter((entry) => entry.cmd === "npm test").length,
+      1,
+    );
+    assert.equal(ledger.commands.length, 2);
     assert.equal(ledger.impl_verified, true);
     assert.equal(verifyLedgerIsValidForHead(root).ok, true);
   });

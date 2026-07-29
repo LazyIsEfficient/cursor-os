@@ -759,10 +759,15 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
     }
     // Remote ref deletion: `git push origin :ref` (empty-src refspec) and
     // `git push [--delete|-d] <remote> <ref>` rewrite shared state like a
-    // force push — deny alongside it.
+    // force push — deny alongside it. `--prune` deletes remote refs whose
+    // local counterpart is gone; `--mirror` force-updates AND deletes refs —
+    // both bypass the force-push/refspec checks otherwise. Exact tokens only,
+    // so legitimate src:dst refspecs and plain pushes are untouched.
     if (
       parsed.subcommand === "push" &&
       (parsed.arguments.includes("--delete") ||
+        parsed.arguments.includes("--mirror") ||
+        parsed.arguments.includes("--prune") ||
         hasShortFlag(parsed.arguments, "d") ||
         parsed.arguments.some((argument) => argument.startsWith(":")))
     ) {

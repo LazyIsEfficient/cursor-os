@@ -516,6 +516,44 @@ function isMeaningfulBuildTarget(token) {
   );
 }
 
+/**
+ * Flags whose NEXT argv word is a value, not a build target (Tier 1 — flag
+ * values misclassified as targets: `make -C src` / `ninja -j 8` satisfied
+ * coverage while running the semantically bare default target). Consuming the
+ * value leaves flag-only invocations with no target → excluded. Standalone
+ * non-value flags (`make -k`) are skipped by isMeaningfulBuildTarget itself.
+ */
+const BUILD_VALUE_TAKING_FLAGS = new Map([
+  ["make", new Set(["-C", "-f", "-j", "-o", "-W", "-I"])],
+  ["ninja", new Set(["-C", "-f", "-j", "-k", "-l"])],
+]);
+
+/** True when argv after the binary contains an explicit build target. */
+function hasMeaningfulBuildTarget(bin, tokens) {
+  const valueFlags = BUILD_VALUE_TAKING_FLAGS.get(bin);
+  const rest = tokens.slice(1);
+  for (let index = 0; index < rest.length; index += 1) {
+    const token = rest[index];
+    if (valueFlags.has(token)) {
+      index += 1; // consume the flag's value
+      continue;
+    }
+    // Glued value form (`-j4`, `-Csrc`) — value embedded, nothing to consume.
+    if (
+      token.length > 2 &&
+      token[0] === "-" &&
+      token[1] !== "-" &&
+      valueFlags.has(token.slice(0, 2))
+    ) {
+      continue;
+    }
+    if (isMeaningfulBuildTarget(token)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function matchesCustomGo(tokens) {
   return VERIFY_CUSTOM_GO_SUBCOMMANDS.has(tokens[1]);
 }
@@ -527,7 +565,7 @@ function matchesCustomCmake(tokens) {
 function matchesCustomMake(tokens) {
   // Bare `make` / flag-only invocations are unverifiable — require an
   // explicit non-help target (`make test`, `make -j4 check`).
-  return tokens.slice(1).some(isMeaningfulBuildTarget);
+  return hasMeaningfulBuildTarget("make", tokens);
 }
 
 function matchesCustomNinja(tokens) {
@@ -536,7 +574,7 @@ function matchesCustomNinja(tokens) {
   if (tokens.includes("-t")) {
     return false;
   }
-  return tokens.slice(1).some(isMeaningfulBuildTarget);
+  return hasMeaningfulBuildTarget("ninja", tokens);
 }
 
 /**
@@ -896,22 +934,20 @@ export function verifyLedgerAppendCommand(
       ledger.commands = [];
     }
     // Re-record supersede (Tier 1 — poisoned ledger recovery): an identical
-    // cmd string REPLACES the prior entry (latest wins) instead of appending
-    // a duplicate, so one flaky failure cannot block the HEAD forever once
-    // the same command is re-run and passes.
+    // cmd string REPLACES every prior entry (latest wins) instead of
+    // appending a duplicate, so one flaky failure cannot block the HEAD
+    // forever once the same command is re-run and passes. ALL cmd-equal
+    // entries are dropped — legacy ledgers may hold duplicates, and replacing
+    // only the first would leave a stale failure behind.
     const entry = { cmd, exit_code: exitCode, at, spawned: true };
-    const existingIndex = ledger.commands.findIndex(
+    ledger.commands = ledger.commands.filter(
       (existing) =>
-        existing !== null &&
-        typeof existing === "object" &&
-        !Array.isArray(existing) &&
-        existing.cmd === cmd,
+        existing === null ||
+        typeof existing !== "object" ||
+        Array.isArray(existing) ||
+        existing.cmd !== cmd,
     );
-    if (existingIndex >= 0) {
-      ledger.commands[existingIndex] = entry;
-    } else {
-      ledger.commands.push(entry);
-    }
+    ledger.commands.push(entry);
 
     const verified = computeImplVerified(ledger);
     ledger.impl_verified = verified;
