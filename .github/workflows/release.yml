@@ -93,6 +93,19 @@ jobs:
       ARCHIVE: ${{ needs.package.outputs.archive }}
       DIGEST: ${{ needs.package.outputs.sha256 }}
     steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      # tag-from-main guard: RELEASE_COMMIT defaults to whatever ref was
+      # dispatched — refuse to tag anything that is not on origin/main.
+      - name: Fail unless the release commit is on main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main; then
+            echo "release commit $RELEASE_COMMIT is not an ancestor of origin/main — refusing to tag" >&2
+            exit 1
+          fi
       - name: Download release artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:

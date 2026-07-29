@@ -17,6 +17,7 @@ import {
   mkdirSync,
   readFileSync,
   rmdirSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
@@ -81,6 +82,31 @@ export function dispatchGateLedgerPath(root) {
 /** Max lock wait: 20 × 50ms = 1s — well under hooks.json 5s timeout. */
 const DISPATCH_GATE_LOCK_MAX_TRIES = 20;
 const DISPATCH_GATE_LOCK_SLEEP_MS = 50;
+/** Lock dirs older than this are leftovers of a killed hook — safe to break. */
+const DISPATCH_GATE_LOCK_STALE_MS = 30_000;
+
+/**
+ * Break a stale mkdir-lock (killed hook left the dir behind, denying all
+ * Reads/verifies until manual removal — Tier 1). Rm is raced-tolerant.
+ */
+function dispatchGateBreakStaleLock(lock) {
+  try {
+    const stats = statSync(lock);
+    if (!stats.isDirectory()) {
+      return;
+    }
+    if (Date.now() - stats.mtimeMs <= DISPATCH_GATE_LOCK_STALE_MS) {
+      return;
+    }
+    try {
+      rmdirSync(lock);
+    } catch {
+      /* lost the race — another holder removed it; retry loop handles it */
+    }
+  } catch {
+    /* missing/unreadable — normal acquire path handles it */
+  }
+}
 
 export function dispatchGateLock(root) {
   const lock = `${dispatchGateLedgerPath(root)}.lock`;
@@ -90,6 +116,7 @@ export function dispatchGateLock(root) {
       mkdirSync(lock);
       return;
     } catch {
+      dispatchGateBreakStaleLock(lock);
       sleepSync(DISPATCH_GATE_LOCK_SLEEP_MS);
     }
   }

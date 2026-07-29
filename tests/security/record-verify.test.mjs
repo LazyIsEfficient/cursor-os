@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -7,8 +14,14 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   verifyCommandIsTrivial,
+  verifyLedgerAppendCommand,
+  verifyLedgerIsValidForHead,
+  verifyLedgerLoad,
+  verifyLedgerLock,
+  verifyLedgerLockPath,
   verifyLedgerPath,
   verifyLedgerProfileCoverage,
+  verifyLedgerUnlock,
   verifyLedgerValidateForHead,
   VERIFY_LEDGER_VERSION,
 } from "../../scripts/lib/verify-ledger-lib.mjs";
@@ -138,8 +151,9 @@ test("records spawned commands and sets impl_verified for node-harness coverage"
     assert.equal(ledger1.commands[0].spawned, true);
     assert.equal(ledger1.commands[0].cmd, 'node -e process.exit(0)');
 
-    // Second append may omit profile when it already matches.
-    const second = runRecord(["--run", "--", "node", "-e", "process.exit(0)"], {
+    // Second append may omit profile when it already matches. A distinct cmd
+    // appends; an identical cmd would supersede (tested separately below).
+    const second = runRecord(["--run", "--", "node", "-e", "console.log(1)"], {
       cwd: root,
     });
     assert.equal(second.status, 0, second.stderr);
@@ -454,19 +468,190 @@ test("verifyLedgerValidateForHead rejects v1 and unspawned commands", () => {
         conversation_id: "",
         impl_verified: true,
         verified_at: at,
-        head_sha: head,
-        commands: [
-          { cmd: "npm test", exit_code: 0, at, spawned: true },
-          {
-            cmd: "node scripts/validate.mjs",
-            exit_code: 0,
-            at,
-            spawned: true,
-          },
-        ],
-      },
-      head,
-    ).ok,
+      head_sha: head,
+      commands: [
+        { cmd: "npm test", exit_code: 0, at, spawned: true },
+        {
+          cmd: "node scripts/validate.mjs",
+          exit_code: 0,
+          at,
+          spawned: true,
+        },
+      ],
+    },
+    head,
+  ).ok,
     true,
   );
+});
+
+test("custom profile rejects inert go/cmake/make/ninja invocations (Tier 1)", () => {
+  const at = new Date().toISOString();
+  const spawned = (cmd) => ({ cmd, exit_code: 0, at, spawned: true });
+  // Reproduced bypass: bare binaries with inert subcommands satisfied coverage.
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("go version"),
+      spawned("go env"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("make"),
+      spawned("ninja"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("make -j4"),
+      spawned("make help"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("cmake -B build"),
+      spawned("cmake --help"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("go help test"),
+      spawned("ninja -t targets"),
+    ]),
+    false,
+  );
+  // Meaningful subcommands / explicit targets still count.
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("go test ./..."),
+      spawned("go vet ./..."),
+    ]),
+    true,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("go build ./..."),
+      spawned("go test"),
+    ]),
+    true,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("make test"),
+      spawned("ninja check"),
+    ]),
+    true,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("custom", [
+      spawned("cmake --build build"),
+      spawned("make -j4 check"),
+    ]),
+    true,
+  );
+});
+
+test("stale verify-ledger lock is broken and re-acquired", () => {
+  withTempProjectRoot((root) => {
+    mkdirSync(join(root, ".cursor"), { recursive: true });
+    const lock = verifyLedgerLockPath(root);
+    mkdirSync(lock);
+    const past = new Date(Date.now() - 60_000);
+    utimesSync(lock, past, past);
+    // Killed-hook leftover (mtime > 30s) must not permanently deny verifies.
+    verifyLedgerLock(root);
+    verifyLedgerUnlock(root);
+  });
+});
+
+test("fresh verify-ledger lock is not broken (lock timeout)", () => {
+  withTempProjectRoot((root) => {
+    mkdirSync(join(root, ".cursor"), { recursive: true });
+    mkdirSync(verifyLedgerLockPath(root));
+    assert.throws(() => verifyLedgerLock(root), /lock timeout/u);
+  });
+});
+
+test("re-record supersedes identical cmd — flaky failure cannot block HEAD", () => {
+  withTempProjectRoot((root) => {
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm run validate",
+      exitCode: 0,
+      profile: "node-harness",
+      spawned: true,
+    });
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm test",
+      exitCode: 1,
+      spawned: true,
+    });
+    assert.equal(verifyLedgerIsValidForHead(root).ok, false);
+
+    // Latest wins: re-run passes, superseding the failure entry in place.
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm test",
+      exitCode: 0,
+      spawned: true,
+    });
+    const ledger = verifyLedgerLoad(root);
+    assert.equal(
+      ledger.commands.filter((entry) => entry.cmd === "npm test").length,
+      1,
+    );
+    assert.equal(ledger.impl_verified, true);
+    assert.equal(verifyLedgerIsValidForHead(root).ok, true);
+  });
+});
+
+test("failing validate superseded by passing validate becomes valid", () => {
+  withTempProjectRoot((root) => {
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm test",
+      exitCode: 0,
+      profile: "node-harness",
+      spawned: true,
+    });
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm run validate",
+      exitCode: 1,
+      spawned: true,
+    });
+    assert.equal(verifyLedgerIsValidForHead(root).ok, false);
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm run validate",
+      exitCode: 0,
+      spawned: true,
+    });
+    assert.equal(verifyLedgerIsValidForHead(root).ok, true);
+  });
+});
+
+test("failure with no superseding pass keeps HEAD invalid", () => {
+  withTempProjectRoot((root) => {
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm run validate",
+      exitCode: 0,
+      profile: "node-harness",
+      spawned: true,
+    });
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm test",
+      exitCode: 1,
+      spawned: true,
+    });
+    const result = verifyLedgerIsValidForHead(root);
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "impl-not-verified");
+    // A different cmd does NOT supersede the failure.
+    verifyLedgerAppendCommand(root, {
+      cmd: "npm run test",
+      exitCode: 0,
+      spawned: true,
+    });
+    assert.equal(verifyLedgerIsValidForHead(root).ok, false);
+  });
 });

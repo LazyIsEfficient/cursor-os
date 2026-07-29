@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+    # `edited` included: PR-body checkbox edits must re-run ship-gates.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
 
 permissions: {}
@@ -50,13 +52,29 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Check out repository
+      - name: Check out PR merge tree
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+      - name: Compute changed files from the merge tree
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-files.txt"
+      # Gate scripts come from the BASE ref, not the merge tree — a fork PR
+      # must not be able to neuter the gate by editing check-pr-ship-gates.sh.
+      - name: Check out base-ref gate scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: gate-src
       - name: Enforce PR reviewer checkboxes
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: bash scripts/check-pr-ship-gates.sh
+        run: |
+          if [[ -s "$RUNNER_TEMP/changed-files.txt" ]]; then
+            SHIP_GATES_CHANGED_FILES="$(cat "$RUNNER_TEMP/changed-files.txt")" \
+              bash gate-src/scripts/check-pr-ship-gates.sh
+          else
+            echo "check-pr-ship-gates: no file changes — OK"
+          fi

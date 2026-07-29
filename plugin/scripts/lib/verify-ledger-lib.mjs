@@ -16,6 +16,7 @@ import {
   mkdirSync,
   readFileSync,
   rmdirSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -33,11 +34,36 @@ export const VERIFY_LEDGER_PROFILES = Object.freeze([
 /** Max lock wait: 20 × 50ms = 1s — under beforeShellExecution 5s timeout. */
 const LOCK_MAX_TRIES = 20;
 const LOCK_SLEEP_MS = 50;
+/** Lock dirs older than this are leftovers of a killed hook — safe to break. */
+const LOCK_STALE_MS = 30_000;
 
 function sleepSync(ms) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
     /* spin — sync-friendly under short hook timeouts */
+  }
+}
+
+/**
+ * Break a stale mkdir-lock (killed hook left the dir behind). The rm is
+ * raced-tolerant: another holder may legitimately remove it first.
+ */
+function breakStaleLockDir(lock) {
+  try {
+    const stats = statSync(lock);
+    if (!stats.isDirectory()) {
+      return;
+    }
+    if (Date.now() - stats.mtimeMs <= LOCK_STALE_MS) {
+      return;
+    }
+    try {
+      rmdirSync(lock);
+    } catch {
+      /* lost the race — another holder removed it; retry loop handles it */
+    }
+  } catch {
+    /* missing/unreadable — normal acquire path handles it */
   }
 }
 
@@ -78,6 +104,7 @@ export function verifyLedgerLock(root) {
       mkdirSync(lock);
       return;
     } catch {
+      breakStaleLockDir(lock);
       sleepSync(LOCK_SLEEP_MS);
     }
   }
@@ -471,6 +498,48 @@ function matchesCargoTest(tokens) {
 }
 
 /**
+ * Per-binary meaningful-subcommand allowlists (Tier 1 — custom-profile inert
+ * commands). Bare `go version` + `go env` satisfied coverage when these
+ * binaries were allowlisted with ANY subcommand. Only workload subcommands
+ * count; `--version`/`--help`/`env`/`version`/`help` forms never count.
+ */
+const VERIFY_CUSTOM_GO_SUBCOMMANDS = new Set(["test", "vet", "build"]);
+
+/** True for an explicit build target — not a flag, assignment, or help form. */
+function isMeaningfulBuildTarget(token) {
+  return (
+    typeof token === "string" &&
+    token.length > 0 &&
+    !token.startsWith("-") &&
+    !/^(?:help|version)$/iu.test(token) &&
+    !/^[A-Za-z_][A-Za-z0-9_]*=/u.test(token)
+  );
+}
+
+function matchesCustomGo(tokens) {
+  return VERIFY_CUSTOM_GO_SUBCOMMANDS.has(tokens[1]);
+}
+
+function matchesCustomCmake(tokens) {
+  return tokens[1] === "--build";
+}
+
+function matchesCustomMake(tokens) {
+  // Bare `make` / flag-only invocations are unverifiable — require an
+  // explicit non-help target (`make test`, `make -j4 check`).
+  return tokens.slice(1).some(isMeaningfulBuildTarget);
+}
+
+function matchesCustomNinja(tokens) {
+  // `-t` runs an inert tool (list/query); otherwise require an explicit
+  // target — bare `ninja` is unverifiable.
+  if (tokens.includes("-t")) {
+    return false;
+  }
+  return tokens.slice(1).some(isMeaningfulBuildTarget);
+}
+
+/**
  * Positive allowlist for `custom` profile coverage — ≥2 spawned commands that
  * look like real verification (test/lint/build runners), not identity probes.
  * Denylisting alone is endless (`pwd`/`date`/`whoami`/…); this closes the
@@ -516,10 +585,24 @@ function matchesCustomVerification(tokens) {
     }
   }
 
+  // Build runners whose subcommand decides whether real work happened
+  // (bare binary / version / env / help forms are inert — Tier 1).
+  if (bin === "go") {
+    return matchesCustomGo(tokens);
+  }
+  if (bin === "cmake") {
+    return matchesCustomCmake(tokens);
+  }
+  if (bin === "make") {
+    return matchesCustomMake(tokens);
+  }
+  if (bin === "ninja") {
+    return matchesCustomNinja(tokens);
+  }
+
   // Common language / build test & lint runners.
   if (
     [
-      "make",
       "just",
       "task",
       "tox",
@@ -530,10 +613,7 @@ function matchesCustomVerification(tokens) {
       "gradlew",
       "bazel",
       "sbt",
-      "go",
       "deno",
-      "cmake",
-      "ninja",
       "meson",
     ].includes(bin)
   ) {
@@ -732,7 +812,8 @@ export function emptyVerifyLedger({ conversationId = "", headSha, profile }) {
 }
 
 /**
- * Append one spawned command result. Resets commands when head_sha / version changes.
+ * Record one spawned command result. Resets commands when head_sha / version
+ * changes. An identical cmd string supersedes the prior entry (latest wins).
  * Requires profile on first write for a HEAD; subsequent appends may omit profile
  * or must match. Sets impl_verified when all exits are 0 and profile coverage holds.
  */
@@ -814,12 +895,23 @@ export function verifyLedgerAppendCommand(
     if (!Array.isArray(ledger.commands)) {
       ledger.commands = [];
     }
-    ledger.commands.push({
-      cmd,
-      exit_code: exitCode,
-      at,
-      spawned: true,
-    });
+    // Re-record supersede (Tier 1 — poisoned ledger recovery): an identical
+    // cmd string REPLACES the prior entry (latest wins) instead of appending
+    // a duplicate, so one flaky failure cannot block the HEAD forever once
+    // the same command is re-run and passes.
+    const entry = { cmd, exit_code: exitCode, at, spawned: true };
+    const existingIndex = ledger.commands.findIndex(
+      (existing) =>
+        existing !== null &&
+        typeof existing === "object" &&
+        !Array.isArray(existing) &&
+        existing.cmd === cmd,
+    );
+    if (existingIndex >= 0) {
+      ledger.commands[existingIndex] = entry;
+    } else {
+      ledger.commands.push(entry);
+    }
 
     const verified = computeImplVerified(ledger);
     ledger.impl_verified = verified;

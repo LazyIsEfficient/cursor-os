@@ -449,3 +449,20 @@ test("corrupt config: HandlePreTool and HandleBeforeRead DENY", () => {
   assert.equal(writeDeny.permission, "deny");
   assert.match(String(writeDeny.agent_message), /corrupt/iu);
 });
+
+test("stale dispatch-gate lock is broken and re-acquired", () => {
+  const root = fixtureRoot();
+  const lock = `${dispatchGateLedgerPath(root)}.lock`;
+  mkdirSync(lock);
+  const past = new Date(Date.now() - 60_000);
+  utimesSync(lock, past, past);
+  // Killed-hook leftover (mtime > 30s) must not permanently deny Reads.
+  dispatchGateLock(root);
+  dispatchGateUnlock(root);
+});
+
+test("fresh dispatch-gate lock is not broken (ledger lock timeout)", () => {
+  const root = fixtureRoot();
+  mkdirSync(`${dispatchGateLedgerPath(root)}.lock`);
+  assert.throws(() => dispatchGateLock(root), /lock timeout/u);
+});
