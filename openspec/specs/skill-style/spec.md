@@ -1,7 +1,9 @@
 # skill-style Specification
 
 ## Purpose
-TBD - created by archiving change cavemen-style-rewrite. Update Purpose after archive.
+Durable style contract for the plugin skill library: telegraphic caveman
+prose per `plugin/references/caveman-style.md` — maximum information per
+token with zero loss of normative content.
 ## Requirements
 ### Requirement: Skill files use telegraphic caveman style
 Skill files (`plugin/skills/**/SKILL.md`) and their reference, asset, and

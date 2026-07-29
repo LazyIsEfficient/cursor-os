@@ -1,7 +1,9 @@
 # planning Specification
 
 ## Purpose
-TBD - created by archiving change openspec-first-class-planning. Update Purpose after archive.
+Canonical planning model for engineering work in repositories using this
+harness: every plan is an OpenSpec change on disk, validated by the `openspec`
+CLI, so humans and agents share one source of truth before code is written.
 ## Requirements
 ### Requirement: Engineering planning artifacts are OpenSpec changes
 The orchestrator SHALL store every engineering planning artifact on disk under
