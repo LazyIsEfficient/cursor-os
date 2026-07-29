@@ -40,7 +40,7 @@ here therefore corresponds to a single consistent version across the repository.
   counts, ten test globs, dispatch-enforcement + gate-dag classification
   tables aligned to the planners (incl. openspec rows, eval/metrics as
   code), stop-hook wording, rules list (nine).
-- **Library:** 7 routing descriptions trimmed ≤780 chars (triggers verified
+- **Library:** 7 routing descriptions trimmed ≤800 chars (triggers verified
   preserved), `game-balancer` frontmatter `<TBD>` angle brackets removed,
   `skill-new` cites `scripts/validate.mjs` (was nonexistent `.sh`), dead
   `write_tools`/`research_tools` keys removed from `dispatch-gate.json`.
