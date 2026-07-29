@@ -27,6 +27,21 @@ here therefore corresponds to a single consistent version across the repository.
   components (372 total) — gate-dag.md, caveman-style.md, dispatch-gate.json
   no longer ship untracked.
 
+### Security
+
+- **Two-tier `gh` command hardening in the shell guard:** Tier A hard denies
+  (no verify-ledger exception) — `gh ssh-key add` / `gh gpg-key add`
+  (`gh-account-key-add`), `gh extension install|upgrade`
+  (`gh-extension-install`), `gh alias set|delete` (`gh-alias-mutation`),
+  all `gh pr merge` forms (`gh-pr-merge`), `gh release create|edit`
+  (`gh-release-mutation`), `gh auth token` (`gh-auth-token`). Tier B
+  verify-ledger gates (same `gh-pr-without-verify` rule as `gh pr create`) —
+  `gh secret set|delete`, `gh variable set|delete`,
+  `gh workflow run|disable|enable`, `gh pr close|reopen`,
+  `gh pr review --approve|--request-changes`, `gh repo create|fork|rename`.
+  Read-only `gh` forms stay ungated. Spec via
+  `openspec/changes/gh-command-hardening/`.
+
 ### Fixed
 
 - **Gate twin parity:** JS dispatch-gate planner now requires a change-id

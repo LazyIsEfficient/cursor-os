@@ -512,6 +512,123 @@ test("allows mutating gh api calls with a valid verify ledger for HEAD", () => {
   });
 });
 
+test("denies Tier A gh hard-deny forms even with a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    // A valid ledger must NOT soften these — they are hard denies, not gates.
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    const cases = [
+      ["gh ssh-key add ~/.ssh/id_rsa.pub", "gh-account-key-add"],
+      ["gh gpg-key add ~/key.asc", "gh-account-key-add"],
+      ["gh extension install owner/gh-cool", "gh-extension-install"],
+      ["gh extension upgrade --all", "gh-extension-install"],
+      ["gh alias set bugs 'issue list --label bug'", "gh-alias-mutation"],
+      ["gh alias delete bugs", "gh-alias-mutation"],
+      ["gh pr merge 123", "gh-pr-merge"],
+      ["gh pr merge --squash --auto 123", "gh-pr-merge"],
+      ["gh pr merge 123 --auto --delete-branch", "gh-pr-merge"],
+      ["gh -R owner/repo pr merge --squash", "gh-pr-merge"],
+      ["gh release create v1.0.0", "gh-release-mutation"],
+      ["gh release edit v1.0.0 --draft=false", "gh-release-mutation"],
+      ["gh auth token", "gh-auth-token"],
+      ["gh auth token --hostname example.com", "gh-auth-token"],
+    ];
+    for (const [command, rule] of cases) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${rule}\\)`, "u"),
+        command,
+      );
+      assert.equal(typeof response.agent_message, "string", command);
+    }
+  });
+});
+
+test("denies Tier B gh ledger-gated mutations without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    for (const command of [
+      "gh secret set MY_SECRET",
+      "gh secret delete MY_SECRET",
+      "gh variable set MY_VAR",
+      "gh variable delete MY_VAR",
+      "gh workflow run ci.yml",
+      "gh workflow disable ci.yml",
+      "gh workflow enable ci.yml",
+      "gh pr close 123",
+      "gh pr reopen 123",
+      "gh pr review 123 --approve",
+      "gh pr review --request-changes 123",
+      "gh repo create my-repo --private",
+      "gh repo fork owner/repo",
+      "gh repo rename new-name",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+  });
+});
+
+test("allows Tier B gh ledger-gated mutations with a valid ledger for HEAD", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh secret set MY_SECRET",
+      "gh workflow run ci.yml",
+      "gh pr close 123",
+      "gh pr review 123 --approve",
+      "gh repo create my-repo --private",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("allows read-only gh forms without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh pr view 123",
+      "gh pr list",
+      "gh pr status",
+      "gh pr checks 123",
+      "gh pr diff 123",
+      "gh pr review 123 --comment lgtm",
+      "gh release view v1.0.0",
+      "gh release list",
+      "gh workflow list",
+      "gh workflow view ci.yml",
+      "gh secret list",
+      "gh repo view",
+      "gh repo list",
+      "gh alias list",
+      "gh auth status",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
 test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
   withTempWorkspace((root) => {
     // Fresh throwaway repo: no ledger file exists here.

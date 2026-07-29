@@ -786,17 +786,85 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
 
   if (executable === "gh") {
     const parsed = ghCommand(arguments_);
+    const ghArgs = parsed.arguments;
 
     if (
-      (parsed.subcommand === "repo" && parsed.arguments[0] === "delete") ||
-      (parsed.subcommand === "release" && parsed.arguments[0] === "delete")
+      (parsed.subcommand === "repo" && ghArgs[0] === "delete") ||
+      (parsed.subcommand === "release" && ghArgs[0] === "delete")
     ) {
       return "remote-object-delete";
     }
 
+    // Tier A hard denies — no verify ledger can make these agent-safe.
+    if (
+      (parsed.subcommand === "ssh-key" || parsed.subcommand === "gpg-key") &&
+      ghArgs[0] === "add"
+    ) {
+      // Persistent account takeover: a new SSH/GPG key survives the session.
+      return "gh-account-key-add";
+    }
+    if (
+      parsed.subcommand === "extension" &&
+      (ghArgs[0] === "install" || ghArgs[0] === "upgrade")
+    ) {
+      // Supply-chain RCE: extensions execute arbitrary code as the user.
+      return "gh-extension-install";
+    }
+    if (
+      parsed.subcommand === "alias" &&
+      (ghArgs[0] === "set" || ghArgs[0] === "delete")
+    ) {
+      // Gate bypass: alias expansions are invisible to hook command matching.
+      return "gh-alias-mutation";
+    }
+    if (parsed.subcommand === "pr" && ghArgs[0] === "merge") {
+      // Repo doctrine: humans merge. An agent merge skips the ship-gate DAG.
+      return "gh-pr-merge";
+    }
+    if (
+      parsed.subcommand === "release" &&
+      (ghArgs[0] === "create" || ghArgs[0] === "edit")
+    ) {
+      // Releases are owned by release.yml + the tag-from-main CI guard.
+      return "gh-release-mutation";
+    }
+    if (parsed.subcommand === "auth" && ghArgs[0] === "token") {
+      // Credential exfiltration: prints the OAuth token to stdout.
+      return "gh-auth-token";
+    }
+
     if (
       parsed.subcommand === "pr" &&
-      (parsed.arguments[0] === "create" || parsed.arguments[0] === "ready")
+      (ghArgs[0] === "create" || ghArgs[0] === "ready")
+    ) {
+      const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+      if (!allow.ok) {
+        return GH_PR_WITHOUT_VERIFY_RULE;
+      }
+    }
+
+    // Tier B ledger gates — reversible shared-state mutations that still
+    // require checkpoint:impl-verified, same as `gh pr create|ready`.
+    // Read-only forms (view/list/status/checks/diff, `secret list`,
+    // `workflow list|view`, `repo view|list`, `pr review --comment`) stay
+    // allowed without a ledger.
+    if (
+      ((parsed.subcommand === "secret" || parsed.subcommand === "variable") &&
+        (ghArgs[0] === "set" || ghArgs[0] === "delete")) ||
+      (parsed.subcommand === "workflow" &&
+        (ghArgs[0] === "run" ||
+          ghArgs[0] === "disable" ||
+          ghArgs[0] === "enable")) ||
+      (parsed.subcommand === "pr" &&
+        (ghArgs[0] === "close" || ghArgs[0] === "reopen")) ||
+      (parsed.subcommand === "pr" &&
+        ghArgs[0] === "review" &&
+        (ghArgs.includes("--approve") ||
+          ghArgs.includes("--request-changes"))) ||
+      (parsed.subcommand === "repo" &&
+        (ghArgs[0] === "create" ||
+          ghArgs[0] === "fork" ||
+          ghArgs[0] === "rename"))
     ) {
       const allow = verifyLedgerAllowsGhPr(workspaceRoot);
       if (!allow.ok) {
