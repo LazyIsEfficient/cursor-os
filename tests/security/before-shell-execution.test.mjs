@@ -732,6 +732,44 @@ test("allows flag-before-verb Tier B gh forms with a valid ledger for HEAD", () 
   });
 });
 
+test("denies leaf-flag-before-verb evasion forms (fail closed on unknown flags)", () => {
+  withTempWorkspace((root) => {
+    // Regression: cobra skips an unknown flag AND its value when locating
+    // subcommands, so resolveGhVerb must treat any unrecognized pre-verb
+    // flag as ambiguous and fail closed.
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh pr -b x merge 12",
+      "gh pr --body x merge 12",
+      "gh auth -u someone token",
+      "gh release -t x create v1",
+      "gh release -n notes create v1",
+      "gh ssh-key -t x add k.pub",
+      "gh pr -t x create",
+      "gh pr -c x close 12",
+    ]) {
+      const decision = commandDecision(command, { cwd: root });
+      assert.equal(decision.permission, "deny", command);
+    }
+  });
+});
+
+test("denies leaf-flag-before-verb Tier B forms without a ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh secret -b v set FOO",
+      "gh variable -b v set V",
+      "gh workflow -r main run ci.yml",
+      "gh workflow -f k=v run ci.yml",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(response.user_message, /gh-pr-without-verify/u, command);
+    }
+  });
+});
+
 test("denies flag-before-verb repo/release delete forms", () => {
   withTempWorkspace((root) => {
     // Pre-existing hard denies must also use the resolved verb.

@@ -48,7 +48,11 @@ here therefore corresponds to a single consistent version across the repository.
   `-R`/`--repo`/`--hostname` values including glued `-Ro/r` and `--repo=o/r`
   forms — so flags between the group name and the verb
   (e.g. `gh pr -R owner/repo merge 12`, `gh auth --hostname x token`) no
-  longer bypass the guard. An unresolvable verb position fails closed:
+  longer bypass the guard. Unrecognized pre-verb flags also fail closed as
+  ambiguous — cobra skips an unknown flag AND its value when locating
+  subcommands, so leaf-defined value flags (`gh pr -b x merge 12`,
+  `gh auth -u x token`, `gh secret -b v set F`) cannot evade either. An
+  unresolvable verb position fails closed:
   Tier-A-shaped groups deny with their most restrictive rule, Tier-B-shaped
   groups require the verify ledger. `gh release upload` and
   `gh release delete-asset` are now hard-denied alongside `create|edit` —

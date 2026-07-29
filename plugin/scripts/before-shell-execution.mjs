@@ -653,11 +653,12 @@ function resolveGhVerb(arguments_) {
       index += 1;
       continue;
     }
-    // Unknown flag: conservatively consumes no value.
-    index += 1;
+    // Unknown flag: cobra skips an unknown flag AND its value when locating
+    // subcommands, so we cannot know whether it takes a value. Fail closed.
+    return { verb: null, ambiguous: true };
   }
 
-  return { verb: null, ambiguous: false };
+  return { verb: null, ambiguous: true };
 }
 
 function ghCommand(arguments_) {
