@@ -252,7 +252,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "cae9f338730d66d9bba40baedfd10ba01a6b9bd12bb7e5c736d41d43d332f804"
+      "sha256": "dace011ba1aa58aea0c18dfb74e07e26fa6c838411d01349a8d2c18b064bb397"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -312,7 +312,7 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "a6acebadc1275df5293118b6daf07cd18bf5a3ba354b3798518ebce0e6ea90e6"
+      "sha256": "19c8eb31550845b198b9dc60088186c2279cc82ca1b1814f7f6d3633df742178"
     },
     {
       "id": "memory-extract-nudge",
