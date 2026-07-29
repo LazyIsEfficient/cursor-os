@@ -619,8 +619,47 @@ function gitCommand(arguments_) {
 }
 
 // Peel `gh` global options (`-R`/`--repo`, `--hostname`, …) so high-impact
-// matching sees `pr create|ready` / `repo delete` after flags.
+// matching sees the group name after flags.
 const GH_VALUE_TAKING_FLAGS = new Set(["-R", "--repo", "--hostname"]);
+
+// Resolve the verb that follows the group name: scan for the first non-flag
+// word while consuming values of gh's value-taking flags, including glued
+// `-Ro/r` and `--repo=o/r` forms. Unknown flags that are not `--flag=value`
+// form conservatively consume NO value (matching cobra's subcommand search,
+// which errors on flags the parent group does not define). `--` before the
+// verb makes the position unresolvable — callers fail closed.
+function resolveGhVerb(arguments_) {
+  let index = 0;
+
+  while (index < arguments_.length) {
+    const argument = arguments_[index];
+    if (argument === "--") {
+      return { verb: null, ambiguous: true };
+    }
+    if (!argument.startsWith("-") || argument === "-") {
+      return { verb: argument.toLowerCase(), ambiguous: false };
+    }
+    if (argument.includes("=")) {
+      // --flag=value / glued -R=o/r: value inline, no operand consumed.
+      index += 1;
+      continue;
+    }
+    if (GH_VALUE_TAKING_FLAGS.has(argument)) {
+      index += 2;
+      continue;
+    }
+    if (/^-R\S/u.test(argument)) {
+      // Glued shorthand: -Ro/r
+      index += 1;
+      continue;
+    }
+    // Unknown flag: cobra skips an unknown flag AND its value when locating
+    // subcommands, so we cannot know whether it takes a value. Fail closed.
+    return { verb: null, ambiguous: true };
+  }
+
+  return { verb: null, ambiguous: true };
+}
 
 function ghCommand(arguments_) {
   let index = 0;
@@ -638,11 +677,32 @@ function ghCommand(arguments_) {
     index += 1;
   }
 
+  const ghArgs = arguments_.slice(index + 1);
   return {
     subcommand: (arguments_[index] ?? "").toLowerCase(),
-    arguments: arguments_.slice(index + 1),
+    arguments: ghArgs,
+    ...resolveGhVerb(ghArgs),
   };
 }
+
+// Fail-closed mapping when the verb position after the group name cannot be
+// resolved: Tier-A-shaped groups deny with their most restrictive hard rule;
+// Tier-B-shaped groups (below) require the verify ledger.
+const GH_AMBIGUOUS_VERB_RULES = new Map([
+  ["alias", "gh-alias-mutation"],
+  ["auth", "gh-auth-token"],
+  ["extension", "gh-extension-install"],
+  ["gpg-key", "gh-account-key-add"],
+  ["pr", "gh-pr-merge"],
+  ["release", "gh-release-mutation"],
+  ["repo", "remote-object-delete"],
+  ["ssh-key", "gh-account-key-add"],
+]);
+const GH_AMBIGUOUS_VERB_LEDGER_GROUPS = new Set([
+  "secret",
+  "variable",
+  "workflow",
+]);
 
 // True when `gh api` mutates GitHub state: an explicit mutating -X/--method,
 // or the implicit POST gh performs when body flags (-f/--field, -F/--raw-field,
@@ -786,17 +846,102 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
 
   if (executable === "gh") {
     const parsed = ghCommand(arguments_);
+    const ghArgs = parsed.arguments;
+    const ghVerb = parsed.verb;
+
+    // Verb position unresolvable: deny Tier-A-shaped ambiguity with the
+    // group's most restrictive hard rule; ledger-gate Tier-B-shaped groups.
+    if (parsed.ambiguous) {
+      const ambiguousRule = GH_AMBIGUOUS_VERB_RULES.get(parsed.subcommand);
+      if (ambiguousRule) {
+        return ambiguousRule;
+      }
+      if (GH_AMBIGUOUS_VERB_LEDGER_GROUPS.has(parsed.subcommand)) {
+        const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+        if (!allow.ok) {
+          return GH_PR_WITHOUT_VERIFY_RULE;
+        }
+      }
+    }
 
     if (
-      (parsed.subcommand === "repo" && parsed.arguments[0] === "delete") ||
-      (parsed.subcommand === "release" && parsed.arguments[0] === "delete")
+      (parsed.subcommand === "repo" && ghVerb === "delete") ||
+      (parsed.subcommand === "release" && ghVerb === "delete")
     ) {
       return "remote-object-delete";
     }
 
+    // Tier A hard denies — no verify ledger can make these agent-safe.
+    if (
+      (parsed.subcommand === "ssh-key" || parsed.subcommand === "gpg-key") &&
+      ghVerb === "add"
+    ) {
+      // Persistent account takeover: a new SSH/GPG key survives the session.
+      return "gh-account-key-add";
+    }
+    if (
+      parsed.subcommand === "extension" &&
+      (ghVerb === "install" || ghVerb === "upgrade")
+    ) {
+      // Supply-chain RCE: extensions execute arbitrary code as the user.
+      return "gh-extension-install";
+    }
+    if (
+      parsed.subcommand === "alias" &&
+      (ghVerb === "set" || ghVerb === "delete")
+    ) {
+      // Gate bypass: alias expansions are invisible to hook command matching.
+      return "gh-alias-mutation";
+    }
+    if (parsed.subcommand === "pr" && ghVerb === "merge") {
+      // Repo doctrine: humans merge. An agent merge skips the ship-gate DAG.
+      return "gh-pr-merge";
+    }
+    if (
+      parsed.subcommand === "release" &&
+      ["create", "edit", "upload", "delete-asset"].includes(ghVerb)
+    ) {
+      // Releases are owned by release.yml + the tag-from-main CI guard;
+      // upload/delete-asset mutate assets on those owned releases.
+      return "gh-release-mutation";
+    }
+    if (parsed.subcommand === "auth" && ghVerb === "token") {
+      // Credential exfiltration: prints the OAuth token to stdout.
+      return "gh-auth-token";
+    }
+
     if (
       parsed.subcommand === "pr" &&
-      (parsed.arguments[0] === "create" || parsed.arguments[0] === "ready")
+      (ghVerb === "create" || ghVerb === "ready")
+    ) {
+      const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+      if (!allow.ok) {
+        return GH_PR_WITHOUT_VERIFY_RULE;
+      }
+    }
+
+    // Tier B ledger gates — reversible shared-state mutations that still
+    // require checkpoint:impl-verified, same as `gh pr create|ready`.
+    // Read-only forms (view/list/status/checks/diff, `secret list`,
+    // `workflow list|view`, `repo view|list`, `pr review --comment`) stay
+    // allowed without a ledger.
+    if (
+      ((parsed.subcommand === "secret" || parsed.subcommand === "variable") &&
+        (ghVerb === "set" || ghVerb === "delete")) ||
+      (parsed.subcommand === "workflow" &&
+        (ghVerb === "run" ||
+          ghVerb === "disable" ||
+          ghVerb === "enable")) ||
+      (parsed.subcommand === "pr" &&
+        (ghVerb === "close" || ghVerb === "reopen")) ||
+      (parsed.subcommand === "pr" &&
+        ghVerb === "review" &&
+        (ghArgs.includes("--approve") ||
+          ghArgs.includes("--request-changes"))) ||
+      (parsed.subcommand === "repo" &&
+        (ghVerb === "create" ||
+          ghVerb === "fork" ||
+          ghVerb === "rename"))
     ) {
       const allow = verifyLedgerAllowsGhPr(workspaceRoot);
       if (!allow.ok) {

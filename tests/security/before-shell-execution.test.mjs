@@ -512,6 +512,309 @@ test("allows mutating gh api calls with a valid verify ledger for HEAD", () => {
   });
 });
 
+test("denies Tier A gh hard-deny forms even with a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    // A valid ledger must NOT soften these — they are hard denies, not gates.
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    const cases = [
+      ["gh ssh-key add ~/.ssh/id_rsa.pub", "gh-account-key-add"],
+      ["gh gpg-key add ~/key.asc", "gh-account-key-add"],
+      ["gh extension install owner/gh-cool", "gh-extension-install"],
+      ["gh extension upgrade --all", "gh-extension-install"],
+      ["gh alias set bugs 'issue list --label bug'", "gh-alias-mutation"],
+      ["gh alias delete bugs", "gh-alias-mutation"],
+      ["gh pr merge 123", "gh-pr-merge"],
+      ["gh pr merge --squash --auto 123", "gh-pr-merge"],
+      ["gh pr merge 123 --auto --delete-branch", "gh-pr-merge"],
+      ["gh -R owner/repo pr merge --squash", "gh-pr-merge"],
+      ["gh release create v1.0.0", "gh-release-mutation"],
+      ["gh release edit v1.0.0 --draft=false", "gh-release-mutation"],
+      ["gh auth token", "gh-auth-token"],
+      ["gh auth token --hostname example.com", "gh-auth-token"],
+    ];
+    for (const [command, rule] of cases) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${rule}\\)`, "u"),
+        command,
+      );
+      assert.equal(typeof response.agent_message, "string", command);
+    }
+  });
+});
+
+test("denies Tier B gh ledger-gated mutations without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    for (const command of [
+      "gh secret set MY_SECRET",
+      "gh secret delete MY_SECRET",
+      "gh variable set MY_VAR",
+      "gh variable delete MY_VAR",
+      "gh workflow run ci.yml",
+      "gh workflow disable ci.yml",
+      "gh workflow enable ci.yml",
+      "gh pr close 123",
+      "gh pr reopen 123",
+      "gh pr review 123 --approve",
+      "gh pr review --request-changes 123",
+      "gh repo create my-repo --private",
+      "gh repo fork owner/repo",
+      "gh repo rename new-name",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+  });
+});
+
+test("allows Tier B gh ledger-gated mutations with a valid ledger for HEAD", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh secret set MY_SECRET",
+      "gh workflow run ci.yml",
+      "gh pr close 123",
+      "gh pr review 123 --approve",
+      "gh repo create my-repo --private",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("allows read-only gh forms without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh pr view 123",
+      "gh pr list",
+      "gh pr status",
+      "gh pr checks 123",
+      "gh pr diff 123",
+      "gh pr review 123 --comment lgtm",
+      "gh release view v1.0.0",
+      "gh release list",
+      "gh workflow list",
+      "gh workflow view ci.yml",
+      "gh secret list",
+      "gh repo view",
+      "gh repo list",
+      "gh alias list",
+      "gh auth status",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("denies flag-before-verb Tier A gh forms even with a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    // Regression: flags between the group name and the verb used to evade
+    // every Tier A rule (checks tested ghArgs[0] verbatim).
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    const cases = [
+      ["gh ssh-key -R owner/repo add ~/.ssh/id_rsa.pub", "gh-account-key-add"],
+      ["gh gpg-key --repo owner/repo add ~/key.asc", "gh-account-key-add"],
+      ["gh gpg-key --repo=owner/repo add ~/key.asc", "gh-account-key-add"],
+      ["gh extension -R owner/repo install owner/gh-cool", "gh-extension-install"],
+      ["gh extension --hostname example.com upgrade --all", "gh-extension-install"],
+      ["gh alias -R owner/repo set bugs 'issue list'", "gh-alias-mutation"],
+      ["gh alias --repo=owner/repo delete bugs", "gh-alias-mutation"],
+      ["gh pr -R owner/repo merge 12", "gh-pr-merge"],
+      ["gh pr -Rowner/repo merge --squash 12", "gh-pr-merge"],
+      ["gh pr --repo=owner/repo merge 12", "gh-pr-merge"],
+      ["gh release -R owner/repo create v1.0.0", "gh-release-mutation"],
+      ["gh release --repo owner/repo edit v1.0.0 --draft=false", "gh-release-mutation"],
+      ["gh release upload v1.0.0 dist.zip", "gh-release-mutation"],
+      ["gh release -R owner/repo upload v1.0.0 dist.zip", "gh-release-mutation"],
+      ["gh release delete-asset v1.0.0 asset.zip", "gh-release-mutation"],
+      ["gh release -R owner/repo delete-asset v1.0.0 asset.zip", "gh-release-mutation"],
+      ["gh auth --hostname example.com token", "gh-auth-token"],
+      // Unresolvable verb position (`--` before the verb) fails closed with
+      // the Tier-A-shaped group's most restrictive hard rule.
+      ["gh pr -- merge 12", "gh-pr-merge"],
+      ["gh release -- upload v1.0.0 dist.zip", "gh-release-mutation"],
+      ["gh auth -- token", "gh-auth-token"],
+    ];
+    for (const [command, rule] of cases) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${rule}\\)`, "u"),
+        command,
+      );
+      assert.equal(typeof response.agent_message, "string", command);
+    }
+  });
+});
+
+test("denies flag-before-verb Tier B gh forms without a verify ledger", () => {
+  withTempWorkspace((root) => {
+    // Fresh throwaway repo: no ledger file exists here.
+    for (const command of [
+      "gh secret -R owner/repo set MY_SECRET",
+      "gh secret --repo=owner/repo set MY_SECRET",
+      "gh variable --repo owner/repo delete MY_VAR",
+      "gh variable -Rowner/repo delete MY_VAR",
+      "gh workflow -R owner/repo run ci.yml",
+      "gh workflow --repo=owner/repo disable ci.yml",
+      "gh pr -R owner/repo close 12",
+      "gh pr -R owner/repo reopen 12",
+      "gh pr -R owner/repo review 12 --approve",
+      "gh pr --repo=owner/repo review 12 --request-changes",
+      "gh pr -R owner/repo create --fill",
+      "gh repo -R owner/repo rename new-name",
+      "gh repo --repo=owner/repo fork owner/upstream",
+      // Unresolvable verb position fails closed on the ledger gate for
+      // Tier-B-shaped groups.
+      "gh secret -- set MY_SECRET",
+      "gh workflow -- run ci.yml",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GH_PR_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+  });
+});
+
+test("allows flag-before-verb Tier B gh forms with a valid ledger for HEAD", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh secret -R owner/repo set MY_SECRET",
+      "gh variable --repo=owner/repo delete MY_VAR",
+      "gh workflow -R owner/repo run ci.yml",
+      "gh pr -R owner/repo review 12 --approve",
+      "gh pr -R owner/repo create --fill",
+      "gh repo -R owner/repo rename new-name",
+      "gh workflow -- run ci.yml",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("denies leaf-flag-before-verb evasion forms (fail closed on unknown flags)", () => {
+  withTempWorkspace((root) => {
+    // Regression: cobra skips an unknown flag AND its value when locating
+    // subcommands, so resolveGhVerb must treat any unrecognized pre-verb
+    // flag as ambiguous and fail closed.
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "gh pr -b x merge 12",
+      "gh pr --body x merge 12",
+      "gh auth -u someone token",
+      "gh release -t x create v1",
+      "gh release -n notes create v1",
+      "gh ssh-key -t x add k.pub",
+      "gh pr -t x create",
+      "gh pr -c x close 12",
+    ]) {
+      const decision = commandDecision(command, { cwd: root });
+      assert.equal(decision.permission, "deny", command);
+    }
+  });
+});
+
+test("denies leaf-flag-before-verb Tier B forms without a ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh secret -b v set FOO",
+      "gh variable -b v set V",
+      "gh workflow -r main run ci.yml",
+      "gh workflow -f k=v run ci.yml",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(response.user_message, /gh-pr-without-verify/u, command);
+    }
+  });
+});
+
+test("denies flag-before-verb repo/release delete forms", () => {
+  withTempWorkspace((root) => {
+    // Pre-existing hard denies must also use the resolved verb.
+    for (const command of [
+      "gh repo -R owner/repo delete x",
+      "gh repo --repo=owner/repo delete x",
+      "gh repo -Rowner/repo delete x",
+      "gh release -R owner/repo delete v1",
+      "gh release --repo=owner/repo delete v1",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        /\(remote-object-delete\)/u,
+        command,
+      );
+    }
+  });
+});
+
+test("allows read-only gh forms with flags before or after the verb", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "gh pr -R owner/repo view 12",
+      "gh pr -Rowner/repo view 12",
+      "gh pr --repo=owner/repo view 12",
+      "gh pr -R owner/repo checks",
+      "gh repo -R owner/repo view",
+      "gh release -R owner/repo list",
+      "gh release --repo=owner/repo view v1.0.0",
+      "gh workflow -R owner/repo list",
+      "gh secret -R owner/repo list",
+      "gh pr review 12 -R owner/repo --comment",
+      "gh pr review 12 --comment lgtm -R owner/repo",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
 test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
   withTempWorkspace((root) => {
     // Fresh throwaway repo: no ledger file exists here.
@@ -545,6 +848,7 @@ test("guard entry has no direct fs/network/credential APIs (ledger via lib)", as
   assert.match(source, /verify-ledger-lib\.mjs/u);
   assert.match(source, /GH_PR_WITHOUT_VERIFY_RULE/u);
   assert.match(source, /ghCommand/u);
+  assert.match(source, /resolveGhVerb/u);
   assert.match(source, /NAMED_EXCEPTIONS/u);
   assert.match(source, /MAX_INPUT_BYTES/u);
   assert.match(source, /isSafeCommandWord/u);
