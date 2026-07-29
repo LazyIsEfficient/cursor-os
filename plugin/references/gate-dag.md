@@ -130,9 +130,9 @@ SHIP_GATES_CHANGED_FILES="path/to/changed" bash scripts/gate-plan.sh --json
 
 | Condition | Gates required |
 |---|---|
-| Docs-only (`*.md`/`*.mdc` allowlist outside sensitive/library paths) | **None** — skip entire DAG |
-| `is_sensitive` only (e.g. `SECURITY.md`, hooks, workflows, `plugin/rules|commands|references`) | `G-security-review`, `G-data-document` |
-| `is_code_change` and/or `is_library` | `G-code-review`, `G-security-review`, `G-data-document` |
+| Docs-only — allowlist outside sensitive/library paths: `*.md`/`*.mdc`, `LICENSE`, `NOTICE`, `docs/*`, `.claude/memory/*`, `.claude/ledger/*`, `openspec/*.md`/`openspec/*.mdc` (nested — bash `*` matches `/`), `*/.openspec.yaml` | **None** — skip entire DAG |
+| `is_sensitive` only (e.g. `SECURITY.md`, hooks, workflows, `plugin/rules|commands|references`, `openspec/changes/*/dispatch/*`, `openspec/specs/*`) | `G-security-review`, `G-data-document` |
+| `is_code_change` and/or `is_library` — includes `eval/metrics/runs/**` and any other file type under `openspec/` (fail closed) | `G-code-review`, `G-security-review`, `G-data-document` |
 | `is_library` | + `G-library-review` |
 | `DATA_MODEL.md` in diff after Wave 1 | + `G-data-verify` (`data-model-verifier`) |
 

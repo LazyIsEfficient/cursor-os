@@ -49,7 +49,7 @@ project removes rather than adds.
 
 Node.js 22 is required. `engines` is `^22` and `.nvmrc` pins `22`, matching what
 CI actually exercises. The range is deliberately narrow: the test script passes
-nine glob patterns to `node --test`, and glob handling has changed across
+ten glob patterns to `node --test`, and glob handling has changed across
 recent majors. Widening it is a change that must come *with* CI matrix evidence,
 not before it.
 

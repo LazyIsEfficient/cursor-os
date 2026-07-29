@@ -1,6 +1,6 @@
 # Cursor Harness
 
-Cursor Harness v0.1.0 provides correctness-first engineering workflows for
+Cursor Harness v0.2.0 provides correctness-first engineering workflows for
 local Cursor Editor and Cursor CLI use. It turns implementation into an
 evidence-gated path: shape, plan, implement, verify, review, and only then ship.
 
@@ -184,11 +184,10 @@ rm ~/.cursor/plugins/local/cursor-harness
 If you already have global agents, rules, or hooks under `~/.cursor`, install
 adds this plugin beside them — it does not replace that configuration.
 
-- **Name collisions (precedence UNVERIFIED).** Eight agents share common global
-  names: `adversarial-claims-reviewer`, `code-reviewer`, `engineer`,
-  `godot-engineer`, `library-investigator`, `phaser-engineer`, `rust-engineer`,
-  and `security-reviewer`. Only `capability-probe` is unique to this plugin.
-  `factual-correctness.mdc` can collide the same way among rules. This package
+- **Name collisions (precedence UNVERIFIED).** Seventeen plugin agents total;
+  all except `capability-probe` may collide with names under
+  `~/.cursor/agents/`. `factual-correctness.mdc` can collide the same way
+  among rules. This package
   does not document a Cursor precedence rule because none is proven here —
   confirm which definition runs (invoke `capability-probe`; expect exactly
   `cursor-harness-agent-discovered`).

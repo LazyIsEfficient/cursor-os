@@ -64,10 +64,9 @@ Evidence: `npm run validate` and the official
 - **Unverified — editor-only/manual:** the installed editor has not loaded the
   plugin or shown/invoked `capability-probe`. Use the exact sentinel response in
   that agent file for a later manual editor smoke test.
-- **Unverified — editor-only/manual:** eight of nine plugin agents share common
-  global agent names (`adversarial-claims-reviewer`, `code-reviewer`,
-  `engineer`, `godot-engineer`, `library-investigator`, `phaser-engineer`,
-  `rust-engineer`, `security-reviewer`; only `capability-probe` is unique).
+- **Unverified — editor-only/manual:** seventeen plugin agents total; all
+  except `capability-probe` may collide with names under a user's global
+  `~/.cursor/agents/`.
   Cursor's precedence when a plugin agent and a global agent share a name is
   not proven in this repository. The same gap applies to
   `factual-correctness.mdc` among rules. See
@@ -115,8 +114,9 @@ Evidence: `npm test`, `npm run validate`, and the official
 - **Verified by local process tests:** all four scripts exit `0`, write nothing
   to standard error, and return `{}` on malformed or non-JSON stdin. This is the
   fail-open contract; none of these hooks sets `failClosed`.
-- **Verified in the configuration:** the `stop` hook sets `loop_limit: 1`, the
-  documented loop-safety control that bounds followup re-entry.
+- **Verified in the configuration:** two `stop` hooks set the documented
+  loop-safety control that bounds followup re-entry: `memory-extract-nudge`
+  sets `loop_limit: 1` and `dispatch-gate-stop` sets `loop_limit: 3`.
 - **Verified by static scan:** none of these scripts writes to disk, spawns a
   process, or performs network access.
 - **Unverified — editor-only/manual:** Cursor itself has not executed these

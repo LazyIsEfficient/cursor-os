@@ -6,7 +6,7 @@ This is a Cursor plugin hook layer. It adds three gates:
 
 - **Research gate** — after a threshold of main-thread `Read`/`Grep`/`Glob`/`SemanticSearch` ops without an `explore` Task, deny further research and demand a `Task(subagent_type=explore)`.
 - **Impl gate** — deny `Write`/`StrReplace`/`Delete` on a *code path* from the main thread until an implementation `Task` (`engineer`, `rust-engineer`, …) **completes**.
-- **Stop gate** — at end of turn, if the git worktree has code/library changes but the required reviewer Tasks have not completed, emit an auto follow-up demanding them (Wave 1 gate DAG).
+- **Stop gate** — at end of turn, if the git worktree has code/library changes but the required reviewer Tasks have not completed, emit an auto follow-up demanding them (Wave 1 reviewers plus Wave 2 `data-model-verifier` when `DATA_MODEL.md` changed).
 
 ## Opt-in by default
 
@@ -61,10 +61,12 @@ The runtime planner `dispatch-gate-plan-lib.mjs` **mirrors** `scripts/lib/gate-p
 | Class | Paths | Reviewers |
 | --- | --- | --- |
 | **library** | `plugin/skills/**`, `plugin/agents/**` | code-reviewer, security-reviewer, data-model-documenter, **library-reviewer** |
-| **code** | non-docs paths not skipped | code-reviewer, security-reviewer, data-model-documenter |
-| **sensitive** | `plugin/hooks/**`, `plugin/rules/**`, `plugin/commands/**`, `plugin/references/**`, validate/release scripts, workflows, dispatch-gate itself, `SECURITY.md`, … | security-reviewer, data-model-documenter |
-| **docs / churn (skip)** | `*.md`, `*.mdc`, `docs/**`, `.cursor/dispatch-ledger.json`, `.claude/memory/**`, `.claude/ledger/**`, `eval/metrics/runs/**` | — |
+| **code** | non-docs paths not skipped — includes `eval/metrics/runs/**` and any other file type under `openspec/` — e.g. `openspec/config.yaml` (fail closed) | code-reviewer, security-reviewer, data-model-documenter |
+| **sensitive** | `plugin/hooks/**`, `plugin/rules/**`, `plugin/commands/**`, `plugin/references/**`, validate/release scripts, workflows, dispatch-gate itself, `SECURITY.md`, `openspec/changes/*/dispatch/**`, `openspec/specs/**`, … | security-reviewer, data-model-documenter |
+| **docs / churn (skip)** | `*.md`, `*.mdc`, `LICENSE`, `NOTICE`, `docs/**`, `.cursor/dispatch-ledger.json`, `.claude/memory/**`, `.claude/ledger/**`, `openspec/*.md`, `openspec/*.mdc`, `*/.openspec.yaml` | — |
 | **DATA_MODEL.md** | `DATA_MODEL.md` | code-change + Wave 2 `data-model-verifier` |
+
+Bash `*` matches `/`, so `openspec/*.md` covers nested planning docs. Sensitive patterns flag before the docs skip applies, so `openspec/changes/*/dispatch/**` and `openspec/specs/**` markdown still gates.
 
 **Impl gate** `code_path_prefixes`: `plugin/skills/`, `plugin/agents/`, `plugin/commands/`, `plugin/rules/`, `plugin/references/`, `scripts/`.
 
