@@ -276,6 +276,24 @@ test("inventory generation is deterministic", async () => {
   );
 });
 
+// plugin/references/* and plugin/.cursor/* ship inside the plugin tree via the
+// local-install adapter; without discovery their hashes went untracked.
+test("inventory covers plugin/references and plugin/.cursor files", async () => {
+  const inventory = await generatePluginInventory(root);
+  const byPath = new Map(inventory.components.map((component) => [component.path, component]));
+
+  for (const path of [
+    "plugin/references/gate-dag.md",
+    "plugin/references/caveman-style.md",
+    "plugin/.cursor/dispatch-gate.json",
+  ]) {
+    const component = byPath.get(path);
+    assert.ok(component, `inventory must cover ${path}`);
+    assert.equal(component.kind, "reference");
+    assert.match(component.sha256, /^[a-f0-9]{64}$/u);
+  }
+});
+
 // Issue #5: both READMEs claimed six skills while nineteen shipped. The prose
 // component lists are asserted against the inventory so the same drift cannot
 // recur silently.

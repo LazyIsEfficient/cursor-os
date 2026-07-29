@@ -70,6 +70,8 @@ Bash `*` matches `/`, so `openspec/*.md` covers nested planning docs. Sensitive 
 
 **Impl gate** `code_path_prefixes`: `plugin/skills/`, `plugin/agents/`, `plugin/commands/`, `plugin/rules/`, `plugin/references/`, `scripts/`.
 
+**Tool classification is code-defined, not config.** Write/research tool lists are hardcoded in `dispatchGateIsWriteTool` / `dispatchGateIsResearchTool` (`plugin/scripts/lib/dispatch-gate-lib.mjs`); the JSON has no `write_tools` / `research_tools` keys.
+
 **Harness exempt** (main-thread edits always allowed): dispatch-gate scripts, `plugin/hooks/`, config/ledger paths, `docs/dispatch-enforcement.md`, `SESSION-STATE.md`.
 
 ## Hard constraints

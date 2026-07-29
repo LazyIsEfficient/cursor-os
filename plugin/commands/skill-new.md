@@ -19,7 +19,7 @@ Create exactly one file: `plugin/skills/$1/SKILL.md`. The folder name MUST equal
 
 Emit this content verbatim, substituting `$1` for the name. Leave every `TODO` in place — do NOT invent triggers, cross-references, or domain detail. The author fills those in.
 
-This plugin's skill frontmatter is Cursor discovery only: `name` and `description`. Do **not** add Claude-only fields such as `when_to_use` — `scripts/validate.sh` rejects unsupported frontmatter.
+This plugin's skill frontmatter is Cursor discovery only: `name` and `description`. Do **not** add Claude-only fields such as `when_to_use` — `scripts/validate.mjs` rejects unsupported frontmatter.
 
 ```
 ---
