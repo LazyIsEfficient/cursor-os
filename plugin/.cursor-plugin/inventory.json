@@ -180,7 +180,7 @@
       "id": "verify-ci-parity",
       "kind": "command",
       "path": "plugin/commands/verify-ci-parity.md",
-      "sha256": "ca40d71654e174a5795147fe4f91b363bf6c4139a65e7595bfa133b4302cbe83"
+      "sha256": "12e87c6459a718e7ec69b3bd53513d0dea565a67dbf5f51c66ccf14366ed34b0"
     },
     {
       "id": "hooks",
@@ -264,7 +264,7 @@
       "id": "ci-parity",
       "kind": "script",
       "path": "plugin/scripts/ci-parity.mjs",
-      "sha256": "b1cd8d9f0dc9dfc6eeeac30da4c477e03158af36a7cb63c522cb5f069814d17b"
+      "sha256": "e407b8c5408fe2b75f424af86a21dc8453938bf80276a66b16e02370a9fe54b6"
     },
     {
       "id": "dispatch-gate-after-file-edit",

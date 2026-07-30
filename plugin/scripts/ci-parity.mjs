@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ci-parity.mjs — scan consumer CI (workflows / justfile / Makefile) and print
- * verify:record recipe lines. Optionally write `.cursor/verify-profile.json`.
+ * record-verify recipe lines. Optionally write `.cursor/verify-profile.json`.
  *
  * Usage (consumers — plugin install root):
  *   node "${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/ci-parity.mjs" [--write] [--root <path>]

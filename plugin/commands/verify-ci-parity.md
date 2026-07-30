@@ -1,6 +1,6 @@
 ---
 name: verify-ci-parity
-description: Scan consumer CI (workflows/justfile/Makefile) and emit verify:record recipe + optional .cursor/verify-profile.json. Use when CI floors differ from local, "local green CI red", verify profile missing/stale, or user says "CI parity" / "/verify-ci-parity".
+description: Scan consumer CI (workflows/justfile/Makefile) and emit record-verify recipe + optional .cursor/verify-profile.json. Use when CI floors differ from local, "local green CI red", verify profile missing/stale, or user says "CI parity" / "/verify-ci-parity".
 ---
 
 # Verify CI parity
