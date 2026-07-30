@@ -36,6 +36,21 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Security
 
+- **git-push-without-verify gate:** plain `git push` requires a valid
+  `.cursor/verify-ledger.json` proving `impl_verified` for HEAD (rule
+  `git-push-without-verify`). Closes the consumer bypass of recording
+  verification only at `gh pr create|ready`. Tier-A force-push and
+  remote-ref-delete denials unchanged. Spec via
+  `openspec/changes/consumer-verify-before-push/`.
+- **verify-ledger-stop follow-up:** when a session completes with a dirty
+  worktree or commits ahead of upstream and the verify ledger is invalid,
+  the stop hook emits a one-shot follow-up directing `verify:record`
+  before the next push/PR. `VERIFY_PR_GATE_DISABLED=1` skips push, PR,
+  and this follow-up.
+- **Rust clippy floor:** rust profile coverage requires
+  `cargo clippy --all-targets` plus `-D warnings` (including `-Dwarnings`
+  and `-D` + `warnings`), matching typical consumer CI rather than a
+  weaker local floor.
 - **Two-tier `gh` command hardening in the shell guard:** Tier A hard denies
   (no verify-ledger exception) — `gh ssh-key add` / `gh gpg-key add`
   (`gh-account-key-add`), `gh extension install|upgrade`
