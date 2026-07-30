@@ -16,6 +16,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **CI parity recorder for consumer repos:** `npm run verify:ci-parity`
+  (`plugin/scripts/ci-parity.mjs` + `ci-parity-lib.mjs`) scans
+  `.github/workflows/*`, justfile, and Makefile for check-shaped commands,
+  prints `verify:record` recipe lines, and optionally writes
+  `.cursor/verify-profile.json`. Custom ledger coverage requires those exact
+  cmds when the sidecar exists. Command `/verify-ci-parity`; gate-dag
+  `impl-verified` documents the consumer once-then-record flow.
 - **Audit Tier 1 fixes (full-repo best-practice sweep):** mutating `gh api`
   (POST/PUT/PATCH/DELETE, implicit POST via field flags) now requires a valid
   verify ledger; `git push :ref` / `--delete` remote-ref deletion denied by
@@ -29,6 +36,21 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Security
 
+- **git-push-without-verify gate:** plain `git push` requires a valid
+  `.cursor/verify-ledger.json` proving `impl_verified` for HEAD (rule
+  `git-push-without-verify`). Closes the consumer bypass of recording
+  verification only at `gh pr create|ready`. Tier-A force-push and
+  remote-ref-delete denials unchanged. Spec via
+  `openspec/changes/consumer-verify-before-push/`.
+- **verify-ledger-stop follow-up:** when a session completes with a dirty
+  worktree or commits ahead of upstream and the verify ledger is invalid,
+  the stop hook emits a one-shot follow-up directing `verify:record`
+  before the next push/PR. `VERIFY_PR_GATE_DISABLED=1` skips push, PR,
+  and this follow-up.
+- **Rust clippy floor:** rust profile coverage requires
+  `cargo clippy --all-targets` plus `-D warnings` (including `-Dwarnings`
+  and `-D` + `warnings`), matching typical consumer CI rather than a
+  weaker local floor.
 - **Two-tier `gh` command hardening in the shell guard:** Tier A hard denies
   (no verify-ledger exception) — `gh ssh-key add` / `gh gpg-key add`
   (`gh-account-key-add`), `gh extension install|upgrade`

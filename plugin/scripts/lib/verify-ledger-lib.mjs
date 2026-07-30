@@ -5,7 +5,7 @@
  * Filesystem + git live here so before-shell-execution.mjs can import validators
  * without embedding node:fs / child_process in the guard entry (static scan).
  *
- * Emergency: VERIFY_PR_GATE_DISABLED=1 skips the PR gate check only.
+ * Emergency: VERIFY_PR_GATE_DISABLED=1 skips the push and PR gate checks.
  *
  * Residual: Write-tool forging a full v2 ledger with spawned:true remains
  * possible; this layer does not solve filesystem forgery.
@@ -19,8 +19,13 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, dirname, isAbsolute } from "node:path";
 import { execFileSync } from "node:child_process";
+import {
+  isValidVerifyProfile,
+  loadVerifyProfile,
+  normalizeVerifyCmd,
+} from "./ci-parity-lib.mjs";
 
 export const VERIFY_LEDGER_VERSION = 2;
 export const VERIFY_LEDGER_RELATIVE_PATH = join(".cursor", "verify-ledger.json");
@@ -128,6 +133,152 @@ export function readHeadSha(root) {
   } catch {
     return null;
   }
+}
+
+function isExistingDirectory(path) {
+  if (typeof path !== "string" || path.length === 0) {
+    return false;
+  }
+  try {
+    return existsSync(path) && statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function resolveAgainstBase(base, path) {
+  if (typeof path !== "string" || path.length === 0) {
+    return null;
+  }
+  return isAbsolute(path) ? resolve(path) : resolve(base, path);
+}
+
+/**
+ * Resolve the effective git work tree a `git …` invocation would use, from
+ * global options before the subcommand (`-C`, `--git-dir`, `--work-tree`,
+ * including `=` glued forms; stacked `-C` applied left-to-right).
+ *
+ * Prefer `--work-tree`, else toplevel from `--git-dir`, else final `-C`,
+ * else `cwd`. Returns an absolute existing directory, or `null` (callers
+ * fail closed — e.g. deny `git-push-without-verify`).
+ *
+ * @param {string[]} gitArgv arguments after the `git` executable
+ * @param {string} cwd hook / process cwd used for relative path resolution
+ * @returns {string | null}
+ */
+export function resolveGitWorkTreeFromArgv(gitArgv, cwd) {
+  if (!Array.isArray(gitArgv) || typeof cwd !== "string" || cwd.length === 0) {
+    return null;
+  }
+  let base = resolve(cwd);
+  if (!isExistingDirectory(base)) {
+    return null;
+  }
+
+  let gitDir = null;
+  let workTree = null;
+  let index = 0;
+
+  while (index < gitArgv.length) {
+    const arg = gitArgv[index];
+    if (typeof arg !== "string") {
+      return null;
+    }
+    if (arg === "--" || !arg.startsWith("-") || arg === "-") {
+      break;
+    }
+
+    if (arg === "-C") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      const nextBase = resolveAgainstBase(base, next);
+      if (!nextBase || !isExistingDirectory(nextBase)) {
+        return null;
+      }
+      base = nextBase;
+      index += 2;
+      continue;
+    }
+
+    if (arg === "--git-dir") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      gitDir = next;
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("--git-dir=")) {
+      gitDir = arg.slice("--git-dir=".length);
+      if (gitDir.length === 0) {
+        return null;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--work-tree") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      workTree = next;
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("--work-tree=")) {
+      workTree = arg.slice("--work-tree=".length);
+      if (workTree.length === 0) {
+        return null;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (arg === "-c" || arg === "--namespace") {
+      if (typeof gitArgv[index + 1] !== "string") {
+        return null;
+      }
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("-c") || arg.startsWith("--namespace=")) {
+      index += 1;
+      continue;
+    }
+
+    // Other global flags (`--bare`, `-c key=value` glued, …).
+    index += 1;
+  }
+
+  if (workTree !== null) {
+    const abs = resolveAgainstBase(base, workTree);
+    return abs && isExistingDirectory(abs) ? abs : null;
+  }
+
+  if (gitDir !== null) {
+    const absGitDir = resolveAgainstBase(base, gitDir);
+    if (!absGitDir) {
+      return null;
+    }
+    // Standard `repo/.git` layout: parent is the work tree. Do NOT ask
+    // `rev-parse --show-toplevel` with only `--git-dir` set — git then treats
+    // the process cwd as the work tree, which reintroduces decoy-cwd evasion
+    // (`git --git-dir=real/.git push` from a verified decoy).
+    const lower = absGitDir.replace(/\\/gu, "/");
+    if (lower.endsWith("/.git")) {
+      const parent = dirname(absGitDir);
+      return isExistingDirectory(parent) ? resolve(parent) : null;
+    }
+    // Bare / nonstandard git-dir without `--work-tree`: cannot safely bind a
+    // ledger root — fail closed.
+    return null;
+  }
+
+  return base;
 }
 
 export function verifyLedgerLoad(root) {
@@ -479,13 +630,32 @@ function matchesCargoFmtCheck(tokens) {
   );
 }
 
+/** True when argv has `-D warnings` (split) or glued `-Dwarnings`. */
+function hasDenyWarnings(tokens) {
+  if (tokens.includes("-Dwarnings")) {
+    return true;
+  }
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (tokens[index] === "-D" && tokens[index + 1] === "warnings") {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * CI-shaped clippy: `cargo clippy --all-targets` plus `-D warnings`
+ * (`-Dwarnings` or `-D` + `warnings`, including after `--`).
+ */
 function matchesCargoClippy(tokens) {
   if (argvHasHelpFlag(tokens)) {
     return false;
   }
   return (
     commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
-    tokens[1] === "clippy"
+    tokens[1] === "clippy" &&
+    tokens.includes("--all-targets") &&
+    hasDenyWarnings(tokens)
   );
 }
 
@@ -646,6 +816,14 @@ function matchesCustomVerification(tokens) {
       "tox",
       "nox",
       "pytest",
+      "ruff",
+      "flake8",
+      "mypy",
+      "pylint",
+      "eslint",
+      "prettier",
+      "black",
+      "isort",
       "mvn",
       "gradle",
       "gradlew",
@@ -686,8 +864,19 @@ function matchesCustomVerification(tokens) {
  * Whether recorded commands satisfy the stack profile's required coverage.
  * Matching is argv-shaped (not substring): embedding tokens inside `node -e`
  * payloads does not count.
+ *
+ * For `custom`: when `root` has a valid `.cursor/verify-profile.json`
+ * (`version: 1`, non-empty `commands`), each listed command must appear as a
+ * spawned exit-0 entry after `normalizeVerifyCmd` on both sides. Listed cmds
+ * that are trivial or fail `matchesCustomVerification` never satisfy
+ * coverage (reject inert sidecar entries like `go version`). Otherwise falls
+ * back to ≥2 verification-shaped commands.
+ *
+ * @param {string} profile
+ * @param {unknown[]} commands
+ * @param {string} [root] project root for optional verify-profile sidecar
  */
-export function verifyLedgerProfileCoverage(profile, commands) {
+export function verifyLedgerProfileCoverage(profile, commands, root) {
   if (!Array.isArray(commands)) {
     return false;
   }
@@ -718,6 +907,38 @@ export function verifyLedgerProfileCoverage(profile, commands) {
   }
 
   if (profile === "custom") {
+    if (typeof root === "string" && root.length > 0) {
+      const verifyProfile = loadVerifyProfile(root);
+      if (isValidVerifyProfile(verifyProfile)) {
+        return verifyProfile.commands.every((requiredCmd) => {
+          const requiredNorm = normalizeVerifyCmd(requiredCmd);
+          if (
+            requiredNorm.length === 0 ||
+            verifyCommandIsTrivial(requiredNorm) ||
+            !matchesCustomVerification(
+              peelVerifyArgv(tokenizeVerifyCommand(requiredNorm)),
+            )
+          ) {
+            return false;
+          }
+          return commands.some(
+            (entry) =>
+              entry !== null &&
+              typeof entry === "object" &&
+              !Array.isArray(entry) &&
+              entry.spawned === true &&
+              typeof entry.cmd === "string" &&
+              normalizeVerifyCmd(entry.cmd) === requiredNorm &&
+              typeof entry.exit_code === "number" &&
+              entry.exit_code === 0 &&
+              !verifyCommandIsTrivial(entry.cmd) &&
+              matchesCustomVerification(
+                peelVerifyArgv(tokenizeVerifyCommand(entry.cmd)),
+              ),
+          );
+        });
+      }
+    }
     const qualifying = commands.filter(
       (entry) =>
         entry !== null &&
@@ -736,7 +957,7 @@ export function verifyLedgerProfileCoverage(profile, commands) {
   return false;
 }
 
-function computeImplVerified(ledger) {
+function computeImplVerified(ledger, root) {
   if (!Array.isArray(ledger.commands) || ledger.commands.length < 1) {
     return false;
   }
@@ -750,15 +971,18 @@ function computeImplVerified(ledger) {
   if (!allZero) {
     return false;
   }
-  return verifyLedgerProfileCoverage(ledger.profile, ledger.commands);
+  return verifyLedgerProfileCoverage(ledger.profile, ledger.commands, root);
 }
 
 /**
  * Valid for PR: version 2, known profile, impl_verified===true, head_sha === HEAD,
  * commands.length>=1, every exit_code===0, every spawned===true, profile coverage.
+ * @param {object} ledger
+ * @param {string} headSha
+ * @param {string} [root] project root (loads `.cursor/verify-profile.json` for custom)
  * @returns {{ ok: true, ledger: object } | { ok: false, reason: string }}
  */
-export function verifyLedgerValidateForHead(ledger, headSha) {
+export function verifyLedgerValidateForHead(ledger, headSha, root) {
   if (ledger === null || typeof ledger !== "object" || Array.isArray(ledger)) {
     return { ok: false, reason: "missing-or-invalid-ledger" };
   }
@@ -795,7 +1019,7 @@ export function verifyLedgerValidateForHead(ledger, headSha) {
       return { ok: false, reason: "unspawned-command" };
     }
   }
-  if (!verifyLedgerProfileCoverage(ledger.profile, ledger.commands)) {
+  if (!verifyLedgerProfileCoverage(ledger.profile, ledger.commands, root)) {
     return { ok: false, reason: "profile-incomplete" };
   }
   return { ok: true, ledger };
@@ -814,7 +1038,7 @@ export function verifyLedgerIsValidForHead(root) {
   if (!ledger) {
     return { ok: false, reason: "missing-or-invalid-ledger" };
   }
-  const result = verifyLedgerValidateForHead(ledger, headSha);
+  const result = verifyLedgerValidateForHead(ledger, headSha, root);
   if (!result.ok) {
     return result;
   }
@@ -822,8 +1046,9 @@ export function verifyLedgerIsValidForHead(root) {
 }
 
 /**
- * Whether `gh pr create|ready` is allowed under the verify ledger gate.
- * VERIFY_PR_GATE_DISABLED=1 ⇒ allow (skip check only).
+ * Whether `gh pr create|ready` / plain `git push` is allowed under the verify
+ * ledger gate. VERIFY_PR_GATE_DISABLED=1 ⇒ allow (skip check only — covers
+ * both push and PR).
  */
 export function verifyLedgerAllowsGhPr(root) {
   if (verifyPrGateDisabled()) {
@@ -949,7 +1174,7 @@ export function verifyLedgerAppendCommand(
     );
     ledger.commands.push(entry);
 
-    const verified = computeImplVerified(ledger);
+    const verified = computeImplVerified(ledger, root);
     ledger.impl_verified = verified;
     ledger.verified_at = verified ? at : null;
 
@@ -967,6 +1192,22 @@ export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Denied: .cursor/verify-ledger.json does not prove impl_verified for the current HEAD. " +
   "Choose a stack profile and record only via spawn: " +
   "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
-  "node-harness needs validate + test; rust needs cargo fmt --check, clippy, and test/nextest; " +
-  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
-  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check.";
+  "node-harness needs validate + test; rust needs cargo fmt --check, " +
+  "`clippy --all-targets -- -D warnings`, and test/nextest; " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +
+  "If `.cursor/verify-profile.json` exists, those exact cmds must be recorded. " +
+  "Fake `--cmd/--exit` recording is removed. " +
+  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";
+
+export const GIT_PUSH_WITHOUT_VERIFY_RULE = "git-push-without-verify";
+
+export const GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE =
+  "Denied: git push requires .cursor/verify-ledger.json proving impl_verified for the current HEAD. " +
+  "Choose a stack profile and record only via spawn: " +
+  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
+  "node-harness needs validate + test; rust needs cargo fmt --check, " +
+  "`clippy --all-targets -- -D warnings`, and test/nextest; " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +
+  "If `.cursor/verify-profile.json` exists, those exact cmds must be recorded. " +
+  "Fake `--cmd/--exit` recording is removed. " +
+  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";

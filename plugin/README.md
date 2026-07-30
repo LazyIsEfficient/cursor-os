@@ -50,10 +50,10 @@ Attribution: Cursor Harness contributors
   `marketing-shaper`, `content-ops`, `content-pipeline`, `conversion-ops`,
   `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
   `autoresearch`, and `telemetry`.<!-- components:skill:end -->
-- **Commands:** <!-- components:command:start -->ten commands —
+- **Commands:** <!-- components:command:start -->eleven commands —
   `/review-gate`, `/triage-findings`, `/state`, `/skill-new`,
   `/agent-new`, `/audit-library`, `/eval-harness`, `/openspec-propose`,
-  `/openspec-apply`, and `/openspec-archive`.<!-- components:command:end -->
+  `/openspec-apply`, `/openspec-archive`, and `/verify-ci-parity`.<!-- components:command:end -->
 - **Rules:** factual correctness, grounding, communication, memory discipline,
   orchestrator-first dispatch, deterministic diff verification, evidence
   review tiers, anti-patterns, and briefing.

@@ -114,9 +114,10 @@ Evidence: `npm test`, `npm run validate`, and the official
 - **Verified by local process tests:** all four scripts exit `0`, write nothing
   to standard error, and return `{}` on malformed or non-JSON stdin. This is the
   fail-open contract; none of these hooks sets `failClosed`.
-- **Verified in the configuration:** two `stop` hooks set the documented
+- **Verified in the configuration:** three `stop` hooks set the documented
   loop-safety control that bounds followup re-entry: `memory-extract-nudge`
-  sets `loop_limit: 1` and `dispatch-gate-stop` sets `loop_limit: 3`.
+  and `verify-ledger-stop` set `loop_limit: 1`; `dispatch-gate-stop` sets
+  `loop_limit: 3`.
 - **Verified by static scan:** none of these scripts writes to disk, spawns a
   process, or performs network access.
 - **Unverified — editor-only/manual:** Cursor itself has not executed these

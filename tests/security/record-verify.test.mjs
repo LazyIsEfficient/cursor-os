@@ -366,7 +366,7 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
   assert.equal(
     verifyLedgerProfileCoverage("rust", [
       spawned("cargo fmt --check"),
-      spawned("cargo clippy --all-targets"),
+      spawned("cargo clippy --all-targets -- -D warnings"),
       spawned("cargo test"),
     ]),
     true,
@@ -374,10 +374,27 @@ test("verifyLedgerProfileCoverage matches profile requirements", () => {
   assert.equal(
     verifyLedgerProfileCoverage("rust", [
       spawned("cargo fmt --all --check"),
-      spawned("cargo clippy"),
+      spawned("cargo clippy --all-targets -- -Dwarnings"),
       spawned("cargo nextest run"),
     ]),
     true,
+  );
+  // Bare clippy (no --all-targets / -D warnings) does not satisfy coverage.
+  assert.equal(
+    verifyLedgerProfileCoverage("rust", [
+      spawned("cargo fmt --check"),
+      spawned("cargo clippy"),
+      spawned("cargo test"),
+    ]),
+    false,
+  );
+  assert.equal(
+    verifyLedgerProfileCoverage("rust", [
+      spawned("cargo fmt --check"),
+      spawned("cargo clippy --all-targets"),
+      spawned("cargo test"),
+    ]),
+    false,
   );
   assert.equal(
     verifyLedgerProfileCoverage("rust", [

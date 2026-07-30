@@ -177,10 +177,16 @@
       "sha256": "c316f81254ea563c9d2f86fbdc26f96795d4e26029b4aad087caf99da880d839"
     },
     {
+      "id": "verify-ci-parity",
+      "kind": "command",
+      "path": "plugin/commands/verify-ci-parity.md",
+      "sha256": "2b5b0b4869755fded21c98842d242f5c41da854e8a0d10f5dcbafb00e1623c26"
+    },
+    {
       "id": "hooks",
       "kind": "hook",
       "path": "plugin/hooks/hooks.json",
-      "sha256": "977e590b19cb1eea2e6bbfa44b0b3f4891287b5ccaa1c4368d1936b79dad85f3"
+      "sha256": "1075a54ad1832702eb624fdd49438920336ef73a585a77a484fc6b0d3ebe7845"
     },
     {
       "id": "caveman-style",
@@ -192,7 +198,7 @@
       "id": "gate-dag",
       "kind": "reference",
       "path": "plugin/references/gate-dag.md",
-      "sha256": "02caed9a7d9f8d0bb0e405ca1a954f41efb6a2af207156bcf0c75d326b04627c"
+      "sha256": "c8c0d9fbb969081a63ed868407232291b76ad007a460f22cec41d0608a104d99"
     },
     {
       "id": "actual-diff-verification",
@@ -252,7 +258,13 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "aafe1d6c2fe631d40133b5207ddfb95ac1f5c9e9aa671fe36438470c2ecb45c4"
+      "sha256": "24a36af9da54f7ce004b4d9f62a8a545ddac01156c8033661a46e17762bf5083"
+    },
+    {
+      "id": "ci-parity",
+      "kind": "script",
+      "path": "plugin/scripts/ci-parity.mjs",
+      "sha256": "ea69ab550f52ffbab0cac3b3cc363179009a599cb106901d7e8bf0a5e4266913"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -297,6 +309,12 @@
       "sha256": "9e875e7c1d1d16cefd554c46fb5eb6a28ea7bd40ff959af579c8f351d6fb3b77"
     },
     {
+      "id": "ci-parity-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/ci-parity-lib.mjs",
+      "sha256": "4d972d308aba26d030eb3fa03a2fb6f390d39944364d5d157eb3af447c8a6c94"
+    },
+    {
       "id": "dispatch-gate-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-lib.mjs",
@@ -312,7 +330,13 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "19c8eb31550845b198b9dc60088186c2279cc82ca1b1814f7f6d3633df742178"
+      "sha256": "82e24aa9f30e3d6f0a5a414bf86a538881628da25b82aeaf65cbc2a790d3ca45"
+    },
+    {
+      "id": "verify-ledger-stop-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/verify-ledger-stop-lib.mjs",
+      "sha256": "4f57f89d51fb9fd1d326fb81db3f4fb5fdd1e67c9b63535880ede6034777768b"
     },
     {
       "id": "memory-extract-nudge",
@@ -343,6 +367,12 @@
       "kind": "script",
       "path": "plugin/scripts/session-state-inject.mjs",
       "sha256": "d48ad7a7759b79055777d7c173f8d7690767fb8351ab150d6f70165e50add81f"
+    },
+    {
+      "id": "verify-ledger-stop",
+      "kind": "script",
+      "path": "plugin/scripts/verify-ledger-stop.mjs",
+      "sha256": "9dd62431280eb32929df80b6507279a583bdfa2f0900312aee77d743ec2034be"
     },
     {
       "id": "adversarial-claims-reviewer",

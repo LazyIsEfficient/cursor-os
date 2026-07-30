@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 import {
   GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
   GH_PR_WITHOUT_VERIFY_RULE,
+  GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE,
+  GIT_PUSH_WITHOUT_VERIFY_RULE,
   VERIFY_PR_GATE_DISABLED_ENV,
   verifyLedgerPath,
 } from "../../scripts/lib/verify-ledger-lib.mjs";
@@ -116,9 +118,6 @@ test("allows benign everyday commands", () => {
     "ls /",
     "git status",
     "git status --short",
-    "git push origin feature/safe-update",
-    "git push origin HEAD:refs/heads/feature",
-    "git push origin main --set-upstream",
     "npm test",
     "npm run validate",
     "node --test tests/security/*.test.mjs",
@@ -350,6 +349,7 @@ test("advisory hooks are registered fail-open with plugin-root commands", async 
     ],
     stop: [
       'node "${CURSOR_PLUGIN_ROOT}/scripts/memory-extract-nudge.mjs"',
+      'node "${CURSOR_PLUGIN_ROOT}/scripts/verify-ledger-stop.mjs"',
       'node "${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-stop.mjs"',
     ],
   };
@@ -374,7 +374,8 @@ test("advisory hooks are registered fail-open with plugin-root commands", async 
 
   // Loop safety: replaces the on-disk turn counter of the Claude original.
   assert.equal(config.hooks.stop[0].loop_limit, 1);
-  assert.equal(config.hooks.stop[1].loop_limit, 3);
+  assert.equal(config.hooks.stop[1].loop_limit, 1);
+  assert.equal(config.hooks.stop[2].loop_limit, 3);
 });
 
 test("dispatch-gate failClosed hooks always declare failClosed", async () => {
@@ -815,11 +816,18 @@ test("allows read-only gh forms with flags before or after the verb", () => {
   });
 });
 
-test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
+test("VERIFY_PR_GATE_DISABLED=1 skips verify-ledger push and PR checks", () => {
   withTempWorkspace((root) => {
     // Fresh throwaway repo: no ledger file exists here.
     assert.deepEqual(
       commandDecision("gh pr create", {
+        cwd: root,
+        env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
+      }),
+      { permission: "allow" },
+    );
+    assert.deepEqual(
+      commandDecision("git push origin feature/safe-update", {
         cwd: root,
         env: { [VERIFY_PR_GATE_DISABLED_ENV]: "1" },
       }),
@@ -835,6 +843,152 @@ test("VERIFY_PR_GATE_DISABLED=1 skips only the verify-ledger PR check", () => {
   });
 });
 
+test("denies git push without a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    for (const command of [
+      "git push origin feature/safe-update",
+      "git push origin HEAD:refs/heads/feature",
+      "git push origin main --set-upstream",
+      "git push",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GIT_PUSH_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+      assert.equal(
+        response.agent_message,
+        GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE,
+        command,
+      );
+    }
+  });
+});
+
+test("allows git push with a valid verify ledger for HEAD", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "git push origin feature/safe-update",
+      "git push origin HEAD:refs/heads/feature",
+      "git push origin main --set-upstream",
+    ]) {
+      assert.deepEqual(
+        commandDecision(command, { cwd: root }),
+        { permission: "allow" },
+        command,
+      );
+    }
+  });
+});
+
+test("denies git -C / --git-dir push when decoy cwd has valid ledger (Tier 1)", () => {
+  withTempWorkspace((decoy) => {
+    withTempWorkspace((real) => {
+      const decoySha = gitHeadSha(decoy);
+      writeValidVerifyLedger(decoy, decoySha);
+      // Real repo has no ledger — push targeting real must fail closed even
+      // though the hook cwd (decoy) would otherwise authorize.
+      for (const command of [
+        `git -C ${real} push origin feature/safe-update`,
+        `git --git-dir=${join(real, ".git")} push origin feature/safe-update`,
+        `git --git-dir ${join(real, ".git")} push origin feature/safe-update`,
+        `git --work-tree=${real} --git-dir=${join(real, ".git")} push origin HEAD`,
+      ]) {
+        const response = commandDecision(command, { cwd: decoy });
+        assert.equal(response.permission, "deny", command);
+        assert.match(
+          response.user_message,
+          new RegExp(`\\(${GIT_PUSH_WITHOUT_VERIFY_RULE}\\)`, "u"),
+          command,
+        );
+        assert.equal(
+          response.agent_message,
+          GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE,
+          command,
+        );
+      }
+    });
+  });
+});
+
+test("allows plain git push from real repo when its ledger is valid (Tier 1)", () => {
+  withTempWorkspace((real) => {
+    writeValidVerifyLedger(real, gitHeadSha(real));
+    assert.deepEqual(
+      commandDecision("git push origin feature/safe-update", { cwd: real }),
+      { permission: "allow" },
+    );
+    // -C pointing at the same verified root still allows.
+    assert.deepEqual(
+      commandDecision(`git -C ${real} push origin feature/safe-update`, {
+        cwd: real,
+      }),
+      { permission: "allow" },
+    );
+  });
+});
+
+test("denies unresolvable git -C / --git-dir push fail-closed (Tier 1)", () => {
+  withTempWorkspace((root) => {
+    writeValidVerifyLedger(root, gitHeadSha(root));
+    for (const command of [
+      "git -C /nonexistent/verify-push-target-xyz push origin main",
+      "git --git-dir=/nonexistent/verify-push-target-xyz/.git push origin main",
+      "git --work-tree=/nonexistent/verify-push-target-xyz push origin main",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(
+        response.user_message,
+        new RegExp(`\\(${GIT_PUSH_WITHOUT_VERIFY_RULE}\\)`, "u"),
+        command,
+      );
+    }
+  });
+});
+
+test("force push remains hard-denied even with a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    const headSha = gitHeadSha(root);
+    writeValidVerifyLedger(root, headSha);
+    for (const command of [
+      "git push --force origin main",
+      "git push --force-with-lease origin main",
+      "git push -f origin main",
+      "git push origin +main",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(response.user_message, /git-history-rewrite/u, command);
+    }
+  });
+});
+
+test("remote-ref-delete remains hard-denied even with a valid verify ledger", () => {
+  withTempWorkspace((root) => {
+    writeValidVerifyLedger(root, gitHeadSha(root));
+    for (const command of [
+      "git push origin :feat/old",
+      "git push origin ':refs/heads/old'",
+      "git push --delete origin feat/old",
+      "git push -d origin feat/old",
+      "git push -qd origin feat/old",
+      "git push origin --prune",
+      "git push --prune origin",
+      "git push --mirror origin",
+      "git push origin --mirror",
+    ]) {
+      const response = commandDecision(command, { cwd: root });
+      assert.equal(response.permission, "deny", command);
+      assert.match(response.user_message, /git-remote-ref-delete/u, command);
+    }
+  });
+});
+
 test("guard entry has no direct fs/network/credential APIs (ledger via lib)", async () => {
   const source = await readFile(scriptPath, "utf8");
 
@@ -847,6 +1001,8 @@ test("guard entry has no direct fs/network/credential APIs (ledger via lib)", as
   assert.doesNotMatch(source, /\b(?:homedir|readFile|readFileSync|fetch)\s*\(/u);
   assert.match(source, /verify-ledger-lib\.mjs/u);
   assert.match(source, /GH_PR_WITHOUT_VERIFY_RULE/u);
+  assert.match(source, /GIT_PUSH_WITHOUT_VERIFY_RULE/u);
+  assert.match(source, /resolveGitWorkTreeFromArgv/u);
   assert.match(source, /ghCommand/u);
   assert.match(source, /resolveGhVerb/u);
   assert.match(source, /NAMED_EXCEPTIONS/u);

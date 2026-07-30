@@ -19,6 +19,10 @@ const scripts = {
 // has to satisfy the static safety scan below.
 const shellGuard = "plugin/scripts/before-shell-execution.mjs";
 
+// Verify-ledger stop: thin entry; git/ledger I/O lives in lib/. Must still pass
+// the static safety scan (entry has no child_process / writes).
+const verifyLedgerStop = "plugin/scripts/verify-ledger-stop.mjs";
+
 // Dispatch-gate thin entries: registered in hooks.json; logic (and writes) live
 // in plugin/scripts/lib/. Entries must still pass the static safety scan.
 const dispatchGateScripts = [
@@ -387,7 +391,7 @@ function declaredHookScripts() {
 test("the static safety scan covers every script registered in hooks.json", () => {
   assert.deepEqual(
     [...declaredHookScripts()].sort(),
-    [...Object.values(scripts), shellGuard, ...dispatchGateScripts].sort(),
+    [...Object.values(scripts), shellGuard, verifyLedgerStop, ...dispatchGateScripts].sort(),
     "a hooks.json script is not covered by the static safety scan below",
   );
 });

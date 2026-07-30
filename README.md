@@ -71,10 +71,10 @@ The consumer plugin in [`plugin/`](plugin/README.md) contains:
   `growth-engine`, `outbound-engine`, `seo-ops`, `revenue-intelligence`,
   `autoresearch`, `codebase-cost-estimator`, `security`, and `telemetry` for
   marketing, growth, measurement, and sanitization;<!-- components:skill:end -->
-- <!-- components:command:start -->ten commands: `/review-gate`,
+- <!-- components:command:start -->eleven commands: `/review-gate`,
   `/triage-findings`, `/state`, `/skill-new`, `/agent-new`,
   `/audit-library`, `/eval-harness`, `/openspec-propose`,
-  `/openspec-apply`, and `/openspec-archive`;<!-- components:command:end -->
+  `/openspec-apply`, `/openspec-archive`, and `/verify-ci-parity`;<!-- components:command:end -->
 - always-applied factual-correctness, grounding, communication,
   memory-discipline, orchestration, review-tier, actual-diff, anti-patterns,
   and briefing rules; and

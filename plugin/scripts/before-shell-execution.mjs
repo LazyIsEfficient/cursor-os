@@ -1,6 +1,9 @@
 import {
   GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE,
   GH_PR_WITHOUT_VERIFY_RULE,
+  GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE,
+  GIT_PUSH_WITHOUT_VERIFY_RULE,
+  resolveGitWorkTreeFromArgv,
   verifyLedgerAllowsGhPr,
   verifyLedgerProjectRoot,
 } from "./lib/verify-ledger-lib.mjs";
@@ -763,8 +766,8 @@ function isRecursiveForceDelete(arguments_) {
 
 // High-impact shapes that remain denied even when the command word is a literal
 // allowlisted form. Compose after named exceptions and expansion denial.
-// `workspaceRoot` is used for the verify-ledger PR gate (`gh pr create|ready`
-// and mutating `gh api` calls).
+// `workspaceRoot` is used for the verify-ledger gate (`git push`, `gh pr
+// create|ready`, and mutating `gh api` / Tier-B gh forms).
 function highImpactRule(segment, executable, arguments_, workspaceRoot) {
   for (let index = 0; index < segment.length - 1; index += 1) {
     if (
@@ -832,6 +835,20 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
         parsed.arguments.some((argument) => argument.startsWith(":")))
     ) {
       return "git-remote-ref-delete";
+    }
+    // Remaining plain `git push` forms require a valid verify ledger for the
+    // effective git work tree (from `-C` / `--git-dir` / `--work-tree`), not
+    // merely the hook cwd — otherwise a decoy cwd with a valid ledger can
+    // authorize pushing a different repo. Unresolvable target → fail closed.
+    if (parsed.subcommand === "push") {
+      const ledgerRoot = resolveGitWorkTreeFromArgv(arguments_, workspaceRoot);
+      if (ledgerRoot === null) {
+        return GIT_PUSH_WITHOUT_VERIFY_RULE;
+      }
+      const allow = verifyLedgerAllowsGhPr(ledgerRoot);
+      if (!allow.ok) {
+        return GIT_PUSH_WITHOUT_VERIFY_RULE;
+      }
     }
     if (
       parsed.subcommand === "branch" &&
@@ -1212,10 +1229,12 @@ async function main() {
       MAX_NESTED_SHELL_DEPTH,
       workspaceRoot,
     );
-    const agentMessage =
-      rule === GH_PR_WITHOUT_VERIFY_RULE
-        ? GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE
-        : undefined;
+    let agentMessage;
+    if (rule === GH_PR_WITHOUT_VERIFY_RULE) {
+      agentMessage = GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE;
+    } else if (rule === GIT_PUSH_WITHOUT_VERIFY_RULE) {
+      agentMessage = GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE;
+    }
     process.stdout.write(
       `${JSON.stringify(decision(rule ? "deny" : "allow", rule, agentMessage))}\n`,
     );
