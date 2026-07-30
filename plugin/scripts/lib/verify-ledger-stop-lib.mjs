@@ -16,11 +16,18 @@ import {
   verifyLedgerProjectRoot,
   verifyPrGateDisabled,
 } from "./verify-ledger-lib.mjs";
+import { formatRecordVerifyCommand } from "./verify-cli-paths.mjs";
+
+const RECORD_VERIFY_SPAWN_HINT = formatRecordVerifyCommand(
+  "<node-harness|rust|custom>",
+  "<cmd>",
+);
 
 export const VERIFY_LEDGER_STOP_FOLLOWUP_MESSAGE = [
   "Local git is dirty or ahead of upstream, but `.cursor/verify-ledger.json` does not prove `impl_verified` for the current HEAD.",
   "Record verification before push/PR:",
-  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`",
+  `\`${RECORD_VERIFY_SPAWN_HINT}\`.`,
+  "Harness dogfood only: `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`.",
   "(node-harness: validate + test; rust: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, test/nextest; custom: ≥2 verification-shaped commands).",
   "Consumer repos: also run `/verify-ci-parity` when CI floors differ from local.",
   `Emergency only: ${VERIFY_PR_GATE_DISABLED_ENV}=1 skips push, PR, and this stop follow-up.`,

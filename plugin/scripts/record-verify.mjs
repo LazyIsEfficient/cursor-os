@@ -3,9 +3,12 @@
  * record-verify.mjs — spawn a verification command and append the result to
  * `.cursor/verify-ledger.json` (version 2 + stack profile).
  *
- * Usage:
- *   node plugin/scripts/record-verify.mjs --profile node-harness --run -- npm test
+ * Usage (consumers — plugin install root):
+ *   node "${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/record-verify.mjs" --profile node-harness --run -- npm test
+ *
+ * Harness checkout only:
  *   npm run verify:record -- --profile node-harness --run -- node scripts/validate.mjs
+ *   node plugin/scripts/record-verify.mjs --profile node-harness --run -- npm test
  *
  * `--cmd` / `--exit` fake recording is removed — only `--run` (spawn) is allowed.
  */
@@ -26,8 +29,9 @@ import {
 function printUsage() {
   process.stderr.write(
     "usage:\n" +
-      "  node plugin/scripts/record-verify.mjs --profile <node-harness|rust|custom> --run -- <command...>\n" +
-      "  npm run verify:record -- --profile <node-harness|rust|custom> --run -- <command...>\n" +
+      "  node \"${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/record-verify.mjs\" --profile <node-harness|rust|custom> --run -- <command...>\n" +
+      "  (harness checkout only) npm run verify:record -- --profile <node-harness|rust|custom> --run -- <command...>\n" +
+      "  (harness checkout only) node plugin/scripts/record-verify.mjs --profile <node-harness|rust|custom> --run -- <command...>\n" +
       "\n" +
       "Notes:\n" +
       "  --profile is required on first write for a HEAD (omit only when ledger already has matching profile).\n" +

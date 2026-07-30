@@ -48,13 +48,13 @@
       "id": "devops-engineer",
       "kind": "agent",
       "path": "plugin/agents/devops-engineer.md",
-      "sha256": "284b7349690533ff8447eda0df17310c758efeb548e69f29e61233a7fe652826"
+      "sha256": "94ffe884d6aeb139541af340b95c88e305524e9e11f0be981e913d2e0a07c12a"
     },
     {
       "id": "engineer",
       "kind": "agent",
       "path": "plugin/agents/engineer.md",
-      "sha256": "43c1ff960eb0562f1a2a2eb2e8583cba8cf774a677b4ee264bff82998fba3cad"
+      "sha256": "78f21f2ed8be66be4b8298ca144f2d88767b15e85cba0f5b505ed5252185da08"
     },
     {
       "id": "game-design-shaper",
@@ -66,7 +66,7 @@
       "id": "godot-engineer",
       "kind": "agent",
       "path": "plugin/agents/godot-engineer.md",
-      "sha256": "528ba7de6eee84c739f3ce761112f41b0ef6f208410142d625a6c902a30a9cd8"
+      "sha256": "aab62ac4d7aeb519cd1a578fa16dcc45a497f7632263e3c4ecb791e36850d901"
     },
     {
       "id": "library-investigator",
@@ -90,13 +90,13 @@
       "id": "phaser-engineer",
       "kind": "agent",
       "path": "plugin/agents/phaser-engineer.md",
-      "sha256": "197b16c9dd2da5962e3512ce43b818fbffedda6ae84a13e0e27dd72cba8d2cf4"
+      "sha256": "47f66dcdd6815434722d1ade680145d37bf988a6c8460066c113e3197d19871d"
     },
     {
       "id": "rust-engineer",
       "kind": "agent",
       "path": "plugin/agents/rust-engineer.md",
-      "sha256": "15130d4519042a3ce86ae5fc45b3af3ca3fa4b209560fe82c8aaa90d2ca4af02"
+      "sha256": "26a91d7785c08fd41a2d19a9e2f270b95cb15d215f35b186157bed909b35b0f9"
     },
     {
       "id": "security-reviewer",
@@ -114,7 +114,7 @@
       "id": "web3-engineer",
       "kind": "agent",
       "path": "plugin/agents/web3-engineer.md",
-      "sha256": "313ee87eb9359f46e262468a8df0e83bf9d6c0ad29437822da630ed2c4fd5d6e"
+      "sha256": "9a099850488208937d05ec7afb3add9f7ba425c005bfb3d36b3e9550580dbb27"
     },
     {
       "id": "agent-new",
@@ -180,7 +180,7 @@
       "id": "verify-ci-parity",
       "kind": "command",
       "path": "plugin/commands/verify-ci-parity.md",
-      "sha256": "2b5b0b4869755fded21c98842d242f5c41da854e8a0d10f5dcbafb00e1623c26"
+      "sha256": "ca40d71654e174a5795147fe4f91b363bf6c4139a65e7595bfa133b4302cbe83"
     },
     {
       "id": "hooks",
@@ -198,13 +198,13 @@
       "id": "gate-dag",
       "kind": "reference",
       "path": "plugin/references/gate-dag.md",
-      "sha256": "c8c0d9fbb969081a63ed868407232291b76ad007a460f22cec41d0608a104d99"
+      "sha256": "825920f0b5ac6a06016fbe7285daf8fa2c7d995b6edda897fc28396f742222f6"
     },
     {
       "id": "actual-diff-verification",
       "kind": "rule",
       "path": "plugin/rules/actual-diff-verification.mdc",
-      "sha256": "c80aa8a2dde620f46ade150ddca6801c0836f7e684b0525ce5eb6780df4af63c"
+      "sha256": "36134defc8a9a5844bc235ab7a69259b431624fb0b5e6c8cf2c898c12eefd8fe"
     },
     {
       "id": "anti-patterns",
@@ -264,7 +264,7 @@
       "id": "ci-parity",
       "kind": "script",
       "path": "plugin/scripts/ci-parity.mjs",
-      "sha256": "ea69ab550f52ffbab0cac3b3cc363179009a599cb106901d7e8bf0a5e4266913"
+      "sha256": "b1cd8d9f0dc9dfc6eeeac30da4c477e03158af36a7cb63c522cb5f069814d17b"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -312,7 +312,7 @@
       "id": "ci-parity-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/ci-parity-lib.mjs",
-      "sha256": "4d972d308aba26d030eb3fa03a2fb6f390d39944364d5d157eb3af447c8a6c94"
+      "sha256": "1d8dfc888c6d7ff66d04669b23f65508fa560cf89db1f01a726e84c2a28faeaa"
     },
     {
       "id": "dispatch-gate-lib",
@@ -327,16 +327,22 @@
       "sha256": "1dc32e7ad46ac9120237cc90bbe94c08ada38d7cf708bc8fb5cc964303eea562"
     },
     {
+      "id": "verify-cli-paths",
+      "kind": "script",
+      "path": "plugin/scripts/lib/verify-cli-paths.mjs",
+      "sha256": "472b6a85cd98008ffa2ee117eece0d23d24b50968cac7b7983ebf9a6e483cd2a"
+    },
+    {
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "82e24aa9f30e3d6f0a5a414bf86a538881628da25b82aeaf65cbc2a790d3ca45"
+      "sha256": "74cf9ba2f528dab86ca08ea5eaf512b627c4a9cad460b7741ec346ecf5d8a20c"
     },
     {
       "id": "verify-ledger-stop-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-stop-lib.mjs",
-      "sha256": "4f57f89d51fb9fd1d326fb81db3f4fb5fdd1e67c9b63535880ede6034777768b"
+      "sha256": "03b03060ca4d3625299b26fb6d7228a413829c6b0c6d9ec0622612474721f7f6"
     },
     {
       "id": "memory-extract-nudge",
@@ -360,7 +366,7 @@
       "id": "record-verify",
       "kind": "script",
       "path": "plugin/scripts/record-verify.mjs",
-      "sha256": "72e42e44222759b998d361896c6b35afb0db41795be41f509ea65ce51837920e"
+      "sha256": "892295fa9e3408b47238c92e4f2490f6f21bfcdf47e205cbe927c1dcd78e2756"
     },
     {
       "id": "session-state-inject",

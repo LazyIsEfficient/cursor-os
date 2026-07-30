@@ -3,9 +3,12 @@
  * ci-parity.mjs — scan consumer CI (workflows / justfile / Makefile) and print
  * verify:record recipe lines. Optionally write `.cursor/verify-profile.json`.
  *
- * Usage:
- *   node plugin/scripts/ci-parity.mjs [--write] [--root <path>]
+ * Usage (consumers — plugin install root):
+ *   node "${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/ci-parity.mjs" [--write] [--root <path>]
+ *
+ * Harness checkout only:
  *   npm run verify:ci-parity -- [--write] [--root <path>]
+ *   node plugin/scripts/ci-parity.mjs [--write] [--root <path>]
  *
  * Exit: 0 success; 1 no check commands; 2 usage error.
  */
@@ -19,10 +22,11 @@ import {
 function printUsage() {
   process.stderr.write(
     "usage:\n" +
-      "  node plugin/scripts/ci-parity.mjs [--write] [--root <path>]\n" +
-      "  npm run verify:ci-parity -- [--write] [--root <path>]\n" +
+      "  node \"${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/ci-parity.mjs\" [--write] [--root <path>]\n" +
+      "  (harness checkout only) npm run verify:ci-parity -- [--write] [--root <path>]\n" +
+      "  (harness checkout only) node plugin/scripts/ci-parity.mjs [--write] [--root <path>]\n" +
       "\n" +
-      "Default: print verify:record recipe to stdout.\n" +
+      "Default: print record-verify recipe to stdout.\n" +
       "--write: also write .cursor/verify-profile.json\n" +
       "Exit 1 if no check commands found; exit 2 on usage error.\n",
   );

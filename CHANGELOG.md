@@ -82,6 +82,12 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Fixed
 
+- **Consumer verify recipes use plugin scripts:** deny messages, stop
+  follow-up, `/verify-ci-parity`, `formatRecordRecipe`, gate-dag, and eng
+  agents no longer tell consumers to run `npm run verify:record` /
+  `npm run verify:ci-parity` (harness-only aliases). Primary form is
+  `node "${CURSOR_PLUGIN_ROOT:-…/cursor-harness}/scripts/…"`. Shared helpers
+  in `plugin/scripts/lib/verify-cli-paths.mjs`.
 - **Gate twin parity:** JS dispatch-gate planner now requires a change-id
   segment in `openspec/changes/*/dispatch/**`, matching the bash twin.
 - **Verify-ledger hardening:** custom-profile coverage requires meaningful
