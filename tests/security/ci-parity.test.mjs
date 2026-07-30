@@ -112,15 +112,29 @@ test("rust workflow extracts fmt/clippy/test and recommends rust", () => {
     assert.equal(scanned.profile, "rust");
     assert.equal(scanned.commands.length, 3);
     const recipe = formatRecordRecipe(scanned.profile, scanned.commands);
+    assert.match(recipe, /record-verify\.mjs/u);
     assert.match(recipe, /--profile rust --run -- cargo fmt --check/u);
     assert.match(
       recipe,
       /--profile rust --run -- cargo clippy --all-targets -- -D warnings/u,
     );
     assert.match(recipe, /--profile rust --run -- cargo test/u);
+    for (const line of recipe.split("\n")) {
+      assert.match(line, /^node "/u);
+      assert.doesNotMatch(line, /npm run verify:record/u);
+    }
   });
 });
 
+test("formatRecordRecipe uses plugin record-verify.mjs not harness npm", () => {
+  const recipe = formatRecordRecipe("custom", ["pytest -q", "ruff check ."]);
+  assert.match(recipe, /record-verify\.mjs/u);
+  assert.doesNotMatch(recipe.split("\n")[0], /npm run verify:record/u);
+  assert.match(
+    recipe,
+    /node ".*\/scripts\/record-verify\.mjs" --profile custom --run -- pytest -q/u,
+  );
+});
 test("npm test + validate recommends node-harness", () => {
   withTempRoot((root) => {
     writeWorkflow(root, "ci.yml", NODE_WORKFLOW);

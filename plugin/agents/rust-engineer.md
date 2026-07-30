@@ -44,9 +44,10 @@ Also run every verification command declared in the brief. In this harness
 repository, run `npm run validate` on non-docs-only diffs. Skipped or failed
 checks go in `residual_risk` and block claiming verified. After verification
 succeeds, record commands with
-`npm run verify:record -- --profile rust --run -- <cmd>` so
+`node "${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/record-verify.mjs" --profile rust --run -- <cmd>` so
 `.cursor/verify-ledger.json` proves `impl_verified` for HEAD before
-`gh pr create|ready` (spawn only; rust profile coverage required).
+`gh pr create|ready` (spawn only; rust profile coverage required). Harness
+dogfood only: `npm run verify:record …`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
 relevant output, `verify_ledger` status, acceptance results, any `unsafe`

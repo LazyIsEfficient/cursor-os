@@ -7,6 +7,13 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { formatRecordVerifyCommand } from "./verify-cli-paths.mjs";
+
+export {
+  formatCiParityCommand,
+  formatRecordVerifyCommand,
+  verifyPluginScriptsRoot,
+} from "./verify-cli-paths.mjs";
 
 export const VERIFY_PROFILE_VERSION = 1;
 export const VERIFY_PROFILE_RELATIVE_PATH = join(".cursor", "verify-profile.json");
@@ -433,10 +440,7 @@ export function formatRecordRecipe(profile, commands) {
     return "";
   }
   return commands
-    .map(
-      (cmd) =>
-        `npm run verify:record -- --profile ${profile} --run -- ${cmd}`,
-    )
+    .map((cmd) => formatRecordVerifyCommand(profile, cmd))
     .join("\n");
 }
 

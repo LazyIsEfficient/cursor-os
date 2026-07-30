@@ -26,6 +26,7 @@ import {
   loadVerifyProfile,
   normalizeVerifyCmd,
 } from "./ci-parity-lib.mjs";
+import { formatRecordVerifyCommand } from "./verify-cli-paths.mjs";
 
 export const VERIFY_LEDGER_VERSION = 2;
 export const VERIFY_LEDGER_RELATIVE_PATH = join(".cursor", "verify-ledger.json");
@@ -1188,10 +1189,16 @@ export function verifyLedgerAppendCommand(
 
 export const GH_PR_WITHOUT_VERIFY_RULE = "gh-pr-without-verify";
 
+const RECORD_VERIFY_SPAWN_HINT = formatRecordVerifyCommand(
+  "<node-harness|rust|custom>",
+  "<cmd>",
+);
+
 export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Denied: .cursor/verify-ledger.json does not prove impl_verified for the current HEAD. " +
   "Choose a stack profile and record only via spawn: " +
-  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
+  `\`${RECORD_VERIFY_SPAWN_HINT}\`. ` +
+  "Harness dogfood only: `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
   "node-harness needs validate + test; rust needs cargo fmt --check, " +
   "`clippy --all-targets -- -D warnings`, and test/nextest; " +
   "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +
@@ -1204,7 +1211,8 @@ export const GIT_PUSH_WITHOUT_VERIFY_RULE = "git-push-without-verify";
 export const GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Denied: git push requires .cursor/verify-ledger.json proving impl_verified for the current HEAD. " +
   "Choose a stack profile and record only via spawn: " +
-  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
+  `\`${RECORD_VERIFY_SPAWN_HINT}\`. ` +
+  "Harness dogfood only: `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
   "node-harness needs validate + test; rust needs cargo fmt --check, " +
   "`clippy --all-targets -- -D warnings`, and test/nextest; " +
   "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +

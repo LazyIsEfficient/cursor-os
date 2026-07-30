@@ -34,7 +34,7 @@ Reach `checkpoint:impl-verified` before returning: lint/diff/preview as
 appropriate (`helm lint`, `kubectl apply --dry-run=client`, `pulumi preview`),
 every brief verification command to exit 0, and in this harness repository
 `npm run validate` on non-docs-only diffs. Skipped checks are not passes.
-After verification succeeds, record with `npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`.
+After verification succeeds, record with `node "${CURSOR_PLUGIN_ROOT:-$HOME/.cursor/plugins/local/cursor-harness}/scripts/record-verify.mjs" --profile <node-harness|rust|custom> --run -- <cmd>`. Harness dogfood only: `npm run verify:record …`.
 
 Return `files_read`, `files_changed`, exact commands with exit codes and
 relevant output, `verify_ledger` status, acceptance results, rollback plan, any cluster-scoped

@@ -173,7 +173,7 @@ test("dirty worktree without ledger follows up", () => {
     assert.equal(gitNeedsVerifyBeforePush(root), true);
     const result = verifyLedgerHandleStop({ status: "completed", cwd: root });
     assert.equal(result.followup_message, VERIFY_LEDGER_STOP_FOLLOWUP_MESSAGE);
-    assert.match(result.followup_message, /verify:record/u);
+    assert.match(result.followup_message, /record-verify\.mjs/u);
   });
 });
 
