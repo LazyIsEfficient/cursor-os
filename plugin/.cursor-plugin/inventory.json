@@ -177,6 +177,12 @@
       "sha256": "c316f81254ea563c9d2f86fbdc26f96795d4e26029b4aad087caf99da880d839"
     },
     {
+      "id": "verify-ci-parity",
+      "kind": "command",
+      "path": "plugin/commands/verify-ci-parity.md",
+      "sha256": "2b5b0b4869755fded21c98842d242f5c41da854e8a0d10f5dcbafb00e1623c26"
+    },
+    {
       "id": "hooks",
       "kind": "hook",
       "path": "plugin/hooks/hooks.json",
@@ -192,7 +198,7 @@
       "id": "gate-dag",
       "kind": "reference",
       "path": "plugin/references/gate-dag.md",
-      "sha256": "ce8846f21eac39fc56c911e0b6929f2783c3530591b59592af9c1d553c237d8c"
+      "sha256": "98abdc344c554f00194c563b94d7b8e0d9a713ecbf45c32cbcd7de891c50c9a2"
     },
     {
       "id": "actual-diff-verification",
@@ -255,6 +261,12 @@
       "sha256": "f51d32162a50df44f63c73ece857c129df3c3a1b1ca88aaae27d3c5e03758531"
     },
     {
+      "id": "ci-parity",
+      "kind": "script",
+      "path": "plugin/scripts/ci-parity.mjs",
+      "sha256": "ea69ab550f52ffbab0cac3b3cc363179009a599cb106901d7e8bf0a5e4266913"
+    },
+    {
       "id": "dispatch-gate-after-file-edit",
       "kind": "script",
       "path": "plugin/scripts/dispatch-gate-after-file-edit.mjs",
@@ -297,6 +309,12 @@
       "sha256": "9e875e7c1d1d16cefd554c46fb5eb6a28ea7bd40ff959af579c8f351d6fb3b77"
     },
     {
+      "id": "ci-parity-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/ci-parity-lib.mjs",
+      "sha256": "0dad0df96288c5c0d324ec5fbf111e3c50d6adf8269323fe718cef71bba59c7e"
+    },
+    {
       "id": "dispatch-gate-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/dispatch-gate-lib.mjs",
@@ -312,7 +330,7 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "a2b7230a41f645782326bdf90e040d772f4d48d6c1595ad212cbaad872225da3"
+      "sha256": "c13b9c6023119fe818487ce9e3aa2445b34df49cb0cedc08f4df96bbd891cc37"
     },
     {
       "id": "verify-ledger-stop-lib",

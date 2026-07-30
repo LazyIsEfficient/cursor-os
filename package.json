@@ -34,6 +34,7 @@
     "release:dry-run": "node scripts/release.mjs",
     "release:test": "node --test tests/release/*.test.mjs",
     "validate": "node scripts/validate.mjs",
-    "verify:record": "node plugin/scripts/record-verify.mjs"
+    "verify:record": "node plugin/scripts/record-verify.mjs",
+    "verify:ci-parity": "node plugin/scripts/ci-parity.mjs"
   }
 }

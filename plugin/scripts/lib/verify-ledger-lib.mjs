@@ -21,6 +21,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
+import {
+  isValidVerifyProfile,
+  loadVerifyProfile,
+} from "./ci-parity-lib.mjs";
 
 export const VERIFY_LEDGER_VERSION = 2;
 export const VERIFY_LEDGER_RELATIVE_PATH = join(".cursor", "verify-ledger.json");
@@ -705,8 +709,17 @@ function matchesCustomVerification(tokens) {
  * Whether recorded commands satisfy the stack profile's required coverage.
  * Matching is argv-shaped (not substring): embedding tokens inside `node -e`
  * payloads does not count.
+ *
+ * For `custom`: when `root` has a valid `.cursor/verify-profile.json`
+ * (`version: 1`, non-empty `commands`), each listed command string must appear
+ * as an exact `cmd` on a spawned entry with `exit_code === 0`. Otherwise falls
+ * back to ≥2 verification-shaped commands.
+ *
+ * @param {string} profile
+ * @param {unknown[]} commands
+ * @param {string} [root] project root for optional verify-profile sidecar
  */
-export function verifyLedgerProfileCoverage(profile, commands) {
+export function verifyLedgerProfileCoverage(profile, commands, root) {
   if (!Array.isArray(commands)) {
     return false;
   }
@@ -737,6 +750,23 @@ export function verifyLedgerProfileCoverage(profile, commands) {
   }
 
   if (profile === "custom") {
+    if (typeof root === "string" && root.length > 0) {
+      const verifyProfile = loadVerifyProfile(root);
+      if (isValidVerifyProfile(verifyProfile)) {
+        return verifyProfile.commands.every((requiredCmd) =>
+          commands.some(
+            (entry) =>
+              entry !== null &&
+              typeof entry === "object" &&
+              !Array.isArray(entry) &&
+              entry.spawned === true &&
+              entry.cmd === requiredCmd &&
+              typeof entry.exit_code === "number" &&
+              entry.exit_code === 0,
+          ),
+        );
+      }
+    }
     const qualifying = commands.filter(
       (entry) =>
         entry !== null &&
@@ -755,7 +785,7 @@ export function verifyLedgerProfileCoverage(profile, commands) {
   return false;
 }
 
-function computeImplVerified(ledger) {
+function computeImplVerified(ledger, root) {
   if (!Array.isArray(ledger.commands) || ledger.commands.length < 1) {
     return false;
   }
@@ -769,15 +799,18 @@ function computeImplVerified(ledger) {
   if (!allZero) {
     return false;
   }
-  return verifyLedgerProfileCoverage(ledger.profile, ledger.commands);
+  return verifyLedgerProfileCoverage(ledger.profile, ledger.commands, root);
 }
 
 /**
  * Valid for PR: version 2, known profile, impl_verified===true, head_sha === HEAD,
  * commands.length>=1, every exit_code===0, every spawned===true, profile coverage.
+ * @param {object} ledger
+ * @param {string} headSha
+ * @param {string} [root] project root (loads `.cursor/verify-profile.json` for custom)
  * @returns {{ ok: true, ledger: object } | { ok: false, reason: string }}
  */
-export function verifyLedgerValidateForHead(ledger, headSha) {
+export function verifyLedgerValidateForHead(ledger, headSha, root) {
   if (ledger === null || typeof ledger !== "object" || Array.isArray(ledger)) {
     return { ok: false, reason: "missing-or-invalid-ledger" };
   }
@@ -814,7 +847,7 @@ export function verifyLedgerValidateForHead(ledger, headSha) {
       return { ok: false, reason: "unspawned-command" };
     }
   }
-  if (!verifyLedgerProfileCoverage(ledger.profile, ledger.commands)) {
+  if (!verifyLedgerProfileCoverage(ledger.profile, ledger.commands, root)) {
     return { ok: false, reason: "profile-incomplete" };
   }
   return { ok: true, ledger };
@@ -833,7 +866,7 @@ export function verifyLedgerIsValidForHead(root) {
   if (!ledger) {
     return { ok: false, reason: "missing-or-invalid-ledger" };
   }
-  const result = verifyLedgerValidateForHead(ledger, headSha);
+  const result = verifyLedgerValidateForHead(ledger, headSha, root);
   if (!result.ok) {
     return result;
   }
@@ -969,7 +1002,7 @@ export function verifyLedgerAppendCommand(
     );
     ledger.commands.push(entry);
 
-    const verified = computeImplVerified(ledger);
+    const verified = computeImplVerified(ledger, root);
     ledger.impl_verified = verified;
     ledger.verified_at = verified ? at : null;
 
@@ -989,7 +1022,9 @@ export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
   "node-harness needs validate + test; rust needs cargo fmt --check, " +
   "`clippy --all-targets -- -D warnings`, and test/nextest; " +
-  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +
+  "If `.cursor/verify-profile.json` exists, those exact cmds must be recorded. " +
+  "Fake `--cmd/--exit` recording is removed. " +
   "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";
 
 export const GIT_PUSH_WITHOUT_VERIFY_RULE = "git-push-without-verify";
@@ -1000,5 +1035,7 @@ export const GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE =
   "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
   "node-harness needs validate + test; rust needs cargo fmt --check, " +
   "`clippy --all-targets -- -D warnings`, and test/nextest; " +
-  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). " +
+  "If `.cursor/verify-profile.json` exists, those exact cmds must be recorded. " +
+  "Fake `--cmd/--exit` recording is removed. " +
   "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";

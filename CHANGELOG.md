@@ -16,6 +16,13 @@ here therefore corresponds to a single consistent version across the repository.
 
 ### Added
 
+- **CI parity recorder for consumer repos:** `npm run verify:ci-parity`
+  (`plugin/scripts/ci-parity.mjs` + `ci-parity-lib.mjs`) scans
+  `.github/workflows/*`, justfile, and Makefile for check-shaped commands,
+  prints `verify:record` recipe lines, and optionally writes
+  `.cursor/verify-profile.json`. Custom ledger coverage requires those exact
+  cmds when the sidecar exists. Command `/verify-ci-parity`; gate-dag
+  `impl-verified` documents the consumer once-then-record flow.
 - **Audit Tier 1 fixes (full-repo best-practice sweep):** mutating `gh api`
   (POST/PUT/PATCH/DELETE, implicit POST via field flags) now requires a valid
   verify ledger; `git push :ref` / `--delete` remote-ref deletion denied by
