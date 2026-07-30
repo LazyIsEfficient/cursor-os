@@ -5,7 +5,7 @@
  * Filesystem + git live here so before-shell-execution.mjs can import validators
  * without embedding node:fs / child_process in the guard entry (static scan).
  *
- * Emergency: VERIFY_PR_GATE_DISABLED=1 skips the PR gate check only.
+ * Emergency: VERIFY_PR_GATE_DISABLED=1 skips the push and PR gate checks.
  *
  * Residual: Write-tool forging a full v2 ledger with spawned:true remains
  * possible; this layer does not solve filesystem forgery.
@@ -479,13 +479,32 @@ function matchesCargoFmtCheck(tokens) {
   );
 }
 
+/** True when argv has `-D warnings` (split) or glued `-Dwarnings`. */
+function hasDenyWarnings(tokens) {
+  if (tokens.includes("-Dwarnings")) {
+    return true;
+  }
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (tokens[index] === "-D" && tokens[index + 1] === "warnings") {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * CI-shaped clippy: `cargo clippy --all-targets` plus `-D warnings`
+ * (`-Dwarnings` or `-D` + `warnings`, including after `--`).
+ */
 function matchesCargoClippy(tokens) {
   if (argvHasHelpFlag(tokens)) {
     return false;
   }
   return (
     commandBasename(tokens[0] ?? "").toLowerCase() === "cargo" &&
-    tokens[1] === "clippy"
+    tokens[1] === "clippy" &&
+    tokens.includes("--all-targets") &&
+    hasDenyWarnings(tokens)
   );
 }
 
@@ -822,8 +841,9 @@ export function verifyLedgerIsValidForHead(root) {
 }
 
 /**
- * Whether `gh pr create|ready` is allowed under the verify ledger gate.
- * VERIFY_PR_GATE_DISABLED=1 ⇒ allow (skip check only).
+ * Whether `gh pr create|ready` / plain `git push` is allowed under the verify
+ * ledger gate. VERIFY_PR_GATE_DISABLED=1 ⇒ allow (skip check only — covers
+ * both push and PR).
  */
 export function verifyLedgerAllowsGhPr(root) {
   if (verifyPrGateDisabled()) {
@@ -967,6 +987,18 @@ export const GH_PR_WITHOUT_VERIFY_AGENT_MESSAGE =
   "Denied: .cursor/verify-ledger.json does not prove impl_verified for the current HEAD. " +
   "Choose a stack profile and record only via spawn: " +
   "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
-  "node-harness needs validate + test; rust needs cargo fmt --check, clippy, and test/nextest; " +
+  "node-harness needs validate + test; rust needs cargo fmt --check, " +
+  "`clippy --all-targets -- -D warnings`, and test/nextest; " +
   "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
-  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check.";
+  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";
+
+export const GIT_PUSH_WITHOUT_VERIFY_RULE = "git-push-without-verify";
+
+export const GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE =
+  "Denied: git push requires .cursor/verify-ledger.json proving impl_verified for the current HEAD. " +
+  "Choose a stack profile and record only via spawn: " +
+  "`npm run verify:record -- --profile <node-harness|rust|custom> --run -- <cmd>`. " +
+  "node-harness needs validate + test; rust needs cargo fmt --check, " +
+  "`clippy --all-targets -- -D warnings`, and test/nextest; " +
+  "custom needs ≥2 verification-shaped spawned commands (test/lint/build runners — not pwd/date/…). Fake `--cmd/--exit` recording is removed. " +
+  "Emergency only: VERIFY_PR_GATE_DISABLED=1 skips this check (covers both git push and gh pr).";

@@ -79,6 +79,12 @@
       },
       {
         "type": "command",
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/verify-ledger-stop.mjs\"",
+        "timeout": 5,
+        "loop_limit": 1
+      },
+      {
+        "type": "command",
         "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dispatch-gate-stop.mjs\"",
         "timeout": 5,
         "loop_limit": 3

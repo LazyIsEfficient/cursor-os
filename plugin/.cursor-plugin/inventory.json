@@ -180,7 +180,7 @@
       "id": "hooks",
       "kind": "hook",
       "path": "plugin/hooks/hooks.json",
-      "sha256": "977e590b19cb1eea2e6bbfa44b0b3f4891287b5ccaa1c4368d1936b79dad85f3"
+      "sha256": "1075a54ad1832702eb624fdd49438920336ef73a585a77a484fc6b0d3ebe7845"
     },
     {
       "id": "caveman-style",
@@ -192,7 +192,7 @@
       "id": "gate-dag",
       "kind": "reference",
       "path": "plugin/references/gate-dag.md",
-      "sha256": "02caed9a7d9f8d0bb0e405ca1a954f41efb6a2af207156bcf0c75d326b04627c"
+      "sha256": "ce8846f21eac39fc56c911e0b6929f2783c3530591b59592af9c1d553c237d8c"
     },
     {
       "id": "actual-diff-verification",
@@ -252,7 +252,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "aafe1d6c2fe631d40133b5207ddfb95ac1f5c9e9aa671fe36438470c2ecb45c4"
+      "sha256": "f51d32162a50df44f63c73ece857c129df3c3a1b1ca88aaae27d3c5e03758531"
     },
     {
       "id": "dispatch-gate-after-file-edit",
@@ -312,7 +312,13 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "19c8eb31550845b198b9dc60088186c2279cc82ca1b1814f7f6d3633df742178"
+      "sha256": "a2b7230a41f645782326bdf90e040d772f4d48d6c1595ad212cbaad872225da3"
+    },
+    {
+      "id": "verify-ledger-stop-lib",
+      "kind": "script",
+      "path": "plugin/scripts/lib/verify-ledger-stop-lib.mjs",
+      "sha256": "4f57f89d51fb9fd1d326fb81db3f4fb5fdd1e67c9b63535880ede6034777768b"
     },
     {
       "id": "memory-extract-nudge",
@@ -343,6 +349,12 @@
       "kind": "script",
       "path": "plugin/scripts/session-state-inject.mjs",
       "sha256": "d48ad7a7759b79055777d7c173f8d7690767fb8351ab150d6f70165e50add81f"
+    },
+    {
+      "id": "verify-ledger-stop",
+      "kind": "script",
+      "path": "plugin/scripts/verify-ledger-stop.mjs",
+      "sha256": "9dd62431280eb32929df80b6507279a583bdfa2f0900312aee77d743ec2034be"
     },
     {
       "id": "adversarial-claims-reviewer",
