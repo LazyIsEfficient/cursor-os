@@ -16,6 +16,7 @@ import {
   extractCheckCommands,
   formatRecordRecipe,
   loadVerifyProfile,
+  normalizeVerifyCmd,
   recommendProfile,
   scanCiParity,
   writeVerifyProfile,
@@ -294,5 +295,83 @@ test("justfile and Makefile discovery", () => {
     assert.ok(scanned.commands.includes("cargo test"));
     assert.ok(scanned.commands.includes("npm run lint"));
     assert.equal(scanned.profile, "rust");
+  });
+});
+
+test("justfile/Makefile apply looksLikeCheckCommand (echo preparing filtered)", () => {
+  const justfile = `check:\n    echo preparing\n    cargo test\n`;
+  const makefile = `check:\n\techo preparing\n\tnpm test\n`;
+  assert.deepEqual(extractCheckCommands(justfile, "justfile"), ["cargo test"]);
+  assert.deepEqual(extractCheckCommands(makefile, "makefile"), ["npm test"]);
+  assert.ok(!extractCheckCommands(justfile, "justfile").includes("echo preparing"));
+  assert.ok(!extractCheckCommands(makefile, "makefile").includes("echo preparing"));
+});
+
+test("normalizeVerifyCmd collapses quotes/whitespace for profile coverage", () => {
+  assert.equal(
+    normalizeVerifyCmd(`pytest  -k  "not slow"`),
+    "pytest -k not slow",
+  );
+  assert.equal(
+    normalizeVerifyCmd("pytest -k not slow"),
+    "pytest -k not slow",
+  );
+  assert.equal(
+    normalizeVerifyCmd(`pytest -k 'not slow'`),
+    "pytest -k not slow",
+  );
+
+  withTempRoot((root) => {
+    writeVerifyProfile(root, {
+      commands: [`pytest  -k  "not slow"`],
+      source: "ci-parity",
+    });
+    const loaded = loadVerifyProfile(root);
+    assert.deepEqual(loaded.commands, ["pytest -k not slow"]);
+
+    const at = new Date().toISOString();
+    const spawned = (cmd) => ({
+      cmd,
+      exit_code: 0,
+      at,
+      spawned: true,
+    });
+    // Ledger form as record-verify emits (JSON-quoted multi-word arg).
+    assert.equal(
+      verifyLedgerProfileCoverage(
+        "custom",
+        [spawned(`pytest -k "not slow"`)],
+        root,
+      ),
+      true,
+    );
+    assert.equal(
+      verifyLedgerProfileCoverage(
+        "custom",
+        [spawned("pytest -k not slow")],
+        root,
+      ),
+      true,
+    );
+  });
+});
+
+test("sidecar listing go version alone does not satisfy custom coverage", () => {
+  withTempRoot((root) => {
+    writeVerifyProfile(root, {
+      commands: ["go version"],
+      source: "ci-parity",
+    });
+    const at = new Date().toISOString();
+    const spawned = (cmd) => ({
+      cmd,
+      exit_code: 0,
+      at,
+      spawned: true,
+    });
+    assert.equal(
+      verifyLedgerProfileCoverage("custom", [spawned("go version")], root),
+      false,
+    );
   });
 });

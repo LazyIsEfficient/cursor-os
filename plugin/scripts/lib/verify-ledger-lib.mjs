@@ -19,11 +19,12 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, dirname, isAbsolute } from "node:path";
 import { execFileSync } from "node:child_process";
 import {
   isValidVerifyProfile,
   loadVerifyProfile,
+  normalizeVerifyCmd,
 } from "./ci-parity-lib.mjs";
 
 export const VERIFY_LEDGER_VERSION = 2;
@@ -132,6 +133,152 @@ export function readHeadSha(root) {
   } catch {
     return null;
   }
+}
+
+function isExistingDirectory(path) {
+  if (typeof path !== "string" || path.length === 0) {
+    return false;
+  }
+  try {
+    return existsSync(path) && statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function resolveAgainstBase(base, path) {
+  if (typeof path !== "string" || path.length === 0) {
+    return null;
+  }
+  return isAbsolute(path) ? resolve(path) : resolve(base, path);
+}
+
+/**
+ * Resolve the effective git work tree a `git …` invocation would use, from
+ * global options before the subcommand (`-C`, `--git-dir`, `--work-tree`,
+ * including `=` glued forms; stacked `-C` applied left-to-right).
+ *
+ * Prefer `--work-tree`, else toplevel from `--git-dir`, else final `-C`,
+ * else `cwd`. Returns an absolute existing directory, or `null` (callers
+ * fail closed — e.g. deny `git-push-without-verify`).
+ *
+ * @param {string[]} gitArgv arguments after the `git` executable
+ * @param {string} cwd hook / process cwd used for relative path resolution
+ * @returns {string | null}
+ */
+export function resolveGitWorkTreeFromArgv(gitArgv, cwd) {
+  if (!Array.isArray(gitArgv) || typeof cwd !== "string" || cwd.length === 0) {
+    return null;
+  }
+  let base = resolve(cwd);
+  if (!isExistingDirectory(base)) {
+    return null;
+  }
+
+  let gitDir = null;
+  let workTree = null;
+  let index = 0;
+
+  while (index < gitArgv.length) {
+    const arg = gitArgv[index];
+    if (typeof arg !== "string") {
+      return null;
+    }
+    if (arg === "--" || !arg.startsWith("-") || arg === "-") {
+      break;
+    }
+
+    if (arg === "-C") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      const nextBase = resolveAgainstBase(base, next);
+      if (!nextBase || !isExistingDirectory(nextBase)) {
+        return null;
+      }
+      base = nextBase;
+      index += 2;
+      continue;
+    }
+
+    if (arg === "--git-dir") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      gitDir = next;
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("--git-dir=")) {
+      gitDir = arg.slice("--git-dir=".length);
+      if (gitDir.length === 0) {
+        return null;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--work-tree") {
+      const next = gitArgv[index + 1];
+      if (typeof next !== "string" || next.length === 0) {
+        return null;
+      }
+      workTree = next;
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("--work-tree=")) {
+      workTree = arg.slice("--work-tree=".length);
+      if (workTree.length === 0) {
+        return null;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (arg === "-c" || arg === "--namespace") {
+      if (typeof gitArgv[index + 1] !== "string") {
+        return null;
+      }
+      index += 2;
+      continue;
+    }
+    if (arg.startsWith("-c") || arg.startsWith("--namespace=")) {
+      index += 1;
+      continue;
+    }
+
+    // Other global flags (`--bare`, `-c key=value` glued, …).
+    index += 1;
+  }
+
+  if (workTree !== null) {
+    const abs = resolveAgainstBase(base, workTree);
+    return abs && isExistingDirectory(abs) ? abs : null;
+  }
+
+  if (gitDir !== null) {
+    const absGitDir = resolveAgainstBase(base, gitDir);
+    if (!absGitDir) {
+      return null;
+    }
+    // Standard `repo/.git` layout: parent is the work tree. Do NOT ask
+    // `rev-parse --show-toplevel` with only `--git-dir` set — git then treats
+    // the process cwd as the work tree, which reintroduces decoy-cwd evasion
+    // (`git --git-dir=real/.git push` from a verified decoy).
+    const lower = absGitDir.replace(/\\/gu, "/");
+    if (lower.endsWith("/.git")) {
+      const parent = dirname(absGitDir);
+      return isExistingDirectory(parent) ? resolve(parent) : null;
+    }
+    // Bare / nonstandard git-dir without `--work-tree`: cannot safely bind a
+    // ledger root — fail closed.
+    return null;
+  }
+
+  return base;
 }
 
 export function verifyLedgerLoad(root) {
@@ -669,6 +816,14 @@ function matchesCustomVerification(tokens) {
       "tox",
       "nox",
       "pytest",
+      "ruff",
+      "flake8",
+      "mypy",
+      "pylint",
+      "eslint",
+      "prettier",
+      "black",
+      "isort",
       "mvn",
       "gradle",
       "gradlew",
@@ -711,8 +866,10 @@ function matchesCustomVerification(tokens) {
  * payloads does not count.
  *
  * For `custom`: when `root` has a valid `.cursor/verify-profile.json`
- * (`version: 1`, non-empty `commands`), each listed command string must appear
- * as an exact `cmd` on a spawned entry with `exit_code === 0`. Otherwise falls
+ * (`version: 1`, non-empty `commands`), each listed command must appear as a
+ * spawned exit-0 entry after `normalizeVerifyCmd` on both sides. Listed cmds
+ * that are trivial or fail `matchesCustomVerification` never satisfy
+ * coverage (reject inert sidecar entries like `go version`). Otherwise falls
  * back to ≥2 verification-shaped commands.
  *
  * @param {string} profile
@@ -753,18 +910,33 @@ export function verifyLedgerProfileCoverage(profile, commands, root) {
     if (typeof root === "string" && root.length > 0) {
       const verifyProfile = loadVerifyProfile(root);
       if (isValidVerifyProfile(verifyProfile)) {
-        return verifyProfile.commands.every((requiredCmd) =>
-          commands.some(
+        return verifyProfile.commands.every((requiredCmd) => {
+          const requiredNorm = normalizeVerifyCmd(requiredCmd);
+          if (
+            requiredNorm.length === 0 ||
+            verifyCommandIsTrivial(requiredNorm) ||
+            !matchesCustomVerification(
+              peelVerifyArgv(tokenizeVerifyCommand(requiredNorm)),
+            )
+          ) {
+            return false;
+          }
+          return commands.some(
             (entry) =>
               entry !== null &&
               typeof entry === "object" &&
               !Array.isArray(entry) &&
               entry.spawned === true &&
-              entry.cmd === requiredCmd &&
+              typeof entry.cmd === "string" &&
+              normalizeVerifyCmd(entry.cmd) === requiredNorm &&
               typeof entry.exit_code === "number" &&
-              entry.exit_code === 0,
-          ),
-        );
+              entry.exit_code === 0 &&
+              !verifyCommandIsTrivial(entry.cmd) &&
+              matchesCustomVerification(
+                peelVerifyArgv(tokenizeVerifyCommand(entry.cmd)),
+              ),
+          );
+        });
       }
     }
     const qualifying = commands.filter(

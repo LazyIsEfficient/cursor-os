@@ -79,6 +79,85 @@ function normalizeCommand(line) {
   return line.replace(/\s+/gu, " ").trim();
 }
 
+/**
+ * Canonical form for verify-profile cmds and ledger coverage compare.
+ * Collapses whitespace, tokenizes (unwrapping `"…"`), strips residual
+ * surrounding quotes per token, joins with a single space — so
+ * `pytest -k "not slow"` matches ledger `pytest -k not slow` /
+ * `pytest -k "not slow"` after both sides normalize. Used by
+ * `writeVerifyProfile` and `verifyLedgerProfileCoverage`.
+ * @param {string} cmd
+ * @returns {string}
+ */
+export function normalizeVerifyCmd(cmd) {
+  if (typeof cmd !== "string") {
+    return "";
+  }
+  const source = normalizeCommand(cmd);
+  if (source.length === 0) {
+    return "";
+  }
+  // Lightweight tokenize: honor double-quoted spans, then strip residual
+  // matching quotes on each token (covers single-quoted shell forms).
+  const tokens = [];
+  let index = 0;
+  while (index < source.length) {
+    while (index < source.length && /\s/u.test(source[index])) {
+      index += 1;
+    }
+    if (index >= source.length) {
+      break;
+    }
+    if (source[index] === '"') {
+      let value = "";
+      index += 1;
+      while (index < source.length) {
+        const ch = source[index];
+        if (ch === "\\" && index + 1 < source.length) {
+          value += source[index + 1];
+          index += 2;
+          continue;
+        }
+        if (ch === '"') {
+          index += 1;
+          break;
+        }
+        value += ch;
+        index += 1;
+      }
+      tokens.push(value);
+      continue;
+    }
+    if (source[index] === "'") {
+      let value = "";
+      index += 1;
+      while (index < source.length && source[index] !== "'") {
+        value += source[index];
+        index += 1;
+      }
+      if (index < source.length && source[index] === "'") {
+        index += 1;
+      }
+      tokens.push(value);
+      continue;
+    }
+    const start = index;
+    while (index < source.length && !/\s/u.test(source[index])) {
+      index += 1;
+    }
+    let token = source.slice(start, index);
+    if (
+      token.length >= 2 &&
+      ((token[0] === '"' && token[token.length - 1] === '"') ||
+        (token[0] === "'" && token[token.length - 1] === "'"))
+    ) {
+      token = token.slice(1, -1);
+    }
+    tokens.push(token);
+  }
+  return tokens.join(" ").replace(/\s+/gu, " ").trim();
+}
+
 function isNoiseCommand(cmd) {
   return NOISE_RE.test(cmd);
 }
@@ -261,9 +340,13 @@ export function extractCheckCommands(text, kind) {
       }
     }
   } else if (kind === "justfile") {
-    raw = extractJustfileCommands(text).map(normalizeCommand);
+    raw = extractJustfileCommands(text)
+      .map(normalizeCommand)
+      .filter(looksLikeCheckCommand);
   } else if (kind === "makefile") {
-    raw = extractMakefileCommands(text).map(normalizeCommand);
+    raw = extractMakefileCommands(text)
+      .map(normalizeCommand)
+      .filter(looksLikeCheckCommand);
   }
 
   const seen = new Set();
@@ -392,7 +475,7 @@ export function writeVerifyProfile(root, { commands, source = "ci-parity" }) {
   }
   const payload = {
     version: VERIFY_PROFILE_VERSION,
-    commands: commands.map((cmd) => normalizeCommand(String(cmd))),
+    commands: commands.map((cmd) => normalizeVerifyCmd(String(cmd))),
     source: typeof source === "string" && source.length > 0 ? source : "ci-parity",
   };
   mkdirSync(join(root, ".cursor"), { recursive: true });

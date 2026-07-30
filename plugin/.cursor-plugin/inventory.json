@@ -198,7 +198,7 @@
       "id": "gate-dag",
       "kind": "reference",
       "path": "plugin/references/gate-dag.md",
-      "sha256": "98abdc344c554f00194c563b94d7b8e0d9a713ecbf45c32cbcd7de891c50c9a2"
+      "sha256": "c8c0d9fbb969081a63ed868407232291b76ad007a460f22cec41d0608a104d99"
     },
     {
       "id": "actual-diff-verification",
@@ -258,7 +258,7 @@
       "id": "before-shell-execution",
       "kind": "script",
       "path": "plugin/scripts/before-shell-execution.mjs",
-      "sha256": "f51d32162a50df44f63c73ece857c129df3c3a1b1ca88aaae27d3c5e03758531"
+      "sha256": "24a36af9da54f7ce004b4d9f62a8a545ddac01156c8033661a46e17762bf5083"
     },
     {
       "id": "ci-parity",
@@ -312,7 +312,7 @@
       "id": "ci-parity-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/ci-parity-lib.mjs",
-      "sha256": "0dad0df96288c5c0d324ec5fbf111e3c50d6adf8269323fe718cef71bba59c7e"
+      "sha256": "4d972d308aba26d030eb3fa03a2fb6f390d39944364d5d157eb3af447c8a6c94"
     },
     {
       "id": "dispatch-gate-lib",
@@ -330,7 +330,7 @@
       "id": "verify-ledger-lib",
       "kind": "script",
       "path": "plugin/scripts/lib/verify-ledger-lib.mjs",
-      "sha256": "c13b9c6023119fe818487ce9e3aa2445b34df49cb0cedc08f4df96bbd891cc37"
+      "sha256": "82e24aa9f30e3d6f0a5a414bf86a538881628da25b82aeaf65cbc2a790d3ca45"
     },
     {
       "id": "verify-ledger-stop-lib",

@@ -3,6 +3,7 @@ import {
   GH_PR_WITHOUT_VERIFY_RULE,
   GIT_PUSH_WITHOUT_VERIFY_AGENT_MESSAGE,
   GIT_PUSH_WITHOUT_VERIFY_RULE,
+  resolveGitWorkTreeFromArgv,
   verifyLedgerAllowsGhPr,
   verifyLedgerProjectRoot,
 } from "./lib/verify-ledger-lib.mjs";
@@ -835,11 +836,16 @@ function highImpactRule(segment, executable, arguments_, workspaceRoot) {
     ) {
       return "git-remote-ref-delete";
     }
-    // Remaining plain `git push` forms require a valid verify ledger for HEAD
-    // (same kill-switch as gh pr create|ready). Force / ref-delete already
-    // returned above.
+    // Remaining plain `git push` forms require a valid verify ledger for the
+    // effective git work tree (from `-C` / `--git-dir` / `--work-tree`), not
+    // merely the hook cwd — otherwise a decoy cwd with a valid ledger can
+    // authorize pushing a different repo. Unresolvable target → fail closed.
     if (parsed.subcommand === "push") {
-      const allow = verifyLedgerAllowsGhPr(workspaceRoot);
+      const ledgerRoot = resolveGitWorkTreeFromArgv(arguments_, workspaceRoot);
+      if (ledgerRoot === null) {
+        return GIT_PUSH_WITHOUT_VERIFY_RULE;
+      }
+      const allow = verifyLedgerAllowsGhPr(ledgerRoot);
       if (!allow.ok) {
         return GIT_PUSH_WITHOUT_VERIFY_RULE;
       }
